@@ -17,6 +17,11 @@ updates:
     groups:
       tools-dev:
         dependency-type: development
+    ignore:
+      # eslint-plugin-import 2.32.0 does not declare ESLint 10 peer support yet.
+      - dependency-name: eslint
+        update-types:
+          - version-update:semver-major
 
   # GitHub Actions used by repository workflows.
   - package-ecosystem: github-actions
