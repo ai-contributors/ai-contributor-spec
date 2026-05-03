@@ -1,0 +1,8 @@
+node_modules/
+dist/
+build/
+coverage/
+.nyc_output/
+
+# Generated/managed by tooling — do not reformat
+pnpm-lock.yaml

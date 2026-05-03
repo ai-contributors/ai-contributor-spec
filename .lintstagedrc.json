@@ -1,0 +1,9 @@
+{
+  "*.ts": [
+    "tools/node_modules/.bin/prettier --write",
+    "tools/node_modules/.bin/eslint --config tools/eslint.config.js --fix --no-warn-ignored"
+  ],
+  "*.{js,mjs,cjs}": ["tools/node_modules/.bin/prettier --write"],
+  "*.{json,yml,yaml}": ["tools/node_modules/.bin/prettier --write"],
+  "*.md": "tools/node_modules/.bin/markdownlint-cli2 --config tools/markdownlint-cli2.jsonc"
+}

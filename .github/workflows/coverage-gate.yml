@@ -1,0 +1,37 @@
+name: Coverage Gate
+
+on:
+  # PR runs always because this status is required; pushes to main are path-filtered.
+  pull_request:
+  push:
+    branches: [main]
+    paths:
+      - "tools/**"
+      - "skills/ai-contributor-audit/**"
+      - "skills/ai-contributor-audit-profile/**"
+      - ".github/workflows/coverage-gate.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit-tier:
+    name: Audit-tier coverage (80% stmt / 75% branch / 80% lines / 80% funcs, per-file)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Node with npm cache
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: tools/package-lock.json
+
+      - name: Install script tooling
+        run: npm ci --prefix tools
+
+      - name: Audit-tier coverage gate # evergreen-skip: enforces strict per-file thresholds on the verdict surface
+        run: npm --prefix tools run coverage:check:audit

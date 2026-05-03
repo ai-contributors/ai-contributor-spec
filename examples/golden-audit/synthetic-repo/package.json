@@ -1,0 +1,17 @@
+{
+  "name": "ai-contributor-golden-synthetic",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Synthetic repo used by tools/tests/check-golden-audit.ts to assert deterministic auditor output across agents.",
+  "packageManager": "pnpm@10.0.0",
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "prepare": "husky"
+  }
+}

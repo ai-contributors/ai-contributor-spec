@@ -1,0 +1,28 @@
+# Code ownership for sensitive paths.
+# Required by AI Contributor `CODEOWNERS` (AIC-sensitive-path-ownership).
+# Lines later in this file override earlier ones (GitHub semantics).
+
+# Default owner — covers anything not matched below.
+*                                   @ai-contributors
+
+# Specification, audit model, guide — normative documents.
+/AI-CONTRIBUTOR-SPECIFICATION.md    @ai-contributors
+/AI-CONTRIBUTOR-AUDIT-MODEL.md      @ai-contributors
+/AI-CONTRIBUTOR-GUIDE.md            @ai-contributors
+/AI-CONTRIBUTOR-COVERAGE.md         @ai-contributors
+
+# Audit templates shipped to adopters via bootstrap.
+/.ai-contributor-audit/             @ai-contributors
+
+# Runbook scripts and skill prompts that adopters fetch by SHA.
+/skills/                            @ai-contributors
+
+# Verification tooling — drift here breaks every adopter audit.
+/tools/                             @ai-contributors
+
+# CI workflows + repo-level governance.
+/.github/                           @ai-contributors
+/CODEOWNERS                         @ai-contributors
+/SECURITY.md                        @ai-contributors
+/CONTRIBUTING.md                    @ai-contributors
+/LICENSE                            @ai-contributors

@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+*.tsbuildinfo
+
+# Test / coverage
+coverage/
+.nyc_output/
+
+# Environment files (see AI-CONTRIBUTOR-SPECIFICATION.md §5)
+.env
+.env.*
+!.env.example
+.env.local
+.env.*.local
+
+# Secret-bearing files
+*.pem
+*.key
+id_rsa*
+*.p12
+*.pfx
+
+# IDE / OS
+.DS_Store
+.vscode/
+.idea/
+*.log

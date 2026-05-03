@@ -1,0 +1,19 @@
+{
+  "_purpose": "Per-rule expected derived_status when audit-collect.ts runs against examples/golden-audit/synthetic-repo/ in --working-tree --no-network mode. The orchestrator at tools/tests/check-golden-audit.ts asserts equality. A mismatch on any listed rule means the collector's behavior drifted relative to the curated synthetic input — investigate before merging.",
+  "_notes": {
+    "null": "Means the collector left the row as judgment-required (e.g. hosted-setting rules in --no-network mode). The expected outcome is not Fulfilled but also not Alarm.",
+    "tolerance": "Rules NOT listed here are not asserted, so the harness can grow incrementally. To lock down a rule, add it with the expected status."
+  },
+  "expected": {
+    "lockfile-integrity": "Not relevant",
+    "pinned-toolchain": "Fulfilled",
+    "pre-commit": "Fulfilled",
+    "automated-dependency-updates": "Fulfilled",
+    "branch-protection": null,
+    "secret-scanning": "Warning",
+    "push-protection": null,
+    "human-review-required": null,
+    "dependency-security": null,
+    "authoritative-guardrail-doc": "Fulfilled"
+  }
+}

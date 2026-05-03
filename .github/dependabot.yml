@@ -1,0 +1,31 @@
+# Dependabot configuration.
+# Required by AI Contributor `Dependency Security` (AIC-dependency-vuln-detection).
+
+version: 2
+updates:
+  # Verification tooling dependencies.
+  - package-ecosystem: npm
+    directory: /tools
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - tools
+    commit-message:
+      prefix: deps(tools)
+    groups:
+      tools-dev:
+        dependency-type: development
+
+  # GitHub Actions used by repository workflows.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - github-actions
+    commit-message:
+      prefix: deps(actions)

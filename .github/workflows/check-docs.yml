@@ -1,0 +1,36 @@
+name: Check Docs
+
+on:
+  # PR runs always because this status is required; pushes to main are path-filtered.
+  pull_request:
+  push:
+    branches: [main]
+    paths:
+      - "**/*.md"
+      - ".github/workflows/check-docs.yml"
+      - "tools/**"
+      - "skills/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check-links-and-clauses:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Node with npm cache
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: tools/package-lock.json
+
+      - name: Install script tooling
+        run: npm ci --prefix tools
+
+      - name: Run full check suite # evergreen-skip: step name describes the rule
+        run: npm --prefix tools run check

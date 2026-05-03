@@ -1,0 +1,27 @@
+name: Dependency Review
+
+# Surfaces vulnerable, unlicensed, or risky dependency changes on PRs.
+# Required by AI Contributor `Dependency Review` (AIC-dependency-review-visibility).
+
+on:
+  pull_request:
+    paths:
+      - "**/package.json"
+      - "**/package-lock.json"
+      - ".github/workflows/dependency-review.yml"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  dependency-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - name: Review dependency changes
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: moderate
+          comment-summary-in-pr: on-failure

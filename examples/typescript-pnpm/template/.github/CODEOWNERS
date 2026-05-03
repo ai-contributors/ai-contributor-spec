@@ -1,0 +1,31 @@
+# CODEOWNERS skeleton — see AI-CONTRIBUTOR-SPECIFICATION.md §16.
+# Replace @org/* handles with your actual GitHub teams before use.
+
+# Default owner for anything not otherwise specified
+*                            @org/platform
+
+# Policy, workflows, and CI
+/.github/                    @org/platform @org/security
+/.github/workflows/          @org/platform @org/security
+/.github/CODEOWNERS          @org/platform
+
+# Tooling configuration
+/tsconfig.base.json          @org/platform
+/eslint.config.js            @org/platform
+/.prettierrc                 @org/platform
+/pnpm-workspace.yaml         @org/platform
+/package.json                @org/platform
+
+# AI operating model and policy docs (see AI-CONTRIBUTOR-SPECIFICATION.md §§16, 19, 25)
+/AI-CONTRIBUTOR-SPECIFICATION.md  @org/platform @org/security
+/AI-CONTRIBUTOR-CHECKLIST.md @org/platform @org/security
+/AI-CONTRIBUTOR-GUIDE.md     @org/platform
+/AGENTS.md                   @org/platform
+/CLAUDE.md                   @org/platform
+/.github/copilot-instructions.md @org/platform
+/.cursorrules                @org/platform
+/.claude/                    @org/platform
+
+# Security-sensitive paths (replace with real ones)
+/packages/*/src/auth/        @org/security
+/packages/*/src/payments/    @org/security

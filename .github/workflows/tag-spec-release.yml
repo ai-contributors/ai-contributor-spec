@@ -1,0 +1,125 @@
+name: Tag Spec Release
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: tag-spec-release-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  tag-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: github.repository == 'ai-contributors/ai-contributor-spec'
+    outputs:
+      should_tag: ${{ steps.release.outputs.should_tag }}
+      tag: ${{ steps.release.outputs.tag }}
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Resolve release tag
+        id: release
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          subject="$(git log -1 --pretty=%s "$GITHUB_SHA")"
+          if [[ "$subject" =~ ^spec\ (v[0-9]+\.[0-9]+(\.[0-9]+)?):[[:space:]]+ ]]; then
+            tag="${BASH_REMATCH[1]}"
+          else
+            echo "No spec release subject found in HEAD commit: ${subject}"
+            echo "should_tag=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          version="${tag#v}"
+          if ! grep -Eq "^## \\[${version}\\] — [0-9]{4}-[0-9]{2}-[0-9]{2}$" CHANGELOG.md; then
+            echo "CHANGELOG.md has no release heading for ${version}" >&2
+            exit 1
+          fi
+
+          echo "should_tag=true" >> "$GITHUB_OUTPUT"
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+
+      - name: Self-test release matcher
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          resolve_tag() {
+            local subject="$1"
+            if [[ "$subject" =~ ^spec\ (v[0-9]+\.[0-9]+(\.[0-9]+)?):[[:space:]]+ ]]; then
+              printf '%s\n' "${BASH_REMATCH[1]}"
+            fi
+          }
+
+          [[ "$(resolve_tag 'spec v0.1: initial release')" == "v0.1" ]]
+          [[ "$(resolve_tag 'spec v0.1.1: patch release')" == "v0.1.1" ]]
+          [[ -z "$(resolve_tag 'docs: non-release change')" ]]
+
+          version="0.1"
+          grep -Eq "^## \\[${version}\\] — [0-9]{4}-[0-9]{2}-[0-9]{2}$" CHANGELOG.md
+
+      - name: Dry-run release tag
+        if: steps.release.outputs.should_tag == 'true' && github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          tag="${{ steps.release.outputs.tag }}"
+          git fetch --tags origin
+
+          if git rev-parse -q --verify "refs/tags/${tag}" >/dev/null; then
+            existing="$(git rev-list -n 1 "${tag}")"
+            echo "Tag ${tag} already exists at ${existing}; a release push would refuse to move it."
+            exit 0
+          fi
+
+          echo "Dry run: release push would create tag ${tag} at ${GITHUB_SHA}."
+
+  create-immutable-release-tag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: tag-release
+    if: needs.tag-release.outputs.should_tag == 'true' && github.event_name != 'pull_request'
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Create immutable release tag
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          tag="${{ needs.tag-release.outputs.tag }}"
+          git fetch --tags origin
+
+          if git rev-parse -q --verify "refs/tags/${tag}" >/dev/null; then
+            existing="$(git rev-list -n 1 "${tag}")"
+            if [[ "${existing}" == "${GITHUB_SHA}" ]]; then
+              echo "Tag ${tag} already points at ${GITHUB_SHA}; nothing to do."
+              exit 0
+            fi
+            echo "Tag ${tag} already exists at ${existing}; refusing to move it." >&2
+            exit 1
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "${tag}" "${GITHUB_SHA}" -m "AI Contributor Specification ${tag}"
+          git push origin "refs/tags/${tag}"

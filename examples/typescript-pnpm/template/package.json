@@ -1,0 +1,48 @@
+{
+  "name": "ai-contributor-template-ts-pnpm",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Reference TypeScript + pnpm scaffold for the AI Contributor Specification.",
+  "packageManager": "pnpm@10.33.2",
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit -p tsconfig.json && pnpm -r run type-check",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "build": "pnpm -r --sort run build",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.0",
+    "@types/node": "^24.0.0",
+    "@vitest/coverage-v8": "^4.0.0",
+    "eslint": "^10.0.0",
+    "eslint-config-prettier": "^10.1.0",
+    "eslint-plugin-import-x": "^4.16.0",
+    "eslint-plugin-prettier": "^5.5.0",
+    "husky": "^9.1.0",
+    "lint-staged": "^16.0.0",
+    "prettier": "^3.8.0",
+    "typescript": "^6.0.0",
+    "typescript-eslint": "^8.59.0",
+    "vitest": "^4.0.0",
+    "zod": "^4.3.0"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
+  }
+}

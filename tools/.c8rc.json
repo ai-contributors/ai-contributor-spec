@@ -1,0 +1,37 @@
+{
+  "_comment": [
+    "c8 coverage configuration for the spec repo's runtime TypeScript surface.",
+    "",
+    "In-scope (measured by `npm --prefix tools run coverage:all`):",
+    "- skills/ai-contributor-audit/scripts/**       audit collector/stamper/validator/runner",
+    "- skills/ai-contributor-audit-profile/scripts/** profile validator",
+    "- tools/**/*.ts                                 spec-authoring + doc-checks tooling",
+    "",
+    "Deliberately out of scope (verified by other gates, not by c8):",
+    "- examples/**/*.ts                              scaffold and fixture code shipped to adopters; not run by the spec repo. Compiles via `npm --prefix tools run typecheck:examples`, which proves the templates type-check without requiring that we execute them.",
+    "- tools/tests/**                                test files do not measure themselves.",
+    "- **/*.d.ts                                    generated declarations; no runtime statements.",
+    "- collector-types.ts, validator-types.ts       interface-only files; including them would dilute the percentage with uncoverable type declarations.",
+    "",
+    "Unknown keys (this _comment) are ignored by c8."
+  ],
+  "all": true,
+  "include": [
+    "skills/ai-contributor-audit/scripts/**/*.ts",
+    "skills/ai-contributor-audit-profile/scripts/**/*.ts",
+    "tools/**/*.ts"
+  ],
+  "exclude": [
+    "**/*.d.ts",
+    "**/node_modules/**",
+    "tools/tests/**",
+    "tools/eslint.config.js",
+    "skills/ai-contributor-audit/scripts/internal/collector-types.ts",
+    "skills/ai-contributor-audit/scripts/internal/validator-types.ts"
+  ],
+  "reporter": ["text", "html", "json-summary"],
+  "reports-dir": "tools/coverage",
+  "temp-dir": "tools/coverage/.tmp",
+  "exclude-after-remap": false,
+  "skip-full": false
+}

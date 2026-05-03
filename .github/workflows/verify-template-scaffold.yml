@@ -1,0 +1,62 @@
+name: Verify Template Scaffold
+
+on:
+  # PR runs always because this status is required; pushes to main are path-filtered.
+  pull_request:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/verify-template-scaffold.yml"
+      - "examples/typescript-pnpm/template/**"
+      - "examples/typescript-pnpm/README.md"
+      - "examples/typescript-pnpm/hints-typescript-pnpm.md"
+      - "AI-CONTRIBUTOR-GUIDE.md"
+      - "README.md"
+  schedule:
+    - cron: "17 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: examples/typescript-pnpm/template
+    steps:
+      - uses: actions/checkout@v6
+
+      # Read pnpm version from packageManager: pnpm@<version> in
+      # the scaffold's package.json rather than duplicating a literal
+      # here. Keeps the workflow in lockstep with the scaffold's actual
+      # pinned toolchain — bumping packageManager auto-bumps CI.
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: examples/typescript-pnpm/template/package.json
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: examples/typescript-pnpm/template/.nvmrc
+          cache: pnpm
+          cache-dependency-path: examples/typescript-pnpm/template/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Type check
+        run: pnpm type-check
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Format check
+        run: pnpm format:check
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build

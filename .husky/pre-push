@@ -1,0 +1,13 @@
+#!/usr/bin/env sh
+# Pre-push hook — runs the locally reproducible PR gates before code leaves
+# the workstation. GitHub-hosted checks such as CodeQL, dependency review, and
+# immutable tag creation still run in CI because they depend on GitHub services.
+
+cd "$(git rev-parse --show-toplevel)"
+
+if [ ! -x tools/node_modules/.bin/tsx ]; then
+  echo "pre-push: tools/node_modules not found — run 'npm ci --prefix tools' first." >&2
+  exit 1
+fi
+
+npm --prefix tools run check:ci-local
