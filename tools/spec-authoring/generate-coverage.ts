@@ -55,6 +55,7 @@ const COVERAGE_DIRECTIVES = {
   'generated:coverage-by-level': 'byLevel',
   'generated:coverage-cumulative': 'cumulative',
 } satisfies Record<string, keyof CoverageBlocks>;
+const REQUIRED_COVERAGE_DIRECTIVES = ['specVersion', ...Object.keys(COVERAGE_DIRECTIVES)];
 
 function loadCatalog(): RuleCatalog {
   const catalog = JSON.parse(fs.readFileSync(CATALOG_PATH, 'utf8')) as RuleCatalog;
@@ -89,6 +90,11 @@ export function renderCoverageMap(catalog: RuleCatalog, templateContent: string)
   const problems: string[] = [];
   const content = templateContent.replace(TEMPLATE_DIRECTIVE, (marker, directive: string) => {
     const directiveName = directive.trim();
+    if (directiveName === 'specVersion') {
+      usedDirectives.set(directiveName, (usedDirectives.get(directiveName) ?? 0) + 1);
+      return catalog.specVersion;
+    }
+
     const blockName = COVERAGE_DIRECTIVES[directiveName as keyof typeof COVERAGE_DIRECTIVES];
     if (!blockName) {
       problems.push(
@@ -100,7 +106,7 @@ export function renderCoverageMap(catalog: RuleCatalog, templateContent: string)
     return blocks[blockName];
   });
 
-  for (const directiveName of Object.keys(COVERAGE_DIRECTIVES)) {
+  for (const directiveName of REQUIRED_COVERAGE_DIRECTIVES) {
     const count = usedDirectives.get(directiveName) ?? 0;
     if (count === 0) {
       problems.push(`${TEMPLATE} is missing coverage template directive {{${directiveName}}}.`);

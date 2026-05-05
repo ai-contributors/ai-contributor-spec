@@ -17,6 +17,10 @@ import {
   specificationAssetProblems,
 } from '../spec-authoring/generate-specification.ts';
 import {
+  auditTemplateProblems,
+  renderAuditTemplates,
+} from '../spec-authoring/generate-audit-templates.ts';
+import {
   coverageBlocksFromCatalog,
   coverageRowsFromCatalog,
   renderCoverageMap,
@@ -131,6 +135,10 @@ const catalogWithChecklistLevelMetadata = {
 assert('builds one entry per AIC ID', catalog.rules.length === 2);
 assert('extracts catalog spec version from spec', catalog.specVersion === '0.2');
 assert(
+  'records coverage as a catalog projection',
+  (catalog.projections as Record<string, string>).coverage === 'AI-CONTRIBUTOR-COVERAGE.md',
+);
+assert(
   'builds pillar metadata',
   catalog.pillars[0]?.number === 1 &&
     catalog.pillars[0]?.icon === '🏗️' &&
@@ -197,6 +205,19 @@ const problems = validateRuleCatalog({
 assert(
   'rejects blank IDs',
   problems.some((problem) => problem.includes('rules[0].id')),
+);
+const projectionValidationProblems = validateRuleCatalog({
+  ...catalog,
+  projections: {
+    ...catalog.projections,
+    coverage: '',
+  } as unknown as typeof catalog.projections,
+});
+assert(
+  'rejects blank coverage projection',
+  projectionValidationProblems.some((problem) =>
+    problem.includes('projections.coverage must not be blank'),
+  ),
 );
 const referenceProblems = validateRuleCatalog({
   ...catalog,
@@ -273,6 +294,8 @@ assert(
 const coverageTemplateContent = [
   '# Coverage',
   '',
+  '**Version:** {{specVersion}}',
+  '',
   'Prose stays template-owned.',
   '',
   '{{generated:coverage-at-a-glance}}',
@@ -288,7 +311,8 @@ const coverageTemplateContent = [
 const renderedCoverageMap = renderCoverageMap(catalog, coverageTemplateContent);
 assert(
   'renders coverage map from catalog-backed template directives',
-  renderedCoverageMap.includes('Prose stays template-owned.') &&
+  renderedCoverageMap.includes('**Version:** 0.2') &&
+    renderedCoverageMap.includes('Prose stays template-owned.') &&
     renderedCoverageMap.includes('- **2** total rows') &&
     renderedCoverageMap.includes('| `MUST` | 2 |') &&
     renderedCoverageMap.includes('| 1 · 🏗️ Foundation | 1 | 1 | 0 | 0 | 0 |') &&
@@ -531,6 +555,110 @@ assert(
       renderChecklistRuleTables(catalog),
     ].join('\n'),
   }).some((problem) => problem.includes('checklist ID bindings')),
+);
+
+const auditSummaryTemplateContent = [
+  '# AI Contributor Audit',
+  '',
+  'Summary prose stays template-owned.',
+  '',
+  '## Conformance level summary',
+  '',
+  '| Level | Status | Date reached | Notes |',
+  '|---|---|---|---|',
+  '{{generated:conformance-level-summary-rows}}',
+  '',
+  '## Backlog — what to address first',
+  '',
+  'Backlog prose stays template-owned.',
+].join('\n');
+const auditLogTemplateContent = [
+  '---',
+  'spec_version: "{{specVersion}}"',
+  'conformance_level: # one of: none, {{generated:conformance-level-values}}.',
+  '---',
+  '',
+  '# AI Contributor Audit Log',
+  '',
+  'Audit-log prose stays template-owned.',
+  '',
+  '<!-- BEGIN:STAMPED-COLLECTOR-ROWS -->',
+  '<!-- END:STAMPED-COLLECTOR-ROWS -->',
+].join('\n');
+const renderedAuditTemplates = renderAuditTemplates(catalogWithChecklistLevelMetadata, {
+  summaryTemplateContent: auditSummaryTemplateContent,
+  auditLogTemplateContent,
+});
+assert(
+  'renders audit templates from catalog-backed directives',
+  renderedAuditTemplates.summaryContent.includes('Summary prose stays template-owned.') &&
+    renderedAuditTemplates.summaryContent.includes(
+      '| **Level 0 — Catalog Baseline** | <FILL_STATUS> | <FILL_DATE>  | <FILL_NOTES> |',
+    ) &&
+    renderedAuditTemplates.auditLogContent.includes('spec_version: "0.2"') &&
+    renderedAuditTemplates.auditLogContent.includes('conformance_level: # one of: none, 0, 1.') &&
+    renderedAuditTemplates.auditLogContent.includes('Audit-log prose stays template-owned.') &&
+    renderedAuditTemplates.auditLogContent.includes('<!-- BEGIN:STAMPED-COLLECTOR-ROWS -->') &&
+    !renderedAuditTemplates.summaryContent.includes('{{generated:') &&
+    !renderedAuditTemplates.auditLogContent.includes('{{generated:'),
+);
+assert(
+  'reports unknown audit template directives',
+  (() => {
+    try {
+      renderAuditTemplates(catalog, {
+        summaryTemplateContent: `${auditSummaryTemplateContent}\n{{generated:audit-unknown}}`,
+        auditLogTemplateContent,
+      });
+      return false;
+    } catch (err) {
+      return err instanceof Error && err.message.includes('unknown audit template directive');
+    }
+  })(),
+);
+assert(
+  'reports missing audit template directives',
+  auditTemplateProblems({
+    catalog,
+    summaryTemplateContent: auditSummaryTemplateContent.replace(
+      '{{generated:conformance-level-summary-rows}}',
+      '',
+    ),
+    auditLogTemplateContent,
+    summaryContent: renderedAuditTemplates.summaryContent,
+    auditLogContent: renderedAuditTemplates.auditLogContent,
+  }).some((problem) =>
+    problem.includes(
+      'No audit summary template directive found for generated:conformance-level-summary-rows',
+    ),
+  ),
+);
+assert(
+  'reports duplicate audit template directives',
+  auditTemplateProblems({
+    catalog,
+    summaryTemplateContent: `${auditSummaryTemplateContent}\n{{generated:conformance-level-summary-rows}}`,
+    auditLogTemplateContent,
+    summaryContent: renderedAuditTemplates.summaryContent,
+    auditLogContent: renderedAuditTemplates.auditLogContent,
+  }).some((problem) =>
+    problem.includes(
+      'audit summary template contains 2 template directives for generated:conformance-level-summary-rows',
+    ),
+  ),
+);
+assert(
+  'detects audit template drift from catalog-backed templates',
+  auditTemplateProblems({
+    catalog,
+    summaryTemplateContent: auditSummaryTemplateContent,
+    auditLogTemplateContent,
+    summaryContent: renderedAuditTemplates.summaryContent.replace(
+      'Summary prose stays template-owned.',
+      'Summary drift.',
+    ),
+    auditLogContent: renderedAuditTemplates.auditLogContent,
+  }).some((problem) => problem.includes('AI-CONTRIBUTOR-AUDIT.md does not match')),
 );
 
 const specTemplateContent = [

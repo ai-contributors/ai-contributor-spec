@@ -167,13 +167,18 @@ specification template plus `AI-CONTRIBUTOR-RULE-CATALOG.json`.
 `.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md` is generated from the
 checklist template plus the same catalog. `AI-CONTRIBUTOR-COVERAGE.md` is
 generated from its coverage template plus catalog rule, pillar, and level
-metadata. In the checklist, the conformance-level values, conformance-level
-summary rows, quick-reference level bullets, row grouping, scope, requirement
-summary, pillar, and `AIC-*` IDs belong to the catalog; the instructions,
-stamped-block markers, status semantics, backlog policy, evidence rules, and
-auditor workflow prose belong to the checklist template. The audit run-specific
-`A`, `Status`, and `Comment` cells remain blank until the stamper or auditor
-fills them for a repository audit.
+metadata. `AI-CONTRIBUTOR-AUDIT.md` and
+`.ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-LOG.md` are generated from their
+audit templates plus catalog-owned spec version and conformance-level metadata.
+In the checklist, the conformance-level values, conformance-level summary rows,
+quick-reference level bullets, row grouping, scope, requirement summary,
+pillar, and `AIC-*` IDs belong to the catalog; the instructions, stamped-block
+markers, status semantics, backlog policy, evidence rules, and auditor workflow
+prose belong to the checklist template. In the audit-log template, the catalog
+owns the spec version and accepted conformance-level values; the template owns
+frontmatter field comments, evidence-row instructions, and stamped collector-row
+markers. The audit run-specific `A`, `Status`, and `Comment` cells remain blank
+until the stamper or auditor fills them for a repository audit.
 
 Stamp when an audit run can mechanically derive content from the current
 evidence JSON, current checklist state, and stamp flags. This includes

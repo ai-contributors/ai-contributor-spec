@@ -1,5 +1,7 @@
 # AI Contributor Specification — Coverage map
 
+> **Version:** {{specVersion}} · **Source catalog:** [`AI-CONTRIBUTOR-RULE-CATALOG.json`](AI-CONTRIBUTOR-RULE-CATALOG.json)
+
 **Non-normative.** This file shows how [`AI-CONTRIBUTOR-CHECKLIST.md`](.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md) is distributed across pillars, scopes (`MUST` / `MUST when applicable` / `SHOULD` / `MAY`), and minimum levels. Use it to estimate audit effort. Use the checklist itself for scoring.
 
 This generated projection is rendered from `tools/spec-authoring/templates/AI-CONTRIBUTOR-COVERAGE.md.template` plus `AI-CONTRIBUTOR-RULE-CATALOG.json`. The template owns explanatory prose and placement; the catalog owns row grouping, scope, level, pillar, and display metadata. Regenerate it with `tools/spec-authoring/generate-coverage.ts`; do not edit the generated output by hand.

@@ -32,13 +32,17 @@
     "projections": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["specification", "checklist", "collectorRegistry"],
+      "required": ["specification", "checklist", "coverage", "collectorRegistry"],
       "properties": {
         "specification": {
           "type": "string",
           "minLength": 1
         },
         "checklist": {
+          "type": "string",
+          "minLength": 1
+        },
+        "coverage": {
           "type": "string",
           "minLength": 1
         },

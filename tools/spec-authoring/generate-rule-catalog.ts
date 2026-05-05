@@ -24,6 +24,7 @@ const CATALOG = 'AI-CONTRIBUTOR-RULE-CATALOG.json';
 const CATALOG_SCHEMA = './AI-CONTRIBUTOR-RULE-CATALOG.schema.json';
 const SPEC = 'AI-CONTRIBUTOR-SPECIFICATION.md';
 const CHECKLIST = '.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md';
+const COVERAGE = 'AI-CONTRIBUTOR-COVERAGE.md';
 const COLLECTOR_REGISTRY = 'skills/ai-contributor-audit/scripts/internal/collector-registry.ts';
 const VALID_SCOPES = new Set(['MUST', 'MUST when applicable', 'SHOULD', 'MAY']);
 const VALID_DETECTOR_CONFIDENCE = new Set(['indicative', 'manual']);
@@ -36,6 +37,7 @@ export interface RuleCatalog {
   projections: {
     specification: string;
     checklist: string;
+    coverage: string;
     collectorRegistry: string;
   };
   pillars: RuleCatalogPillar[];
@@ -147,6 +149,7 @@ export function buildRuleCatalog(input: {
     projections: {
       specification: 'AI-CONTRIBUTOR-SPECIFICATION.md',
       checklist: '.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md',
+      coverage: COVERAGE,
       collectorRegistry: COLLECTOR_REGISTRY,
     },
     pillars,
@@ -198,6 +201,9 @@ export function validateRuleCatalog(catalog: RuleCatalog): string[] {
   }
   if (catalog.projections.checklist.trim() === '') {
     problems.push('projections.checklist must not be blank');
+  }
+  if (catalog.projections.coverage.trim() === '') {
+    problems.push('projections.coverage must not be blank');
   }
   if (catalog.projections.collectorRegistry.trim() === '') {
     problems.push('projections.collectorRegistry must not be blank');

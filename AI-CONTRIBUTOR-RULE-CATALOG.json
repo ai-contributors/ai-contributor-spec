@@ -6,6 +6,7 @@
   "projections": {
     "specification": "AI-CONTRIBUTOR-SPECIFICATION.md",
     "checklist": ".ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md",
+    "coverage": "AI-CONTRIBUTOR-COVERAGE.md",
     "collectorRegistry": "skills/ai-contributor-audit/scripts/internal/collector-registry.ts"
   },
   "pillars": [
