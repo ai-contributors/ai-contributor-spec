@@ -105,11 +105,11 @@ Use `Warning` when you are unsure. A conservative `Warning` is a valid audit res
 
 **Conformance levels.** These summaries are for quick reference. The formal definitions are in [`AI-CONTRIBUTOR-SPECIFICATION.md` § Conformance levels](../AI-CONTRIBUTOR-SPECIFICATION.md#conformance-levels); if the two differ, the specification governs.
 
-- **Level 0 — Baseline Hygiene:** the minimum baseline: no secrets in git, placeholder-only env examples, documented credential handling, pinned runtime/package manager/lockfile, clean setup, and automated formatting. AI is not yet part of the contribution workflow.
-- **Level 1 — Hardened:** Level 0 plus the required engineering, security, quality, release, human-review, guardrail, and policy controls. AI tools can safely read repository content.
-- **Level 2 — AI Assisted:** Level 1 plus AI instructions, data classification, AI-surface redaction, AI-output licensing, authorship tracking, and any triggered AI-tool rows. AI may suggest or create changes, but humans actively accept them.
-- **Level 3 — AI Authored:** Level 2 plus the rows triggered by AI-authored work, shared skills, MCP servers, delegated agents, or other AI tooling. AI may materially author code that ships after human review. `Prompt Audit Trail` always applies.
-- **Level 4 — AI Autonomous:** Level 3 plus any autonomous-runner rows and every applicable `SHOULD`. AI may ship changes without human review for each change.
+- **Level 0 — Baseline Hygiene:** The repository satisfies the baseline requirements in §1, §2, and §5: no secrets in version control, placeholder-only env examples when contributor-supplied or runtime environment variables exist, documented credential handling, a clean setup path, committed lockfile, pinned runtime, pinned package manager, and automated formatting. AI is not yet part of the contribution workflow. A repository at Level 0 publishes `conformance_level: 0`.
+- **Level 1 — Hardened:** Level 0, plus the remaining unconditional `MUST` rows in Pillars 1–4 and the oversight MUSTs in §23, §24, and §25. A Level 1 repository is strong enough for AI tooling to read repository content. AI-specific MUSTs in Pillars 5–6 are not yet evaluated.
+- **Level 2 — AI Assisted:** Level 1, plus AI instructions, AI data classification, AI-surface redaction, AI-generated-content licensing, and authorship tracking. Any triggered §18–§22 or §26 rows must also be satisfied. AI may assist humans, but every change passes through human acceptance.
+- **Level 3 — AI Authored:** Level 2, plus the rows triggered by AI-authored work, shared skills, MCP servers, delegated agents, or other AI tooling that materially authors code. `AIC-prompt-audit-trail` always applies because Level 3 means AI materially authors code that ships. Humans still review before merge.
+- **Level 4 — AI Autonomous:** Level 3, plus any autonomous-runner rows and every applicable `SHOULD`. Each `SHOULD` row must be `Fulfilled` or `Not relevant` with a documented reason. `⚠️ Warning` is not passing for Level 4. This level is for repositories where AI ships changes without human review for each change.
 
 If no level is `✅ Yes`, set `conformance_level: none` and remove any AI Contributor badge. If only Level 0 is `✅ Yes`, set `conformance_level: 0` and still remove the badge because Level 0 has no badge.
 
@@ -155,7 +155,7 @@ For hosted-platform or SaaS settings, record the exact API command or UI path, a
 
 1. Complete every checklist row first.
 2. Run the stamper so each summary **Status** is derived from the checklist tables.
-3. The stamper sets `conformance_level` to the **highest** level whose **Status** is `✅ Yes`. The value is `0` for Level 0, and `1`, `2`, `3`, or `4` for Levels 1–4.
+3. The stamper sets `conformance_level` to the numeric value of the **highest** level whose **Status** is `✅ Yes`.
 4. If no level row is `✅ Yes`, the stamper sets `none`.
 5. Never claim a level whose row is not `✅ Yes`, even if most requirements are met.
 

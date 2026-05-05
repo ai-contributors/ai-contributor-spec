@@ -163,14 +163,17 @@ The audit has four layers, each with a distinct responsibility:
 
 Generate when checked-in authoring content is fully derivable from canonical
 source files. `AI-CONTRIBUTOR-SPECIFICATION.md` is generated from the
-specification template plus `AI-CONTRIBUTOR-RULE-CATALOG.json`. The checklist
-rule tables are generated from the same catalog inside an otherwise
-hand-authored checklist frame. `AI-CONTRIBUTOR-COVERAGE.md` is generated from
-its coverage template plus catalog rule, pillar, and level metadata. In the
-checklist rule tables, the row grouping, scope, requirement summary, pillar,
-and `AIC-*` IDs belong to the catalog; the audit run-specific `A`, `Status`,
-and `Comment` cells remain blank until the stamper or auditor fills them for a
-repository audit.
+specification template plus `AI-CONTRIBUTOR-RULE-CATALOG.json`.
+`.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md` is generated from the
+checklist template plus the same catalog. `AI-CONTRIBUTOR-COVERAGE.md` is
+generated from its coverage template plus catalog rule, pillar, and level
+metadata. In the checklist, the conformance-level values, conformance-level
+summary rows, quick-reference level bullets, row grouping, scope, requirement
+summary, pillar, and `AIC-*` IDs belong to the catalog; the instructions,
+stamped-block markers, status semantics, backlog policy, evidence rules, and
+auditor workflow prose belong to the checklist template. The audit run-specific
+`A`, `Status`, and `Comment` cells remain blank until the stamper or auditor
+fills them for a repository audit.
 
 Stamp when an audit run can mechanically derive content from the current
 evidence JSON, current checklist state, and stamp flags. This includes
@@ -231,7 +234,7 @@ Scripts are the right place for facts:
 - commands pass or fail
 - lockfiles validate
 - hosted APIs return specific settings
-- generated tables are current
+- generated projections are current
 - checklist and audit-log structure is consistent
 
 LLMs are useful where audit evidence requires interpretation:

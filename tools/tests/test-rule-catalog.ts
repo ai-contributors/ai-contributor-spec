@@ -109,6 +109,24 @@ const catalogWithWorkflowSummaries = {
         : level,
   ),
 };
+const catalogWithChecklistLevelMetadata = {
+  ...catalog,
+  levels: catalog.levels.map((level) =>
+    level.id === 'L0'
+      ? {
+          ...level,
+          label: 'Catalog Baseline',
+          description: 'Catalog-owned baseline definition.',
+        }
+      : level.id === 'L1'
+        ? {
+            ...level,
+            label: 'Catalog Hardened',
+            description: 'Catalog-owned hardened definition.',
+          }
+        : level,
+  ),
+};
 
 assert('builds one entry per AIC ID', catalog.rules.length === 2);
 assert('extracts catalog spec version from spec', catalog.specVersion === '0.2');
@@ -425,41 +443,94 @@ assert(
   ),
 );
 
-const checklistFrameWithLegacyBindings = [
+const checklistTemplateContent = [
+  '---',
+  'spec_version: "{{specVersion}}"',
+  'conformance_level: # one of: none, {{generated:conformance-level-values}}.',
+  '---',
+  '',
   '# Checklist',
   '',
-  '<!-- BEGIN:CHECKLIST-ID-BINDINGS',
-  '{}',
-  'END:CHECKLIST-ID-BINDINGS -->',
+  'Template prose stays checklist-owned.',
   '',
-  '## Checklist row tables',
-  'stale',
-  '---',
+  '## Conformance level summary',
+  '',
+  '| Level | Status | Date reached | Notes |',
+  '|---|---|---|---|',
+  '{{generated:conformance-level-summary-rows}}',
+  '',
+  '## Conformance levels',
+  '',
+  '{{generated:conformance-level-bullets}}',
+  '',
+  '{{generated:checklist-rule-tables}}',
   '',
   '## Verification gaps',
 ].join('\n');
-const renderedChecklistAssets = renderChecklistAssets(catalog, checklistFrameWithLegacyBindings);
+const renderedChecklistAssets = (() => {
+  try {
+    return renderChecklistAssets(catalogWithChecklistLevelMetadata, checklistTemplateContent);
+  } catch {
+    return '';
+  }
+})();
 assert(
-  'renders checklist assets without checklist ID bindings',
-  !renderedChecklistAssets.includes('CHECKLIST-ID-BINDINGS') &&
+  'renders checklist from catalog-backed template directives',
+  renderedChecklistAssets.includes('spec_version: "0.2"') &&
+    renderedChecklistAssets.includes('conformance_level: # one of: none, 0, 1.') &&
+    renderedChecklistAssets.includes('Template prose stays checklist-owned.') &&
+    renderedChecklistAssets.includes(
+      '| **Level 0 — Catalog Baseline** | <FILL_STATUS> | <FILL_DATE>  | <FILL_NOTES> |',
+    ) &&
+    renderedChecklistAssets.includes(
+      '- **Level 0 — Catalog Baseline:** Catalog-owned baseline definition.',
+    ) &&
+    renderedChecklistAssets.includes('## Level 0 — Catalog Baseline') &&
+    renderedChecklistAssets.includes('## Checklist row tables') &&
     renderedChecklistAssets.includes(
       '| `MUST` | `Clean Setup` | - |  |  | Repository bootstraps from a clean clone. | 1 | `AIC-clean-clone-bootstrap` |',
-    ),
+    ) &&
+    !renderedChecklistAssets.includes('{{generated:'),
+);
+assert(
+  'reports unknown checklist template directives',
+  (() => {
+    try {
+      renderChecklistAssets(
+        catalog,
+        `${checklistTemplateContent}\n{{generated:checklist-unknown}}`,
+      );
+      return false;
+    } catch (err) {
+      return err instanceof Error && err.message.includes('unknown checklist template directive');
+    }
+  })(),
 );
 
 const checklistAssetDriftProblems = checklistAssetProblems({
   catalog,
+  templateContent: checklistTemplateContent,
   checklistContent: checklistContent.replace('Clean Setup', 'Dirty Setup'),
 });
 assert(
   'detects checklist asset drift from catalog',
-  checklistAssetDriftProblems.some((problem) =>
-    problem.includes('checklist rule tables are stale'),
-  ),
+  checklistAssetDriftProblems.some((problem) => problem.includes('does not match')),
 );
 assert(
-  'does not require checklist ID bindings',
-  !checklistAssetDriftProblems.some((problem) => problem.includes('checklist ID bindings')),
+  'does not allow checklist ID bindings',
+  checklistAssetProblems({
+    catalog,
+    templateContent: checklistTemplateContent,
+    checklistContent: [
+      '# Checklist',
+      '',
+      '<!-- BEGIN:CHECKLIST-ID-BINDINGS',
+      '{}',
+      'END:CHECKLIST-ID-BINDINGS -->',
+      '',
+      renderChecklistRuleTables(catalog),
+    ].join('\n'),
+  }).some((problem) => problem.includes('checklist ID bindings')),
 );
 
 const specTemplateContent = [

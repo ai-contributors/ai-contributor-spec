@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 // SPDX-License-Identifier: Apache-2.0
 //
-// Renders the rule-bearing checklist regions from
-// AI-CONTRIBUTOR-RULE-CATALOG.json. The surrounding audit instructions remain
-// hand-authored checklist frame text.
+// Renders .ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md from a Markdown
+// template and AI-CONTRIBUTOR-RULE-CATALOG.json. The template owns audit
+// instructions and placement; the catalog owns rule-table facts.
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -12,38 +12,26 @@ import {
   validateRuleCatalog,
   type RuleCatalog,
   type RuleCatalogEntry,
+  type RuleCatalogLevel,
 } from './generate-rule-catalog.ts';
+import { renderMarkdownTable } from '../../skills/ai-contributor-audit/scripts/internal/audit-markdown.ts';
 
 const CATALOG = 'AI-CONTRIBUTOR-RULE-CATALOG.json';
 const CHECKLIST = '.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md';
+const TEMPLATE = 'tools/spec-authoring/templates/AI-CONTRIBUTOR-CHECKLIST.md.template';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(HERE, '..', '..');
 const CATALOG_PATH = path.join(REPO_ROOT, CATALOG);
 const CHECKLIST_PATH = path.join(REPO_ROOT, CHECKLIST);
+const TEMPLATE_PATH = path.join(REPO_ROOT, TEMPLATE);
+const TEMPLATE_DIRECTIVE = /{{\s*([^{}]+?)\s*}}/g;
 
 const LEGACY_ID_BINDINGS_START = '<!-- BEGIN:CHECKLIST-ID-BINDINGS';
 const LEGACY_ID_BINDINGS_END = 'END:CHECKLIST-ID-BINDINGS -->';
-const RULE_TABLES_START = '## Checklist row tables';
-const RULE_TABLES_END = '---\n\n## Verification gaps';
 
-const LEVEL_HEADINGS: Record<string, string> = {
-  L0: '## Level 0 — Baseline Hygiene',
-  L1: '## Level 1 — Hardened',
-  L2: '## Level 2 — AI Assisted',
-  L3: '## Level 3 — AI Authored',
-  L4: '## Level 4 — AI Autonomous',
-};
-
-const LEVEL_ORDER = ['L0', 'L1', 'L2', 'L3', 'L4'];
 const SCOPE_ORDER = ['MUST', 'MUST when applicable', 'SHOULD', 'MAY'];
 const CHECKLIST_HEADER = '| Scope | Rule | A | Status | Comment | Requirement | Pillar | IDs |';
 const CHECKLIST_SEPARATOR = '|-------|------|---|--------|---------|-------------|--------|-----|';
-
-interface Region {
-  start: number;
-  end: number;
-  text: string;
-}
 
 interface ChecklistAssetRow {
   level: string;
@@ -59,6 +47,19 @@ interface ChecklistAssetRowData extends Omit<ChecklistAssetRow, 'ids' | 'clause'
   entries: RuleCatalogEntry[];
 }
 
+interface RenderResult {
+  content: string;
+  problems: string[];
+}
+
+interface RenderContext {
+  usedSpecVersion: number;
+  usedConformanceLevelValues: number;
+  usedConformanceLevelSummaryRows: number;
+  usedConformanceLevelBullets: number;
+  usedRuleTables: number;
+}
+
 export function renderChecklistRuleTables(catalog: RuleCatalog): string {
   const rows = checklistRowsFromCatalog(catalog);
   const lines = [
@@ -70,23 +71,23 @@ export function renderChecklistRuleTables(catalog: RuleCatalog): string {
     '',
   ];
 
-  for (const level of LEVEL_ORDER) {
-    const levelRows = rows.filter((row) => row.level === level);
+  for (const level of conformanceLevelsFromCatalog(catalog)) {
+    const levelRows = rows.filter((row) => row.level === level.id);
     if (levelRows.length === 0) continue;
-    lines.push(LEVEL_HEADINGS[level]!, '');
-    if (level === 'L0') {
+    lines.push(`## ${levelDisplayName(level)}`, '');
+    if (level.id === 'L0') {
       lines.push(
         'Level 0 contains seven unconditional normative MUST IDs represented by five checklist rows because `Pinned Toolchain` groups runtime, package-manager, and lockfile pinning. The `Env Template` row remains a Level 0 requirement when its environment-variable trigger applies.',
         '',
       );
     }
-    if (level === 'L2') {
+    if (level.id === 'L2') {
       lines.push(
         "Level 2 is the AI-declared level. Every row below is required to formally declare AI as part of the repository's contribution workflow, or to close a feature-triggered risk control for AI-assisted work.",
         '',
       );
     }
-    if (level === 'L3') {
+    if (level.id === 'L3') {
       lines.push(
         'For any Level 3 claim, the Level 2 `Prompt Audit Trail` row is always applicable because Level 3 means AI materially authors code that ships.',
         '',
@@ -96,44 +97,146 @@ export function renderChecklistRuleTables(catalog: RuleCatalog): string {
   }
 
   const optionalRows = rows.filter((row) => row.level === '—');
+  const optionalLevel = catalog.levels.find((level) => level.id === '—');
   if (optionalRows.length > 0) {
-    lines.push('## Optional', '', ...renderChecklistTable(optionalRows));
+    lines.push(
+      `## ${optionalLevel?.label ?? 'Optional'}`,
+      '',
+      ...renderChecklistTable(optionalRows),
+    );
   }
 
   return `${lines.join('\n')}\n\n`;
 }
 
-export function renderChecklistAssets(catalog: RuleCatalog, checklistContent: string): string {
-  const withoutLegacyIdBindings = removeLegacyIdBindingsRegion(checklistContent);
-  return replaceRegion(
-    withoutLegacyIdBindings,
-    extractRuleTablesRegion(withoutLegacyIdBindings),
-    renderChecklistRuleTables(catalog),
-    'checklist rule tables',
-  );
+export function renderChecklistAssets(catalog: RuleCatalog, templateContent: string): string {
+  const catalogProblems = validateRuleCatalog(catalog);
+  if (catalogProblems.length > 0) {
+    throw new Error(`Rule catalog validation failed:\n${catalogProblems.join('\n')}`);
+  }
+
+  const result = renderChecklistResult(catalog, templateContent);
+  if (result.problems.length > 0) {
+    throw new Error(result.problems.join('\n'));
+  }
+  return result.content;
 }
 
 export function checklistAssetProblems(input: {
   catalog: RuleCatalog;
+  templateContent: string;
   checklistContent: string;
 }): string[] {
   const problems = validateRuleCatalog(input.catalog);
   if (problems.length > 0) return problems;
 
-  if (extractLegacyIdBindingsRegion(input.checklistContent)) {
+  if (
+    extractLegacyIdBindingsRegion(input.templateContent) ||
+    extractLegacyIdBindingsRegion(input.checklistContent)
+  ) {
     problems.push(
       `${CHECKLIST} still contains legacy checklist ID bindings. Run 'npm --prefix tools run generate:checklist-assets'.`,
     );
   }
 
-  const tableRegion = extractRuleTablesRegion(input.checklistContent);
-  if (!tableRegion || tableRegion.text !== renderChecklistRuleTables(input.catalog)) {
+  const result = renderChecklistResult(input.catalog, input.templateContent);
+  problems.push(...result.problems);
+  if (result.problems.length === 0 && result.content !== input.checklistContent) {
     problems.push(
-      `${CHECKLIST} checklist rule tables are stale. Run 'npm --prefix tools run generate:checklist-assets'.`,
+      `${CHECKLIST} does not match ${TEMPLATE} and ${CATALOG}. Run 'npm --prefix tools run generate:checklist-assets'.`,
     );
   }
 
   return problems;
+}
+
+function renderChecklistResult(catalog: RuleCatalog, templateContent: string): RenderResult {
+  const problems: string[] = [];
+  const context: RenderContext = {
+    usedSpecVersion: 0,
+    usedConformanceLevelValues: 0,
+    usedConformanceLevelSummaryRows: 0,
+    usedConformanceLevelBullets: 0,
+    usedRuleTables: 0,
+  };
+  const content = templateContent.replace(TEMPLATE_DIRECTIVE, (marker, directive: string) => {
+    const rendered = renderDirective(catalog, context, directive.trim(), problems);
+    return rendered ?? marker;
+  });
+
+  validateDirectiveCoverage(context, problems);
+  if (TEMPLATE_DIRECTIVE.test(content)) {
+    problems.push(`${TEMPLATE} rendered output still contains unresolved template directives.`);
+  }
+  TEMPLATE_DIRECTIVE.lastIndex = 0;
+
+  return {
+    content: ensureTrailingNewline(content),
+    problems,
+  };
+}
+
+function renderDirective(
+  catalog: RuleCatalog,
+  context: RenderContext,
+  directive: string,
+  problems: string[],
+): string | null {
+  if (directive === 'specVersion') {
+    context.usedSpecVersion++;
+    return catalog.specVersion;
+  }
+
+  if (directive === 'generated:conformance-level-values') {
+    context.usedConformanceLevelValues++;
+    return renderConformanceLevelValues(catalog);
+  }
+
+  if (directive === 'generated:conformance-level-summary-rows') {
+    context.usedConformanceLevelSummaryRows++;
+    return renderConformanceLevelSummaryRows(catalog);
+  }
+
+  if (directive === 'generated:conformance-level-bullets') {
+    context.usedConformanceLevelBullets++;
+    return renderConformanceLevelBullets(catalog);
+  }
+
+  if (directive === 'generated:checklist-rule-tables') {
+    context.usedRuleTables++;
+    return renderChecklistRuleTables(catalog).trimEnd();
+  }
+
+  problems.push(`${TEMPLATE} contains unknown checklist template directive {{${directive}}}.`);
+  return null;
+}
+
+function validateDirectiveCoverage(context: RenderContext, problems: string[]): void {
+  validateSingleton('specVersion', context.usedSpecVersion, problems);
+  validateSingleton(
+    'generated:conformance-level-values',
+    context.usedConformanceLevelValues,
+    problems,
+  );
+  validateSingleton(
+    'generated:conformance-level-summary-rows',
+    context.usedConformanceLevelSummaryRows,
+    problems,
+  );
+  validateSingleton(
+    'generated:conformance-level-bullets',
+    context.usedConformanceLevelBullets,
+    problems,
+  );
+  validateSingleton('generated:checklist-rule-tables', context.usedRuleTables, problems);
+}
+
+function validateSingleton(name: string, count: number, problems: string[]): void {
+  if (count === 0) {
+    problems.push(`No checklist template directive found for ${name}.`);
+  } else if (count > 1) {
+    problems.push(`${TEMPLATE} contains ${count} checklist template directives for ${name}.`);
+  }
 }
 
 function checklistRowsFromCatalog(catalog: RuleCatalog): ChecklistAssetRow[] {
@@ -217,6 +320,46 @@ function assertSameRowMetadata(row: ChecklistAssetRowData, entry: RuleCatalogEnt
   }
 }
 
+function renderConformanceLevelValues(catalog: RuleCatalog): string {
+  return conformanceLevelsFromCatalog(catalog).map(conformanceLevelValue).join(', ');
+}
+
+function renderConformanceLevelSummaryRows(catalog: RuleCatalog): string {
+  return renderMarkdownTable(
+    ['Level', 'Status', 'Date reached', 'Notes'],
+    conformanceLevelsFromCatalog(catalog).map((level) => [
+      `**${levelDisplayName(level)}**`,
+      '<FILL_STATUS>',
+      '<FILL_DATE>',
+      '<FILL_NOTES>',
+    ]),
+  )
+    .slice(2)
+    .join('\n');
+}
+
+function renderConformanceLevelBullets(catalog: RuleCatalog): string {
+  return conformanceLevelsFromCatalog(catalog)
+    .map((level) => `- **${levelDisplayName(level)}:** ${level.description}`)
+    .join('\n');
+}
+
+function conformanceLevelsFromCatalog(catalog: RuleCatalog): RuleCatalogLevel[] {
+  return catalog.levels
+    .filter((level) => level.id !== '—')
+    .sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
+}
+
+function levelDisplayName(level: RuleCatalogLevel): string {
+  const m = level.id.match(/^L(\d+)$/);
+  return m ? `Level ${m[1]} — ${level.label}` : level.label;
+}
+
+function conformanceLevelValue(level: RuleCatalogLevel): string {
+  const m = level.id.match(/^L(\d+)$/);
+  return m ? m[1]! : level.id;
+}
+
 function renderChecklistTable(rows: readonly ChecklistAssetRow[]): string[] {
   return [CHECKLIST_HEADER, CHECKLIST_SEPARATOR, ...rows.map(renderChecklistTableRow)];
 }
@@ -229,45 +372,24 @@ function escapeMarkdownCell(value: string): string {
   return value.replace(/\|/g, '\\|');
 }
 
-function extractLegacyIdBindingsRegion(content: string): Region | null {
+function extractLegacyIdBindingsRegion(content: string): string | null {
   const start = content.indexOf(LEGACY_ID_BINDINGS_START);
   if (start < 0) return null;
   const endMarkerStart = content.indexOf(LEGACY_ID_BINDINGS_END, start);
   if (endMarkerStart < 0) return null;
   const end = endMarkerStart + LEGACY_ID_BINDINGS_END.length;
-  return { start, end, text: content.slice(start, end) };
+  return content.slice(start, end);
 }
 
-function removeLegacyIdBindingsRegion(content: string): string {
-  const region = extractLegacyIdBindingsRegion(content);
-  if (!region) return content;
-  const before = content.slice(0, region.start).replace(/\n{0,2}$/, '\n');
-  const after = content.slice(region.end).replace(/^\n{0,2}/, '\n');
-  return `${before}${after}`;
-}
-
-function extractRuleTablesRegion(content: string): Region | null {
-  const start = content.indexOf(RULE_TABLES_START);
-  if (start < 0) return null;
-  const end = content.indexOf(RULE_TABLES_END, start);
-  if (end < 0) return null;
-  return { start, end, text: content.slice(start, end) };
-}
-
-function replaceRegion(
-  content: string,
-  region: Region | null,
-  replacement: string,
-  label: string,
-): string {
-  if (!region) throw new Error(`Cannot find ${label} region in ${CHECKLIST}`);
-  return `${content.slice(0, region.start)}${replacement}${content.slice(region.end)}`;
+function ensureTrailingNewline(content: string): string {
+  return content.endsWith('\n') ? content : `${content}\n`;
 }
 
 function main(): void {
   const catalog = JSON.parse(fs.readFileSync(CATALOG_PATH, 'utf8')) as RuleCatalog;
+  const templateContent = fs.readFileSync(TEMPLATE_PATH, 'utf8');
   const checklistContent = fs.readFileSync(CHECKLIST_PATH, 'utf8');
-  const problems = checklistAssetProblems({ catalog, checklistContent });
+  const problems = checklistAssetProblems({ catalog, templateContent, checklistContent });
 
   if (process.argv.includes('--check')) {
     if (problems.length > 0) {
@@ -275,13 +397,13 @@ function main(): void {
       for (const problem of problems) console.error(`- ${problem}`);
       process.exit(1);
     }
-    console.log(`OK — ${CHECKLIST} generated checklist assets match ${CATALOG}`);
+    console.log(`OK — ${CHECKLIST} matches ${TEMPLATE} and ${CATALOG}`);
     return;
   }
 
-  const rendered = renderChecklistAssets(catalog, checklistContent);
+  const rendered = renderChecklistAssets(catalog, templateContent);
   fs.writeFileSync(CHECKLIST_PATH, rendered);
-  console.log(`OK — regenerated generated checklist assets in ${CHECKLIST}`);
+  console.log(`OK — regenerated ${CHECKLIST} from ${TEMPLATE} and ${CATALOG}`);
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {

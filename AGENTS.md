@@ -7,15 +7,14 @@ runners, etc.) MUST follow this document. Tool-specific instruction files
 either be absent or contain only a pointer back here. Rule and document
 metadata source of truth:
 [`AI-CONTRIBUTOR-RULE-CATALOG.json`](AI-CONTRIBUTOR-RULE-CATALOG.json).
-The human-facing specification, coverage map, and audit checklist are
-projection/frame assets that MUST stay synchronized with that catalog. The
-specification and coverage map are generated from Markdown templates under
-`tools/spec-authoring/templates/` plus the catalog; templates own long-form
-prose and placement, while the catalog owns generated facts such as version,
-pillars, coverage counts, the full specification clause section, conformance
-levels, conformance workflow summaries, clause counts, normative scope lists,
-and `AIC-*` rule bullets. The checklist rule tables are generated from the
-catalog.
+The human-facing specification, coverage map, and audit checklist are generated
+projection/frame assets that MUST stay synchronized with that catalog. They are
+generated from Markdown templates under `tools/spec-authoring/templates/` plus
+the catalog; templates own long-form prose and placement, while the catalog
+owns generated facts such as version, pillars, coverage counts, the full
+specification clause section, conformance levels, conformance workflow
+summaries, clause counts, normative scope lists, checklist rule tables, and
+`AIC-*` rule bullets.
 
 ## What this repo is
 
@@ -47,13 +46,42 @@ catalog, specification, and templates that adopters fetch**, plus
   hand-authored coverage-map prose plus placement directives for catalog-owned
   coverage tables.
 - `AI-CONTRIBUTOR-GUIDE.md`, `AI-CONTRIBUTOR-AUDIT-MODEL.md` — companion docs.
-- `.ai-contributor-audit/` — checklist + audit-log **templates** shipped to adopters via `bootstrap.ts`. Treat as published artifacts. The checklist rule tables are generated from the rule catalog; the surrounding audit instructions remain hand-authored frame text.
+- `.ai-contributor-audit/` — checklist + audit-log **templates** shipped to adopters via `bootstrap.ts`. Treat as published artifacts. The checklist is generated from `tools/spec-authoring/templates/AI-CONTRIBUTOR-CHECKLIST.md.template` and the rule catalog; the audit-log template remains hand-authored.
+- `tools/spec-authoring/templates/AI-CONTRIBUTOR-CHECKLIST.md.template` —
+  hand-authored checklist instructions, frontmatter placeholders, auditor
+  template-only blocks, and placement directives for catalog-owned checklist
+  conformance-level sections and rule tables.
 - `skills/ai-contributor-audit/` — runbook (`SKILL.md`, references, `scripts/`). The collector / stamper / validator / bootstrap.
 - `skills/ai-contributor-audit-fix/`, `skills/ai-contributor-audit-profile/` — companion skills.
 - `tools/` — verification tooling that keeps the catalog, spec, checklist,
   and runbook in sync.
 - `examples/` — adopter-facing samples (golden-audit fixture, typescript-pnpm starter).
 - `.github/` — CI workflows, CODEOWNERS, dependabot, PR template.
+
+## Template directives vs shipped markers
+
+This repository uses two machine-readable placeholder styles. They are not
+interchangeable:
+
+- `{{generated:...}}` directives are **authoring-time generation directives**.
+  They belong only in source templates under `tools/spec-authoring/templates/`.
+  Repository generators consume them when rendering checked-in projections such
+  as `AI-CONTRIBUTOR-SPECIFICATION.md`, `AI-CONTRIBUTOR-COVERAGE.md`, and
+  `.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md`. Generated Markdown MUST
+  NOT retain unresolved `{{generated:...}}` directives.
+- `<!-- BEGIN:... -->` / `<!-- END:... -->` markers are **shipped artifact
+  markers**. They intentionally remain in rendered Markdown when audit tools or
+  validators need durable anchors after adopters copy and fill the artifacts.
+  Examples include `TEMPLATE-ONLY` auditor instruction blocks and
+  `STAMPED-*` blocks that `audit-stamp.ts` rewrites with checksum protection.
+
+Use `{{generated:...}}` when catalog/template authoring should produce text.
+Use `<!-- BEGIN:... -->` only when the shipped artifact needs a stable runtime
+anchor for the audit lifecycle. Do not introduce new shipped markers without
+the corresponding parser/stamper/validator behavior and tests. Do not re-add
+generation metadata blocks such as the removed `BEGIN:CHECKLIST-ID-BINDINGS`;
+generation facts belong in `AI-CONTRIBUTOR-RULE-CATALOG.json` plus template
+directives.
 
 ## Commands
 
@@ -64,7 +92,7 @@ npm --prefix tools run check    # aggregate repository check
 npm --prefix tools run typecheck
 npm --prefix tools run check:markdown
 npm --prefix tools run generate:coverage   # refresh AI-CONTRIBUTOR-COVERAGE.md
-npm --prefix tools run generate:checklist-assets   # refresh generated checklist regions
+npm --prefix tools run generate:checklist-assets   # refresh generated checklist
 npm --prefix tools run generate:specification   # refresh generated specification
 ```
 
@@ -80,7 +108,7 @@ from a CODEOWNER on the relevant path:
 
 - **No edits to `AI-CONTRIBUTOR-SPECIFICATION.md` outside an open PR with a normative version bump** (see `CONTRIBUTING.md` "When to bump").
 - **No edits to `AI-CONTRIBUTOR-RULE-CATALOG.json` that are not synchronized with its markdown projections and generator/check updates.** It is the canonical rule and document metadata source; mutating it without projection checks creates silent spec/checklist drift.
-- **No hand edits to generated specification content, generated coverage output, or generated checklist rule tables.** Edit `AI-CONTRIBUTOR-RULE-CATALOG.json` for structured facts/rules, edit the relevant Markdown template under `tools/spec-authoring/templates/` for generated-document prose, then run `npm --prefix tools run generate:specification`, `npm --prefix tools run generate:coverage`, and `npm --prefix tools run generate:checklist-assets` as needed.
+- **No hand edits to generated specification content, generated coverage output, or generated checklist output.** Edit `AI-CONTRIBUTOR-RULE-CATALOG.json` for structured facts/rules, edit the relevant Markdown template under `tools/spec-authoring/templates/` for generated-document prose, then run `npm --prefix tools run generate:specification`, `npm --prefix tools run generate:coverage`, and `npm --prefix tools run generate:checklist-assets` as needed.
 - **No edits to `.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md` or `.ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-LOG.md` that aren't synchronised with the corresponding catalog/spec change.** These are templates; mutating them in isolation breaks every adopter.
 - **No bypassing pre-commit, lint, type-check, or other CI gates** (`--no-verify`, `--ignore-scripts`, `continue-on-error`, masked exit codes, deleting failing checks instead of fixing the cause).
 - **No force-push to `main`**, no `git reset --hard` of published commits, no rewriting tagged releases.
@@ -113,8 +141,9 @@ reproducible subset through `npm --prefix tools run check:ci-local`):
   `check:ci-local` adds audit-runtime coverage and template-scaffold
   verification.
 - `check:rule-catalog` validates and canonicalizes
-  `AI-CONTRIBUTOR-RULE-CATALOG.json`; `check:checklist-assets` verifies the
-  generated checklist rule tables match the catalog; `check:coverage` verifies
+  `AI-CONTRIBUTOR-RULE-CATALOG.json`; `check:checklist-assets` verifies
+  `.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md` matches the checklist
+  template plus catalog; `check:coverage` verifies
   `AI-CONTRIBUTOR-COVERAGE.md` matches the coverage template plus catalog;
   `check:specification` verifies `AI-CONTRIBUTOR-SPECIFICATION.md` matches the
   specification template plus catalog; `check:spec-clauses` is a compatibility

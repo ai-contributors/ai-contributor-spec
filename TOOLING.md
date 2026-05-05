@@ -2,7 +2,8 @@
 
 The AI Contributor Specification is maintained as documents plus executable
 checks. The documents define the policy; the scripts keep cross-references,
-generated tables, audit templates, and the shipped audit skill runtime aligned.
+generated projections, audit templates, and the shipped audit skill runtime
+aligned.
 This page explains the tooling layout and which commands maintainers should use.
 
 ## Architecture
@@ -32,12 +33,10 @@ The scripts enforce invariants that are easy to miss in prose review:
 
 - every normative requirement has a stable `AIC-*` ID,
 - checklist rows cite real specification IDs with matching scope,
-- generated checklist rule tables and the generated specification projection,
+- generated checklist, coverage-map, and specification projections,
   including the complete `## Specification clauses` body, generated scope
   lists, generated clause counts, and conformance workflow table, are current,
 - visible checklist row IDs match the catalog and specification,
-- the generated coverage-map projection from the coverage template and catalog
-  is current,
 - Markdown links, anchors, clause references, and pillar tables stay valid,
 - audit templates remain structurally valid,
 - the audit collector produces stable derived statuses on a known synthetic
@@ -95,7 +94,7 @@ Common focused commands:
 | `npm --prefix tools run check:doc-version` | Verify version strings agree across spec, README, GUIDE, and CHANGELOG. |
 | `npm --prefix tools run check:coverage` | Verify `AI-CONTRIBUTOR-COVERAGE.md` is current with the coverage template and rule catalog. |
 | `npm --prefix tools run check:rule-catalog` | Validate and canonicalize the checked-in AI Contributor rule catalog. |
-| `npm --prefix tools run check:checklist-assets` | Verify generated checklist rule tables are current with the rule catalog. |
+| `npm --prefix tools run check:checklist-assets` | Verify `.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md` is current with the checklist template and rule catalog. |
 | `npm --prefix tools run check:specification` | Verify `AI-CONTRIBUTOR-SPECIFICATION.md` is current with the specification template and rule catalog. |
 | `npm --prefix tools run check:spec-clauses` | Compatibility alias for `check:specification`. |
 | `npm --prefix tools run check:rule-catalog-projections` | Verify specification and checklist markdown projections match the canonical rule catalog. |
@@ -110,7 +109,7 @@ Common focused commands:
 | `npm --prefix tools run check:golden-audit` | Run the collector against the synthetic golden-audit repo. |
 | `npm --prefix tools run generate:coverage` | Rewrite `AI-CONTRIBUTOR-COVERAGE.md` from the coverage template and rule catalog. |
 | `npm --prefix tools run generate:rule-catalog` | Rewrite the AI Contributor rule catalog in canonical JSON order. |
-| `npm --prefix tools run generate:checklist-assets` | Rewrite generated checklist rule tables from the rule catalog. |
+| `npm --prefix tools run generate:checklist-assets` | Rewrite `.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md` from the checklist template and rule catalog. |
 | `npm --prefix tools run generate:specification` | Rewrite `AI-CONTRIBUTOR-SPECIFICATION.md` from the specification template and rule catalog. |
 | `npm --prefix tools run generate:spec-clauses` | Compatibility alias for `generate:specification`. |
 | `npm --prefix tools run generate:audit-profile-template` | Rewrite the audit-profile template applicability table from `PROFILE_QUESTIONS`. |
@@ -172,7 +171,25 @@ hints consistency, pillar structure, and stamped-block checks.
 Checks and generators that understand the specification/checklist model:
 normative IDs, checklist pillar ownership, row scope consistency, audit evidence
 cross-checking, conformance-level consistency, specification and coverage
-template generation, and checklist asset generation.
+template generation, and checklist template generation.
+
+Template renderers use `{{generated:...}}` directives for catalog-owned content
+that is resolved before Markdown is shipped. Those directives are an authoring
+mechanism: they should appear in `tools/spec-authoring/templates/`, and checks
+must fail if generated projections still contain them. Examples are generated
+specification clauses, coverage tables, checklist conformance-level rows, and
+checklist rule tables.
+
+Shipped audit artifacts may also contain paired HTML comment markers such as
+`<!-- BEGIN:TEMPLATE-ONLY -->` and `<!-- BEGIN:STAMPED-VERIFICATION-GAPS -->`.
+Those are runtime anchors, not catalog-generation placeholders. They remain in
+rendered files because `audit-run.ts`, `audit-stamp.ts`, and
+`audit-validate.ts` need stable sections after an adopter copies the template.
+Only add a new shipped marker when a parser, stamper, validator, or auditor
+workflow consumes it, and add tests for that consumer in the same change. Do not
+store generation metadata in shipped markers; catalog-derived generation belongs
+in `AI-CONTRIBUTOR-RULE-CATALOG.json` and `{{generated:...}}` template
+directives.
 
 ### `tools/tests/`
 
