@@ -61,6 +61,7 @@ export interface LevelDetail {
   order: number;
   label: string;
   description: string;
+  workflowSummary?: string;
 }
 
 const ID_PATTERN = /<sup>`(AIC-[a-z0-9][a-z0-9-]*)`<\/sup>/g;

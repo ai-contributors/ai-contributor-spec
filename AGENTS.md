@@ -8,10 +8,14 @@ either be absent or contain only a pointer back here. Rule and document
 metadata source of truth:
 [`AI-CONTRIBUTOR-RULE-CATALOG.json`](AI-CONTRIBUTOR-RULE-CATALOG.json).
 The human-facing specification and audit checklist are projection/frame assets
-that MUST stay synchronized with that catalog. The checklist rule tables are
-generated from the catalog. The specification's `AIC-*` rule bullets under
-`## Specification clauses` are generated from the catalog; surrounding
-non-normative clause prose remains hand-authored frame text.
+that MUST stay synchronized with that catalog. The specification is generated
+from
+`tools/spec-authoring/templates/AI-CONTRIBUTOR-SPECIFICATION.md.template` plus the
+catalog; the template owns long-form prose, and the catalog owns generated
+facts such as version, pillars, the full specification clause section,
+conformance levels, conformance workflow summaries, clause counts, normative
+scope lists, and `AIC-*` rule bullets. The checklist rule tables are generated
+from the catalog.
 
 ## What this repo is
 
@@ -29,9 +33,13 @@ catalog, specification, and templates that adopters fetch**, plus
 
 - `AI-CONTRIBUTOR-RULE-CATALOG.json` — canonical catalog metadata: pillars,
   conformance levels, clauses, `AIC-` IDs, normative scope, rule text,
-  checklist metadata, and detector linkage.
-- `AI-CONTRIBUTOR-SPECIFICATION.md` — human-facing specification frame and
-  generated normative rule-bullet projection from the rule catalog.
+  checklist metadata, conformance workflow summaries, and detector linkage.
+- `AI-CONTRIBUTOR-SPECIFICATION.md` — generated human-facing specification
+  projection from `tools/spec-authoring/templates/AI-CONTRIBUTOR-SPECIFICATION.md.template`
+  and the rule catalog.
+- `tools/spec-authoring/templates/AI-CONTRIBUTOR-SPECIFICATION.md.template` —
+  hand-authored specification prose outside the generated clause section plus
+  placement directives for catalog-owned facts.
 - `AI-CONTRIBUTOR-GUIDE.md`, `AI-CONTRIBUTOR-AUDIT-MODEL.md`, `AI-CONTRIBUTOR-COVERAGE.md` — companion docs.
 - `.ai-contributor-audit/` — checklist + audit-log **templates** shipped to adopters via `bootstrap.ts`. Treat as published artifacts. The checklist rule tables are generated from the rule catalog; the surrounding audit instructions remain hand-authored frame text.
 - `skills/ai-contributor-audit/` — runbook (`SKILL.md`, references, `scripts/`). The collector / stamper / validator / bootstrap.
@@ -51,7 +59,7 @@ npm --prefix tools run typecheck
 npm --prefix tools run check:markdown
 npm --prefix tools run generate:coverage   # refresh AI-CONTRIBUTOR-COVERAGE.md
 npm --prefix tools run generate:checklist-assets   # refresh generated checklist regions
-npm --prefix tools run generate:spec-clauses   # refresh generated specification rule bullets
+npm --prefix tools run generate:specification   # refresh generated specification
 ```
 
 Audit-related entry points live under `skills/ai-contributor-audit/scripts/`
@@ -66,7 +74,7 @@ from a CODEOWNER on the relevant path:
 
 - **No edits to `AI-CONTRIBUTOR-SPECIFICATION.md` outside an open PR with a normative version bump** (see `CONTRIBUTING.md` "When to bump").
 - **No edits to `AI-CONTRIBUTOR-RULE-CATALOG.json` that are not synchronized with its markdown projections and generator/check updates.** It is the canonical rule and document metadata source; mutating it without projection checks creates silent spec/checklist drift.
-- **No hand edits to the generated checklist rule tables or generated specification rule bullets.** Use `npm --prefix tools run generate:checklist-assets` and `npm --prefix tools run generate:spec-clauses` after catalog changes.
+- **No hand edits to generated specification content or generated checklist rule tables.** Edit `AI-CONTRIBUTOR-RULE-CATALOG.json` for structured facts/rules, edit `tools/spec-authoring/templates/AI-CONTRIBUTOR-SPECIFICATION.md.template` for specification prose, then run `npm --prefix tools run generate:specification` and `npm --prefix tools run generate:checklist-assets` as needed.
 - **No edits to `.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md` or `.ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-LOG.md` that aren't synchronised with the corresponding catalog/spec change.** These are templates; mutating them in isolation breaks every adopter.
 - **No bypassing pre-commit, lint, type-check, or other CI gates** (`--no-verify`, `--ignore-scripts`, `continue-on-error`, masked exit codes, deleting failing checks instead of fixing the cause).
 - **No force-push to `main`**, no `git reset --hard` of published commits, no rewriting tagged releases.
@@ -100,8 +108,10 @@ reproducible subset through `npm --prefix tools run check:ci-local`):
   verification.
 - `check:rule-catalog` validates and canonicalizes
   `AI-CONTRIBUTOR-RULE-CATALOG.json`; `check:checklist-assets` verifies the
-  generated checklist rule tables match the catalog; `check:spec-clauses`
-  verifies generated specification rule bullets match the catalog;
+  generated checklist rule tables match the catalog; `check:specification`
+  verifies `AI-CONTRIBUTOR-SPECIFICATION.md` matches the specification template
+  plus catalog; `check:spec-clauses` is a compatibility alias for that full
+  specification check;
   `check:checklist-pillars` verifies visible checklist IDs against the catalog
   and specification; `check:rule-catalog-projections` verifies the current
   specification and checklist projections match that catalog.

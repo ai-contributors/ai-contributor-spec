@@ -31,6 +31,8 @@ This document is for engineering teams adopting AI-assisted development on worki
 
 Monorepos are included. Apply the root policy once. Then use path-scoped ownership, package-level instructions, and deterministic workspace build/test order inside the repository.
 
+**Solo maintainers:** solo repositories can use the same checklist, but approval independence still has to be honest. A solo owner may satisfy human-review requirements for an agent-authored change only when the platform records a distinct human approval and the bot or agent account neither approves nor merges the pull request. If the same human account both authors or pushes the material change and supplies the only approval, that approval is not independent review.
+
 **Out of scope:** foundation-model training and evaluation, reinforcement-learning pipelines, consumer-facing agent safety, and regulatory compliance frameworks beyond the references in §§9 and 18. This document does not replace industry-specific regulations. Combine it with organization-specific compliance programs where required.
 
 Adopt the document as-is or as a starting point for an organization-specific policy. Adopters are responsible for maintaining their own copy under the change-control requirements in §25.
@@ -73,10 +75,17 @@ The 29 clauses are grouped into seven pillars. The grouping is only a reader's m
 
 ## Definitions
 
-Terms used throughout this document. Where this document references these terms, the definitions here govern. Terms used only within a single clause are defined inline at first use.
+Terms used throughout this document. Where this document references these terms, the definitions here govern.
 
 - **Agent** — an automated process that performs multi-step actions on behalf of a human, including LLM-driven coding assistants, orchestration loops, PR bots, and scheduled autonomous runners. A CLI tool that executes one fixed command without planning is not an agent.
+- **Autonomous agent** — an agent that can plan and execute actions without per-step human confirmation.
+- **Delegated agent** — an agent invoked for a bounded task with a defined result and scope.
 - **Harness** — the code that wraps an LLM. The harness decides what context, tools, memory, retrieval, and orchestration the model operates with at each step, and how its outputs flow back into the surrounding system. This specification constrains how a harness is built, reviewed, operated, and audited. It does not prescribe a specific harness architecture.
+- **Shared skill** — a reusable AI workflow module versioned in the repository and available to any contributor.
+- **Personal helper** — an AI workflow module that exists only in a contributor's local configuration and is not versioned in the repository.
+- **Pattern-filter guardrail** — a rule-based input or output filter using exact match, regex, blocklists, or similar deterministic matching. Pattern filters are fast and deterministic, but brittle against paraphrase, obfuscation, translation, and non-English content.
+- **LLM-filter guardrail** — a model-based classifier placed before or after an LLM that tries to flag or block malicious prompts or outputs. LLM filters are non-deterministic and unreliable against attackers who adapt to the filter.
+- **Capability scoping** — restricting an agent's tools, read scopes, and write scopes at the permission layer before the agent runs. The scope is derived from the user's requested task, not from the model's self-policing.
 - **Destructive action** — any action that cannot be reversed by reviewing a diff or reverting a commit. Examples include deleting branches or tags, force-pushing to shared branches, mutating production data, rotating or revoking credentials, dropping database objects, removing published releases, closing or deleting issues or pull requests, and sending outbound messages to external parties.
 - **Security-sensitive action** — any change to authentication, authorization, trust boundaries, cryptographic material, CI credentials, workflow files, or dependency manifests.
 - **Release-affecting action** — any action that can cause an artifact to be published, deployed, or distributed to consumers.
@@ -121,8 +130,6 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ---
 
----
-
 #### 2. Static correctness
 
 ##### `MUST`
@@ -141,8 +148,6 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 ##### `MAY`
 
 - The repository `MAY` add repository-specific lint rules for domain conventions. <sup>`AIC-domain-lint-rules`</sup>
-
----
 
 ---
 
@@ -166,8 +171,6 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ---
 
----
-
 #### 4. Pre-commit and CI gates
 
 ##### `MUST`
@@ -186,8 +189,6 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 ##### `MAY`
 
 - The repository `MAY` use adaptive or staged CI when the distinction between fast and slow checks is explicit and documented. <sup>`AIC-adaptive-staged-ci`</sup>
-
----
 
 ---
 
@@ -218,8 +219,6 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ---
 
----
-
 #### 6. Security scanning and dependency security
 
 ##### `MUST when applicable`
@@ -242,8 +241,6 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ---
 
----
-
 #### 7. Authorization and trusted boundaries
 
 ##### `MUST`
@@ -260,8 +257,6 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 ##### `MAY`
 
 - The repository `MAY` add defense-in-depth client-side controls for UX, as long as they are not misrepresented as authoritative controls. <sup>`AIC-defense-in-depth-client`</sup>
-
----
 
 ---
 
@@ -287,8 +282,6 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ---
 
----
-
 #### 9. Threat modeling and security design review
 
 ##### `MUST when applicable`
@@ -304,8 +297,6 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 ##### `MAY`
 
 - Lower-risk repositories `MAY` satisfy this requirement with lightweight design review rather than heavyweight formal exercises. <sup>`AIC-threat-model-lightweight`</sup>
-
----
 
 ---
 
@@ -327,8 +318,6 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 ##### `MAY`
 
 - The repository `MAY` downgrade suspicious but non-fatal states to warnings if the product can continue safely. <sup>`AIC-non-fatal-warning-downgrade`</sup>
-
----
 
 ---
 
@@ -358,8 +347,6 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ---
 
----
-
 #### 12. Accessibility
 
 ##### `MUST when applicable`
@@ -375,8 +362,6 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 ##### `MAY`
 
 - The repository `MAY` enforce additional accessibility gates such as motion, contrast, or localization-specific checks. <sup>`AIC-a11y-extra-gates`</sup>
-
----
 
 ---
 
@@ -400,8 +385,6 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ---
 
----
-
 #### 14. Performance and reliability
 
 ##### `MUST when applicable`
@@ -417,8 +400,6 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 ##### `MAY`
 
 - Teams `MAY` use SLOs, SLIs, error budgets, or equivalent models according to operational maturity. <sup>`AIC-slo-sli-error-budgets`</sup>
-
----
 
 ---
 
@@ -444,8 +425,6 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ---
 
----
-
 #### 16. Branch protection, ownership, and release governance
 
 ##### `MUST`
@@ -454,8 +433,6 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 - Required checks and required reviews `MUST` be enabled for protected branches. <sup>`AIC-required-checks-and-reviews`</sup>
 - Risky or sensitive changes `MUST` have clear ownership. <sup>`AIC-risky-change-ownership`</sup>
 - Required-review approvals on protected branches `MUST` come from human reviewers; bot or agent accounts `MUST NOT` satisfy required-review counts and `MUST NOT` merge their own pull requests. <sup>`AIC-human-review-required`</sup>
-
-For solo-maintainer repositories, the sole human maintainer may satisfy the human-review requirement for an agent-authored pull request only when the platform records a distinct human approval and the bot or agent account neither approves nor merges the pull request. If the same human account both authors or pushes the material change and supplies the only approval, that approval is not independent review for this requirement.
 
 ##### `MUST when applicable`
 
@@ -471,8 +448,6 @@ For solo-maintainer repositories, the sole human maintainer may satisfy the huma
 ##### `MAY`
 
 - The repository `MAY` add merge queues, release trains, or additional policy layers for high-throughput teams. <sup>`AIC-merge-queue-policy-layers`</sup>
-
----
 
 ---
 
@@ -498,25 +473,9 @@ For solo-maintainer repositories, the sole human maintainer may satisfy the huma
 - The repository `MAY` provide specialized task templates or commands for recurring workflows. <sup>`AIC-ai-task-templates`</sup>
 - Multi-package repositories `MAY` add path-scoped instruction files in subdirectories so rules that apply to only one package live next to the code they govern. Path-scoped files `MUST` extend the root authoritative source, `MUST NOT` contradict it, and `MUST NOT` re-declare approval boundaries or forbidden actions — the root file remains authoritative for those. <sup>`AIC-scoped-ai-instructions`</sup>
 
-##### Examples (non-normative)
-
-The spec is vendor-neutral and does not endorse a specific filename. Common conventions adopters can follow include:
-
-- `AGENTS.md` at the repository root — a cross-vendor open convention that several editors and agents auto-load. The `AI-CONTRIBUTOR-GUIDE.md` worked example uses this name.
-- `CLAUDE.md` — auto-loaded by Claude Code; if AGENTS.md is the authoritative source, `CLAUDE.md` should be one line: `See AGENTS.md.`
-- `.github/copilot-instructions.md` — read by GitHub Copilot; same one-line-pointer pattern.
-- `.cursorrules` and other tool dotfiles — same pattern.
-- For multi-package repositories, path-scoped files such as `apps/<name>/AGENTS.md` or `packages/<name>/AGENTS.md` extend the root authoritative source per `AIC-scoped-ai-instructions`.
-
-These names are illustrative. Any single authoritative path is conformant so long as `AIC-ai-instruction-authoritative` and `AIC-tool-specific-pointer-only` hold.
-
----
-
 ---
 
 #### 18. Skills and shared workflow modules
-
-A **shared skill** is a reusable AI workflow module versioned in the repository and available to any contributor. A **personal helper** is an AI workflow module that exists only in a contributor's local configuration and is not versioned in the repository.
 
 ##### `MUST when applicable`
 
@@ -534,12 +493,6 @@ A **shared skill** is a reusable AI workflow module versioned in the repository 
 
 - Repositories `MAY` group skills by domain such as implementation, review, release, migration, or incident response. <sup>`AIC-skill-domain-grouping`</sup>
 - Shared skills `MAY` include lightweight sample inputs or fixtures to make behavior easier to validate. <sup>`AIC-skill-sample-fixtures`</sup>
-
-##### Cross-references
-
-Skills are subject to the human-approval baseline defined in §23 (`AIC-no-silent-destructive-actions`). A skill that performs a destructive, security-sensitive, or release-affecting action carries the same approval requirements as a direct human or agent invocation. This is a non-normative reminder; the canonical clause and the score-able row both live at §23 / `Human Approval`.
-
----
 
 ---
 
@@ -570,11 +523,7 @@ Skills are subject to the human-approval baseline defined in §23 (`AIC-no-silen
 
 ---
 
----
-
 #### 20. Agents and delegation governance
-
-An **autonomous agent** is an agent that can plan and execute actions without per-step human confirmation. A **delegated agent** is an agent invoked for a bounded task with a defined result and scope.
 
 ##### `MUST when applicable`
 
@@ -601,23 +550,11 @@ An **autonomous agent** is an agent that can plan and execute actions without pe
 - Teams `MAY` apply stronger sandboxing to higher-risk agents. <sup>`AIC-agent-extra-sandboxing`</sup>
 - Teams `MAY` define trust tiers such as read-only, code-write, or release-capable agents. <sup>`AIC-agent-trust-tiers`</sup>
 
-##### Cross-references
-
-Agent invocations are subject to the human-approval baseline defined in §23 (`AIC-no-silent-destructive-actions`). An agent that performs a destructive, security-sensitive, or release-affecting action that policy reserves for humans is governed by that clause. This is a non-normative reminder; the canonical clause and the score-able row both live at §23 / `Human Approval`.
-
----
-
 ---
 
 ### Pillar 6 — ⚠️ AI Risk
 
 #### 21. AI-specific risks
-
-Three terms used in this section:
-
-- A **pattern-filter guardrail** is a rule-based input or output filter using exact match, regex, blocklists, or similar deterministic matching. Fast and deterministic, but brittle against paraphrase, obfuscation, translation, and non-English content.
-- An **LLM-filter guardrail** is a model-based classifier placed before or after an LLM that tries to flag or block malicious prompts or outputs. Non-deterministic, and unreliable against attackers who adapt to the filter.
-- **Capability scoping** means restricting an agent's tools, read scopes, and write scopes at the permission layer before the agent runs. The scope is derived from the user's requested task, not from the model's self-policing.
 
 ##### `MUST when applicable`
 
@@ -650,8 +587,6 @@ Three terms used in this section:
 
 ---
 
----
-
 #### 22. Data protection and privacy
 
 ##### `MUST`
@@ -676,8 +611,6 @@ Three terms used in this section:
 
 ---
 
----
-
 ### Pillar 7 — 🧭 Oversight
 
 #### 23. Human approval and manual checkpoints
@@ -686,13 +619,6 @@ Three terms used in this section:
 
 - The repository `MUST` define which actions require explicit human confirmation. The baseline list `MUST` include every action that meets the Definitions of _destructive_, _security-sensitive_, or _release-affecting_; repositories may add more, but may not silently narrow these categories. <sup>`AIC-human-approval-baseline`</sup>
 - AI agents `MUST NOT` be allowed to silently perform destructive, security-sensitive, or release-affecting actions that the repository policy reserves for humans. <sup>`AIC-no-silent-destructive-actions`</sup>
-
-**Solo-maintainer note (non-normative).** Solo repositories have one human. Two patterns work:
-
-1. **Checks only (usually the honest choice for true solo repos).** Required reviewers = 0. Strong CI, signed commits, linear history. The owner's manual merge counts as approval. Score `Human Review Required` as `Warning` and write one line explaining why.
-2. **Bot identity.** AI commits as a separate bot account (GitHub App or machine user). The human owner approves and merges. Required reviewers = 1. This pattern only pays off when AI runs in CI, or when a second human is involved. For local AI work on one machine, keeping a clean human/bot boundary in `git config` adds daily friction without reducing real risk.
-
-The same person cannot push an AI change and approve it. That rule is in §16 (`AIC-human-review-required`). Pick one pattern. Write it down in your AI policy.
 
 ##### `MUST when applicable`
 
@@ -707,8 +633,6 @@ The same person cannot push an AI change and approve it. That rule is in §16 (`
 ##### `MAY`
 
 - Teams `MAY` add stronger sign-off requirements for regulated or high-impact systems. <sup>`AIC-stronger-signoff-regulated`</sup>
-
----
 
 ---
 
@@ -751,11 +675,7 @@ The same person cannot push an AI change and approve it. That rule is in §16 (`
 
 ---
 
----
-
 #### 26. AI-generated content: licensing and attribution
-
-This clause covers the legal and attribution status of AI-produced content committed to the repository. It does not replace §23 (human approval) or §21 (AI-specific risks). It makes the repository's position on AI output explicit.
 
 ##### `MUST`
 
@@ -765,8 +685,6 @@ This clause covers the legal and attribution status of AI-produced content commi
 ##### `MUST when applicable`
 
 - Repositories where AI materially authors code that ships `MUST` record, for every material AI-generated change: the model identifier, the prompt or system-prompt version, and any skill version used. The record location (commit trailer, PR body field, release manifest, audit-log row, or equivalent) `MUST` be documented with the `AIC-ai-authorship-traceability` mechanism. The record `MUST` be queryable: an auditor `MUST` be able to list AI-authored changes by model, prompt version, or skill version with one command or API query. This makes `AIC-ai-authorship-traceability` concrete for L3+ and supports `AIC-agent-rollback-procedure`. <sup>`AIC-prompt-audit-trail`</sup>
-
-**Implementation note (Git/GitHub):** A compact, queryable pattern is to require each pull request to carry `AI-Authored: no` or `AI-Authored: yes (agent, model)`, and to preserve the same metadata as a Git commit trailer in the commits that land on the protected branch. When `AI-Authored` is `yes`, pair it with a `Prompt-Audit: <references>` field or trailer that names the prompt/system-prompt source, skill version when applicable, and transcript-retention location. When `AI-Authored` is `no`, use `Prompt-Audit: none`. `Co-Authored-By` trailers may still be useful for GitHub visibility, but they are visibility metadata; they do not replace the documented authorship-traceability and prompt-audit mechanism.
 
 ##### `SHOULD`
 
@@ -779,11 +697,7 @@ This clause covers the legal and attribution status of AI-produced content commi
 
 ---
 
----
-
 #### 27. AI credential lifecycle
-
-This clause extends §5 (Secrets and credentials) and §23 (Human approval) for the case where an AI agent participates in creating, distributing, rotating, or revoking credentials. The §5 controls govern the credential's existence; this clause governs the agent's role in changing that state.
 
 ##### `MUST when applicable`
 
@@ -802,11 +716,7 @@ This clause extends §5 (Secrets and credentials) and §23 (Human approval) for 
 
 ---
 
----
-
 #### 28. AI model and provider deprecation
-
-This clause covers continuity when an entry in the §21 (AI-specific risks) provider and model allowlist is deprecated, sunset, repriced, retermed, or transferred to a new owner. Vendor changes are external — the repository's response is the policy that this clause defines.
 
 ##### `MUST when applicable`
 
@@ -825,11 +735,7 @@ This clause covers continuity when an entry in the §21 (AI-specific risks) prov
 
 ---
 
----
-
 #### 29. AI incident response and guardrail-update loop
-
-This clause covers the feedback loop from an AI-attributable incident — an action by an agent, skill, or autonomous runner that caused harm or required intervention — back into the repository's guardrail documentation (§24) and policy (§25). It complements general failure handling (§13) with the AI-specific obligation to update what is enforced when an agent works around or breaks an existing control. The immediate containment and rollback tools — kill switch and rollback procedure — are defined once in §20 (`AIC-agent-kill-switch`, `AIC-agent-rollback-procedure`); incident response invokes them rather than redefining them here.
 
 ##### `MUST when applicable`
 

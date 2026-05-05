@@ -38,6 +38,19 @@ Every released entry lists the release date (the day the version lands on `main`
 - The specification's normative `AIC-*` rule bullets are now generated from
   `AI-CONTRIBUTOR-RULE-CATALOG.json`. The generator preserves hand-authored
   non-normative clause prose, and rule semantics did not change.
+- `AI-CONTRIBUTOR-SPECIFICATION.md` is now rendered from a Markdown template
+  plus `AI-CONTRIBUTOR-RULE-CATALOG.json`, making the catalog the source for
+  specification version, pillar metadata, clause headings, conformance levels,
+  and normative `AIC-*` rule bullets. Rule semantics did not change.
+- The `## Specification clauses` body is now fully generated from the catalog.
+  Remaining explanatory content was moved to scope guidance, definitions, or
+  the adoption guide. Rule semantics did not change.
+- Solo-maintainer human-review patterns that used to live as non-normative
+  specification clause prose are now preserved in the adoption guide's branch
+  protection step. Rule semantics did not change.
+- The specification template now renders clause counts, normative scope lists,
+  and the "Which level do you need?" table from
+  `AI-CONTRIBUTOR-RULE-CATALOG.json`. Rule semantics did not change.
 
 ## [0.1] — 2026-05-03
 

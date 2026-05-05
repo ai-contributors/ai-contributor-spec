@@ -13,9 +13,9 @@ import {
   renderChecklistRuleTables,
 } from '../spec-authoring/generate-checklist-assets.ts';
 import {
-  renderSpecificationClauseRules,
-  specificationClauseAssetProblems,
-} from '../spec-authoring/generate-spec-clauses.ts';
+  renderSpecification,
+  specificationAssetProblems,
+} from '../spec-authoring/generate-specification.ts';
 import { coverageRowsFromCatalog } from '../spec-authoring/generate-coverage.ts';
 import { rowScopeProblemsFromCatalog } from '../spec-authoring/check-row-scope-vs-spec.ts';
 import { collectorRowCoverageProblemsFromCatalog } from '../spec-authoring/check-collector-row-coverage.ts';
@@ -87,6 +87,24 @@ const catalog = buildRuleCatalog({
     'clean-clone-bootstrap': ['AIC-clean-clone-bootstrap'],
   },
 });
+const catalogWithWorkflowSummaries = {
+  ...catalog,
+  levels: catalog.levels.map((level) =>
+    level.id === 'L0'
+      ? {
+          ...level,
+          workflowSummary:
+            'AI is not part of the contribution workflow yet; humans may use personal help outside repository context.',
+        }
+      : level.id === 'L1'
+        ? {
+            ...level,
+            workflowSummary:
+              'AI tools may read repository context and suggest commands, but do not produce shippable changes.',
+          }
+        : level,
+  ),
+};
 
 assert('builds one entry per AIC ID', catalog.rules.length === 2);
 assert('extracts catalog spec version from spec', catalog.specVersion === '0.2');
@@ -382,9 +400,51 @@ assert(
   !checklistAssetDriftProblems.some((problem) => problem.includes('checklist ID bindings')),
 );
 
-const renderedSpecificationClauses = renderSpecificationClauseRules(
+const specTemplateContent = [
+  '# Spec',
+  '',
+  '> **Version:** {{specVersion}} · **Owner:** Example',
+  '',
+  'Introductory prose stays hand-authored.',
+  '',
+  'Read {{generated:spec-scope-list}} for {{generated:clause-count}} clauses.',
+  '',
+  '## Pillars',
+  '',
+  '{{generated:pillars-table}}',
+  '',
+  '## Specification clauses',
+  '',
+  '{{generated:pillar-heading:1}}',
+  '',
+  '{{generated:clause-heading:1}}',
+  '',
+  'This non-normative clause prose stays in the template.',
+  '',
+  '### `MUST`',
+  '',
+  '{{generated:spec-rules:1:MUST}}',
+  '',
+  '{{generated:pillar-heading:2}}',
+  '',
+  '{{generated:clause-heading:2}}',
+  '',
+  '### `MUST`',
+  '',
+  '{{generated:spec-rules:2:MUST}}',
+  '',
+  '## Conformance levels',
+  '',
+  'Conformance introduction stays hand-authored.',
+  '',
+  '{{generated:conformance-levels}}',
+  '',
+  '{{generated:level-workflow-table}}',
+].join('\n');
+
+const renderedSpecification = renderSpecification(
   {
-    ...catalog,
+    ...catalogWithWorkflowSummaries,
     rules: [
       {
         ...catalog.rules[0]!,
@@ -393,45 +453,145 @@ const renderedSpecificationClauses = renderSpecificationClauseRules(
       catalog.rules[1]!,
     ],
   },
-  specContent,
+  specTemplateContent,
 );
 assert(
-  'renders specification rule bullets from catalog',
-  renderedSpecificationClauses.includes(
-    '- Repositories MUST render rule text from the catalog. <sup>`AIC-clean-clone-bootstrap`</sup>',
-  ) && !renderedSpecificationClauses.includes('- Repositories MUST bootstrap cleanly.'),
+  'renders specification from catalog-backed template directives',
+  renderedSpecification.includes('> **Version:** 0.2 · **Owner:** Example') &&
+    renderedSpecification.includes('| 1 | 🏗️ Foundation | §1 | setup |') &&
+    renderedSpecification.includes('### Pillar 1 — 🏗️ Foundation') &&
+    renderedSpecification.includes('#### 1. Setup') &&
+    renderedSpecification.includes('- **Level 0 — Baseline.** Basic hygiene.') &&
+    renderedSpecification.includes(
+      'Read `MUST`, `MUST when applicable`, `SHOULD`, and `MAY` for 2 clauses.',
+    ) &&
+    renderedSpecification.includes(
+      '| **L1 Hardened** | AI tools may read repository context and suggest commands, but do not produce shippable changes. |',
+    ) &&
+    !renderedSpecification.includes('Optional rules are not required for any conformance level') &&
+    renderedSpecification.includes(
+      '- Repositories MUST render rule text from the catalog. <sup>`AIC-clean-clone-bootstrap`</sup>',
+    ) &&
+    !renderedSpecification.includes('{{generated:'),
 );
 
-const specFrameWithProse = specContent.replace(
-  '## 1. Setup\n\n### `MUST`',
-  '## 1. Setup\n\nThis non-normative frame text stays hand-authored.\n\n### `MUST`',
+const renderedSpecificationWithGeneratedClauses = renderSpecification(
+  catalogWithWorkflowSummaries,
+  [
+    '# Spec',
+    '',
+    '> **Version:** {{specVersion}} · **Owner:** Example',
+    '',
+    '{{generated:clause-count}} clauses use {{generated:spec-scope-list}}.',
+    '',
+    '## Pillars',
+    '',
+    '{{generated:pillars-table}}',
+    '',
+    '## Specification clauses',
+    '',
+    '{{generated:specification-clauses}}',
+    '',
+    '## Conformance levels',
+    '',
+    '{{generated:conformance-levels}}',
+    '',
+    '{{generated:level-workflow-table}}',
+  ].join('\n'),
 );
+assert(
+  'renders complete specification clauses section from catalog',
+  renderedSpecificationWithGeneratedClauses.includes('### Pillar 1 — 🏗️ Foundation') &&
+    renderedSpecificationWithGeneratedClauses.includes('#### 1. Setup') &&
+    renderedSpecificationWithGeneratedClauses.includes('##### `MUST`') &&
+    renderedSpecificationWithGeneratedClauses.includes(
+      '- Repositories MUST bootstrap cleanly. <sup>`AIC-clean-clone-bootstrap`</sup>',
+    ) &&
+    renderedSpecificationWithGeneratedClauses.includes('### Pillar 2 — 🧭 Oversight') &&
+    renderedSpecificationWithGeneratedClauses.includes('#### 2. Review') &&
+    !renderedSpecificationWithGeneratedClauses.includes('{{generated:clause-heading') &&
+    !renderedSpecificationWithGeneratedClauses.includes('{{generated:spec-rules'),
+);
+
+const mixedSpecificationClauseDirectiveProblems = specificationAssetProblems({
+  catalog: catalogWithWorkflowSummaries,
+  templateContent: [
+    '# Spec',
+    '',
+    '> **Version:** {{specVersion}} · **Owner:** Example',
+    '',
+    '{{generated:clause-count}} clauses use {{generated:spec-scope-list}}.',
+    '',
+    '## Pillars',
+    '',
+    '{{generated:pillars-table}}',
+    '',
+    '## Specification clauses',
+    '',
+    '{{generated:specification-clauses}}',
+    '',
+    '{{generated:clause-heading:1}}',
+    '',
+    '## Conformance levels',
+    '',
+    '{{generated:conformance-levels}}',
+    '',
+    '{{generated:level-workflow-table}}',
+  ].join('\n'),
+  specContent: renderedSpecificationWithGeneratedClauses,
+});
+assert(
+  'rejects mixed full-section and granular specification clause directives',
+  mixedSpecificationClauseDirectiveProblems.some((problem) =>
+    problem.includes(
+      'must use either generated:specification-clauses or granular clause directives',
+    ),
+  ),
+);
+
 assert(
   'preserves non-normative specification frame prose',
-  renderSpecificationClauseRules(catalog, specFrameWithProse).includes(
-    'This non-normative frame text stays hand-authored.',
+  renderSpecification(catalogWithWorkflowSummaries, specTemplateContent).includes(
+    'This non-normative clause prose stays in the template.',
   ),
 );
 
-const specClauseDriftProblems = specificationClauseAssetProblems({
-  catalog,
-  specContent: specContent.replace('Repositories MUST bootstrap cleanly.', 'Repositories drift.'),
+const renderedSpecificationFromCatalog = renderSpecification(
+  catalogWithWorkflowSummaries,
+  specTemplateContent,
+);
+const specDriftProblems = specificationAssetProblems({
+  catalog: catalogWithWorkflowSummaries,
+  templateContent: specTemplateContent,
+  specContent: renderedSpecificationFromCatalog.replace(
+    'Repositories MUST bootstrap cleanly.',
+    'Repositories drift.',
+  ),
 });
 assert(
-  'detects specification rule bullet drift from catalog',
-  specClauseDriftProblems.some((problem) =>
-    problem.includes('specification rule bullets are stale'),
-  ),
+  'detects specification drift from catalog-backed template',
+  specDriftProblems.some((problem) => problem.includes('specification is stale')),
 );
 
-const missingSpecClauseFrameProblems = specificationClauseAssetProblems({
-  catalog,
-  specContent: specContent.replace('### `MUST`', '### `SHOULD`'),
+const unknownDirectiveProblems = specificationAssetProblems({
+  catalog: catalogWithWorkflowSummaries,
+  templateContent: `${specTemplateContent}\n{{generated:clause-heading:99}}\n`,
+  specContent: renderedSpecificationFromCatalog,
 });
 assert(
-  'reports missing specification clause scope locations',
-  missingSpecClauseFrameProblems.some((problem) =>
-    problem.includes('No specification clause frame found for §1 `MUST`'),
+  'reports unknown specification template directives',
+  unknownDirectiveProblems.some((problem) => problem.includes('references unknown clause 99')),
+);
+
+const missingRuleDirectiveProblems = specificationAssetProblems({
+  catalog: catalogWithWorkflowSummaries,
+  templateContent: specTemplateContent.replace('{{generated:spec-rules:1:MUST}}', ''),
+  specContent: renderedSpecificationFromCatalog,
+});
+assert(
+  'reports missing specification rule group directives',
+  missingRuleDirectiveProblems.some((problem) =>
+    problem.includes('No template directive found for §1 `MUST`'),
   ),
 );
 

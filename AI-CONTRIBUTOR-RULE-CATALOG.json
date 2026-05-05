@@ -57,31 +57,36 @@
       "id": "L0",
       "order": 0,
       "label": "Baseline Hygiene",
-      "description": "The repository satisfies the baseline requirements in §1, §2, and §5: no secrets in version control, placeholder-only env examples when contributor-supplied or runtime environment variables exist, documented credential handling, a clean setup path, committed lockfile, pinned runtime, pinned package manager, and automated formatting. AI is not yet part of the contribution workflow. A repository at Level 0 publishes `conformance_level: 0`."
+      "description": "The repository satisfies the baseline requirements in §1, §2, and §5: no secrets in version control, placeholder-only env examples when contributor-supplied or runtime environment variables exist, documented credential handling, a clean setup path, committed lockfile, pinned runtime, pinned package manager, and automated formatting. AI is not yet part of the contribution workflow. A repository at Level 0 publishes `conformance_level: 0`.",
+      "workflowSummary": "AI is not part of the contribution workflow yet. People may still use AI for personal help, but no AI tool reads the repository as workspace context, creates commits, or opens pull requests."
     },
     {
       "id": "L1",
       "order": 1,
       "label": "Hardened",
-      "description": "Level 0, plus the remaining unconditional `MUST` rows in Pillars 1–4 and the oversight MUSTs in §23, §24, and §25. A Level 1 repository is strong enough for AI tooling to read repository content. AI-specific MUSTs in Pillars 5–6 are not yet evaluated."
+      "description": "Level 0, plus the remaining unconditional `MUST` rows in Pillars 1–4 and the oversight MUSTs in §23, §24, and §25. A Level 1 repository is strong enough for AI tooling to read repository content. AI-specific MUSTs in Pillars 5–6 are not yet evaluated.",
+      "workflowSummary": "AI tools may read repository context, explain code, suggest commands, or help with review, but do not produce shippable changes"
     },
     {
       "id": "L2",
       "order": 2,
       "label": "AI Assisted",
-      "description": "Level 1, plus AI instructions, AI data classification, AI-surface redaction, AI-generated-content licensing, and authorship tracking. Any triggered §18–§22 or §26 rows must also be satisfied. AI may assist humans, but every change passes through human acceptance."
+      "description": "Level 1, plus AI instructions, AI data classification, AI-surface redaction, AI-generated-content licensing, and authorship tracking. Any triggered §18–§22 or §26 rows must also be satisfied. AI may assist humans, but every change passes through human acceptance.",
+      "workflowSummary": "AI may produce code, docs, tests, configuration, or migrations that a human actively accepts. Extra risks such as tool use, external GitHub content, fetched URLs, retained context, provider routing, and dependency suggestions must be controlled."
     },
     {
       "id": "L3",
       "order": 3,
       "label": "AI Authored",
-      "description": "Level 2, plus the rows triggered by AI-authored work, shared skills, MCP servers, delegated agents, or other AI tooling that materially authors code. `AIC-prompt-audit-trail` always applies because Level 3 means AI materially authors code that ships. Humans still review before merge."
+      "description": "Level 2, plus the rows triggered by AI-authored work, shared skills, MCP servers, delegated agents, or other AI tooling that materially authors code. `AIC-prompt-audit-trail` always applies because Level 3 means AI materially authors code that ships. Humans still review before merge.",
+      "workflowSummary": "AI may complete delegated implementation tasks, open pull requests, or make material repository changes for human review"
     },
     {
       "id": "L4",
       "order": 4,
       "label": "AI Autonomous",
-      "description": "Level 3, plus any autonomous-runner rows and every applicable `SHOULD`. Each `SHOULD` row must be `Fulfilled` or `Not relevant` with a documented reason. `⚠️ Warning` is not passing for Level 4. This level is for repositories where AI ships changes without human review for each change."
+      "description": "Level 3, plus any autonomous-runner rows and every applicable `SHOULD`. Each `SHOULD` row must be `Fulfilled` or `Not relevant` with a documented reason. `⚠️ Warning` is not passing for Level 4. This level is for repositories where AI ships changes without human review for each change.",
+      "workflowSummary": "AI may merge, release, deploy, schedule recurring changes, approve workflows, rotate settings, or otherwise act without per-change human approval"
     },
     {
       "id": "—",

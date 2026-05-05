@@ -97,6 +97,10 @@
           "description": {
             "type": "string",
             "minLength": 1
+          },
+          "workflowSummary": {
+            "type": "string",
+            "minLength": 1
           }
         }
       }

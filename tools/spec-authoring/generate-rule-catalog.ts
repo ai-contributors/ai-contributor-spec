@@ -296,6 +296,9 @@ function validateLevels(levels: readonly RuleCatalogLevel[], problems: string[])
     seenOrders.add(level.order);
     if (level.label.trim() === '') problems.push(`${prefix}.label must not be blank`);
     if (level.description.trim() === '') problems.push(`${prefix}.description must not be blank`);
+    if (level.workflowSummary !== undefined && level.workflowSummary.trim() === '') {
+      problems.push(`${prefix}.workflowSummary must not be blank when present`);
+    }
   }
 }
 
