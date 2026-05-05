@@ -15,7 +15,7 @@ const VALID_DETECTOR_CONFIDENCE = new Set(['indicative', 'manual']);
 
 export interface RuleCatalog {
   $schema: string;
-  schemaVersion: '0.2';
+  schemaVersion: '0.1';
   specVersion: string;
   sourceOfTruth: string;
   projections: {
@@ -96,7 +96,7 @@ export function collectorAicIdsFromCatalog(catalog: RuleCatalog): Record<string,
 export function validateRuleCatalog(catalog: RuleCatalog): string[] {
   const problems: string[] = [];
   if (catalog.$schema !== CATALOG_SCHEMA) problems.push('$schema must point to the local schema');
-  if (catalog.schemaVersion !== '0.2') problems.push('schemaVersion must be "0.2"');
+  if (catalog.schemaVersion !== '0.1') problems.push('schemaVersion must be "0.1"');
   if (catalog.specVersion.trim() === '') problems.push('specVersion must not be blank');
   if (catalog.sourceOfTruth !== CATALOG) {
     problems.push(`sourceOfTruth must be "${CATALOG}"`);

@@ -14,12 +14,19 @@ For the specification and companion templates, patch-zero releases are written a
 
 **Release tag versus tool versions.** A Git release tag such as `v0.1` is the specification release and pins the whole adopter-facing bundle at that commit: specification, guide, checklist template, audit-log template, audit skill, examples, bootstrap, collector, stamper, and validator. The tag version is the spec version. It is not the same thing as `BOOTSTRAP_VERSION`, `collector_version`, or `validator_version`; those are implementation versions stamped into audit artifacts so auditors can identify which runtime produced a result. Mention runtime/tool changes in a release entry only when adopters can observe the behavior. Internal refactors, test-only changes, coverage lifts, and implementation version bumps with no adopter-visible behavior stay in `git log`.
 
+The catalog's `specVersion` is the adopter-facing specification release, while
+`schemaVersion` is the catalog JSON shape version used by tooling. Patch
+releases may update `specVersion` without changing `schemaVersion`.
+
 Every released entry lists the release date (the day the version lands on `main`).
 
-## [0.2] — 2026-05-05
+## [0.1.1] — 2026-05-05
 
 ### Changed
 
+- Catalog canonicalization is now shipped as a patch release because rule
+  semantics and conformance obligations did not change. The follow-up v0.2
+  evidence-contract work remains open.
 - Rule metadata authoring now flows through
   `AI-CONTRIBUTOR-RULE-CATALOG.json`, with specification and checklist
   projections checked against the catalog. No rule semantics changed.
@@ -33,8 +40,8 @@ Every released entry lists the release date (the day the version lands on `main`
   Rule IDs and normative text did not change.
 - `AI-CONTRIBUTOR-RULE-CATALOG.json` now includes canonical pillar, clause,
   and conformance-level metadata. Shipped audit templates now carry
-  `spec_version: "0.2"` to match the current specification. Rule semantics did
-  not change.
+  `spec_version: "0.1.1"` to match the current specification. Rule semantics
+  did not change.
 - The specification's normative `AIC-*` rule bullets are now generated from
   `AI-CONTRIBUTOR-RULE-CATALOG.json`. The generator preserves hand-authored
   non-normative clause prose, and rule semantics did not change.

@@ -42,8 +42,8 @@ function assert(name: string, condition: boolean, detail = ''): void {
 
 const catalog: RuleCatalog = {
   $schema: './AI-CONTRIBUTOR-RULE-CATALOG.schema.json',
-  schemaVersion: '0.2',
-  specVersion: '0.2',
+  schemaVersion: '0.1',
+  specVersion: '0.1.1',
   sourceOfTruth: 'AI-CONTRIBUTOR-RULE-CATALOG.json',
   projections: {
     specification: 'AI-CONTRIBUTOR-SPECIFICATION.md',
@@ -153,7 +153,7 @@ const catalogWithChecklistLevelMetadata = {
 };
 
 assert('uses one catalog entry per AIC ID', catalog.rules.length === 2);
-assert('uses catalog spec version', catalog.specVersion === '0.2');
+assert('uses catalog spec version', catalog.specVersion === '0.1.1');
 assert(
   'records coverage as a catalog projection',
   (catalog.projections as Record<string, string>).coverage === 'AI-CONTRIBUTOR-COVERAGE.md',
@@ -331,7 +331,7 @@ const coverageTemplateContent = [
 const renderedCoverageMap = renderCoverageMap(catalog, coverageTemplateContent);
 assert(
   'renders coverage map from catalog-backed template directives',
-  renderedCoverageMap.includes('**Version:** 0.2') &&
+  renderedCoverageMap.includes('**Version:** 0.1.1') &&
     renderedCoverageMap.includes('Prose stays template-owned.') &&
     renderedCoverageMap.includes('- **2** total rows') &&
     renderedCoverageMap.includes('| `MUST` | 2 |') &&
@@ -489,7 +489,7 @@ const renderedChecklistAssets = (() => {
 })();
 assert(
   'renders checklist from catalog-backed template directives',
-  renderedChecklistAssets.includes('spec_version: "0.2"') &&
+  renderedChecklistAssets.includes('spec_version: "0.1.1"') &&
     renderedChecklistAssets.includes('conformance_level: # one of: none, 0, 1.') &&
     renderedChecklistAssets.includes('Template prose stays checklist-owned.') &&
     renderedChecklistAssets.includes(
@@ -568,7 +568,7 @@ assert(
     renderedAuditTemplates.summaryContent.includes(
       '| **Level 0 — Catalog Baseline** | <FILL_STATUS> | <FILL_DATE>  | <FILL_NOTES> |',
     ) &&
-    renderedAuditTemplates.auditLogContent.includes('spec_version: "0.2"') &&
+    renderedAuditTemplates.auditLogContent.includes('spec_version: "0.1.1"') &&
     renderedAuditTemplates.auditLogContent.includes('conformance_level: # one of: none, 0, 1.') &&
     renderedAuditTemplates.auditLogContent.includes('Audit-log prose stays template-owned.') &&
     renderedAuditTemplates.auditLogContent.includes('<!-- BEGIN:STAMPED-COLLECTOR-ROWS -->') &&
@@ -675,7 +675,7 @@ const renderedSpecification = renderSpecification(
 );
 assert(
   'renders specification from catalog-backed template directives',
-  renderedSpecification.includes('> **Version:** 0.2 · **Owner:** Example') &&
+  renderedSpecification.includes('> **Version:** 0.1.1 · **Owner:** Example') &&
     renderedSpecification.includes('| 1 | 🏗️ Foundation | §1 | setup |') &&
     renderedSpecification.includes('### Pillar 1 — 🏗️ Foundation') &&
     renderedSpecification.includes('#### 1. Setup') &&

@@ -73,6 +73,11 @@ Out of scope:
    fields stay empty in this repository, with their inline hint comments
    preserved.
 
+   `specVersion` is the adopter-facing specification release. `schemaVersion`
+   is the catalog JSON shape version used by tooling. Patch releases may update
+   `specVersion` without changing `schemaVersion` when the specification bundle
+   changes but the catalog JSON shape remains compatible.
+
 ## Local validation
 
 Before opening a pull request, use Node.js 24.x and install the

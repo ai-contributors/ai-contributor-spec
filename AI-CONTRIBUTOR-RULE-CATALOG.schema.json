@@ -20,7 +20,7 @@
       "const": "./AI-CONTRIBUTOR-RULE-CATALOG.schema.json"
     },
     "schemaVersion": {
-      "const": "0.2"
+      "const": "0.1"
     },
     "specVersion": {
       "type": "string",

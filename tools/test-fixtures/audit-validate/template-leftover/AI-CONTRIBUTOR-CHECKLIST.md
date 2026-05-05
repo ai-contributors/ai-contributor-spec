@@ -1,5 +1,5 @@
 ---
-spec_version: "0.2"
+spec_version: "0.1.1"
 spec_source: https://github.com/ai-contributors/ai-contributor-spec/tree/0123456789abcdef0123456789abcdef01234567
 assessment_started_at: 2026-04-25T10:00:00+02:00
 assessment_completed_at: 2026-04-25T11:30:00+02:00

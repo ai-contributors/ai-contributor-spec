@@ -32,7 +32,7 @@ function assert(name: string, condition: boolean, detail = ''): void {
 const spec = [
   '# Spec',
   '',
-  '> **Version:** 0.2 · **Owner:** Example',
+  '> **Version:** 0.1.1 · **Owner:** Example',
   '',
   '## Pillars',
   '',
@@ -132,7 +132,7 @@ assert(
     detailedLevels[0]?.description === 'Basic hygiene.',
 );
 assert('valid min levels include optional dash', validMinLevels(spec).has('—'));
-assert('parses spec version', specVersion(spec) === '0.2');
+assert('parses spec version', specVersion(spec) === '0.1.1');
 
 if (failed > 0) {
   console.error(`${failed} spec-model assertion(s) failed`);
