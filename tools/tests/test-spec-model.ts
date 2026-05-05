@@ -2,12 +2,16 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {
+  clauseDetails,
   clauseToPillar,
+  levelDetails,
   levelLabels,
   normativeRuleMap,
   parseNormativeIds,
   parseNormativeRules,
+  pillarDetails,
   pillarNames,
+  specVersion,
   specIdMap,
   specScopeById,
   validMinLevels,
@@ -28,12 +32,14 @@ function assert(name: string, condition: boolean, detail = ''): void {
 const spec = [
   '# Spec',
   '',
+  '> **Version:** 0.2 · **Owner:** Example',
+  '',
   '## Pillars',
   '',
   '| # | Pillar | Clauses | Scope |',
   '|---:|---|---|---|',
-  '| 1 | Foundation | §1–1 | setup |',
-  '| 2 | Oversight | §2–2 | review |',
+  '| 1 | 🏗️ Foundation | §1–1 | setup |',
+  '| 2 | 🧭 Oversight | §2–2 | review |',
   '',
   '## Specification clauses',
   '',
@@ -99,11 +105,34 @@ const c2p = clauseToPillar(spec);
 assert('maps clauses to pillars', c2p.get(1) === 1 && c2p.get(2) === 2);
 
 const pillars = pillarNames(spec);
-assert('parses pillar names', pillars[2] === 'Oversight');
+assert('parses pillar names', pillars[2] === '🧭 Oversight');
+
+const detailedPillars = pillarDetails(spec);
+assert(
+  'parses pillar details',
+  detailedPillars[1]?.icon === '🧭' &&
+    detailedPillars[1]?.title === 'Oversight' &&
+    detailedPillars[1]?.description === 'review',
+);
+
+const clauses = clauseDetails(spec);
+assert(
+  'parses clause details',
+  clauses[0]?.number === 1 && clauses[0]?.pillar === 1 && clauses[0]?.title === 'Setup',
+);
 
 const levels = levelLabels(spec);
 assert('parses level labels', levels.L1 === 'L1 — Hardened');
+const detailedLevels = levelDetails(spec);
+assert(
+  'parses level details',
+  detailedLevels[0]?.id === 'L0' &&
+    detailedLevels[0]?.order === 0 &&
+    detailedLevels[0]?.label === 'Baseline' &&
+    detailedLevels[0]?.description === 'Basic hygiene.',
+);
 assert('valid min levels include optional dash', validMinLevels(spec).has('—'));
+assert('parses spec version', specVersion(spec) === '0.2');
 
 if (failed > 0) {
   console.error(`${failed} spec-model assertion(s) failed`);

@@ -43,13 +43,40 @@ export interface NormativeRule {
   text: string;
 }
 
+export interface PillarDetail {
+  number: number;
+  icon: string;
+  title: string;
+  description: string;
+}
+
+export interface ClauseDetail {
+  number: number;
+  pillar: number;
+  title: string;
+}
+
+export interface LevelDetail {
+  id: string;
+  order: number;
+  label: string;
+  description: string;
+}
+
 const ID_PATTERN = /<sup>`(AIC-[a-z0-9][a-z0-9-]*)`<\/sup>/g;
 const SPECIFICATION_CLAUSES_HEADING = /^## Specification clauses\s*$/;
 const TOP_LEVEL_HEADING = /^##\s+/;
 const CLAUSE_HEADING = /^#{2,4}\s+(\d+)\.\s+/;
+const CLAUSE_DETAIL_HEADING = /^#{2,4}\s+(\d+)\.\s+(.+?)\s*$/;
 const SCOPE_HEADING = /^#{3,6}\s+`(MUST|MUST when applicable|SHOULD|MAY)`\s*$/;
 const ANY_HEADING = /^#{1,6}\s+/;
 const PILLAR_HEADING = /^###\s+Pillar\s+(\d+)\b/;
+const OPTIONAL_LEVEL: LevelDetail = {
+  id: '—',
+  order: 99,
+  label: 'Optional',
+  description: 'Optional rules are not required for any conformance level.',
+};
 
 export function parseNormativeIds(specContent: string): NormativeIdParseResult {
   const ids: SpecId[] = [];
@@ -210,11 +237,26 @@ export function clauseToPillar(specContent: string): Map<number, number> {
 
 export function pillarNames(specContent: string): Record<number, string> {
   const out: Record<number, string> = {};
-  for (const line of specContent.split(/\r?\n/)) {
-    const m = line.match(/^\|\s*(\d+)\s*\|\s*([^|]+?)\s*\|\s*§/);
-    if (m) out[Number(m[1])] = m[2];
+  for (const pillar of pillarDetails(specContent)) {
+    out[pillar.number] = pillar.icon ? `${pillar.icon} ${pillar.title}` : pillar.title;
   }
-  if (Object.keys(out).length === 0) {
+  return out;
+}
+
+export function pillarDetails(specContent: string): PillarDetail[] {
+  const out: PillarDetail[] = [];
+  for (const line of specContent.split(/\r?\n/)) {
+    const m = line.match(/^\|\s*(\d+)\s*\|\s*([^|]+?)\s*\|\s*§[^|]+?\|\s*([^|]+?)\s*\|/);
+    if (!m) continue;
+    const displayName = splitPillarDisplayName(m[2]!.trim());
+    out.push({
+      number: Number(m[1]),
+      icon: displayName.icon,
+      title: displayName.title,
+      description: m[3]!.trim(),
+    });
+  }
+  if (out.length === 0) {
     throw new Error(
       'No pillar rows parsed from specification — pillar table format may have changed.',
     );
@@ -222,11 +264,51 @@ export function pillarNames(specContent: string): Record<number, string> {
   return out;
 }
 
+function splitPillarDisplayName(value: string): { icon: string; title: string } {
+  const m = value.match(/^(\S+)\s+(.+)$/u);
+  if (m && !/^[A-Za-z0-9]/.test(m[1]!)) return { icon: m[1]!, title: m[2]!.trim() };
+  return { icon: '', title: value };
+}
+
+export function clauseDetails(specContent: string): ClauseDetail[] {
+  const out: ClauseDetail[] = [];
+  let inClauses = false;
+  let pillar: number | null = null;
+  const lines = specContent.split(/\r?\n/);
+  for (const line of lines) {
+    if (SPECIFICATION_CLAUSES_HEADING.test(line)) {
+      inClauses = true;
+      continue;
+    }
+    if (!inClauses) continue;
+
+    const pm = line.match(PILLAR_HEADING);
+    if (pm) {
+      pillar = Number(pm[1]);
+      continue;
+    }
+
+    const cm = line.match(CLAUSE_DETAIL_HEADING);
+    if (cm && pillar !== null) {
+      out.push({ number: Number(cm[1]), pillar, title: cm[2]!.trim() });
+      continue;
+    }
+
+    if (TOP_LEVEL_HEADING.test(line)) break;
+  }
+  if (out.length === 0) {
+    throw new Error(
+      'No clause headings parsed from specification — clause heading format may have changed.',
+    );
+  }
+  return out;
+}
+
 export function levelLabels(specContent: string): Record<string, string> {
   const out: Record<string, string> = {};
-  for (const line of specContent.split(/\r?\n/)) {
-    const m = line.match(/^-\s+\*\*Level\s+(\d)\s+—\s+([^.*]+?)\.\*\*/);
-    if (m) out[`L${m[1]}`] = `L${m[1]} — ${m[2].trim()}`;
+  for (const level of levelDetails(specContent)) {
+    if (level.id === '—') continue;
+    out[level.id] = `${level.id} — ${level.label}`;
   }
   if (Object.keys(out).length === 0) {
     throw new Error(
@@ -238,4 +320,31 @@ export function levelLabels(specContent: string): Record<string, string> {
 
 export function validMinLevels(specContent: string): Set<string> {
   return new Set(['—', ...Object.keys(levelLabels(specContent))]);
+}
+
+export function levelDetails(specContent: string): LevelDetail[] {
+  const out: LevelDetail[] = [];
+  for (const line of specContent.split(/\r?\n/)) {
+    const m = line.match(/^-\s+\*\*Level\s+(\d+)\s+—\s+([^.*]+?)\.\*\*\s+(.+?)\s*$/);
+    if (!m) continue;
+    const order = Number(m[1]);
+    out.push({
+      id: `L${order}`,
+      order,
+      label: m[2]!.trim(),
+      description: m[3]!.trim(),
+    });
+  }
+  if (out.length === 0) {
+    throw new Error(
+      'No conformance-level bullets parsed from specification — Conformance levels format may have changed.',
+    );
+  }
+  return [...out, OPTIONAL_LEVEL];
+}
+
+export function specVersion(specContent: string): string {
+  const m = specContent.match(/^>\s+\*\*Version:\*\*\s+([^·\s]+)/m);
+  if (!m) throw new Error('No specification version parsed from specification header.');
+  return m[1]!.trim();
 }

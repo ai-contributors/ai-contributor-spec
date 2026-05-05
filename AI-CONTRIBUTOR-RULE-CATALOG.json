@@ -1,13 +1,242 @@
 {
   "$schema": "./AI-CONTRIBUTOR-RULE-CATALOG.schema.json",
   "schemaVersion": "0.2",
-  "specVersion": "0.1",
+  "specVersion": "0.2",
   "sourceOfTruth": "AI-CONTRIBUTOR-RULE-CATALOG.json",
   "projections": {
     "specification": "AI-CONTRIBUTOR-SPECIFICATION.md",
     "checklist": ".ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md",
     "collectorRegistry": "skills/ai-contributor-audit/scripts/internal/collector-registry.ts"
   },
+  "pillars": [
+    {
+      "number": 1,
+      "icon": "🏗️",
+      "title": "Engineering Foundation",
+      "description": "The reproducible environment, static correctness, architecture boundaries, and pre-commit / CI gates that make any change reviewable."
+    },
+    {
+      "number": 2,
+      "icon": "🛡️",
+      "title": "Security",
+      "description": "Secrets handling, dependency and CI/CD security, authorization boundaries, and threat modeling."
+    },
+    {
+      "number": 3,
+      "icon": "🎯",
+      "title": "Quality & Reliability",
+      "description": "Runtime validation, testing strategy, accessibility, failure handling and observability, and performance and reliability."
+    },
+    {
+      "number": 4,
+      "icon": "🚀",
+      "title": "Release",
+      "description": "Supply-chain transparency, branch protection, and release governance."
+    },
+    {
+      "number": 5,
+      "icon": "🤖",
+      "title": "AI Agents",
+      "description": "How AI agents, shared skills, MCP servers, and delegated agents are governed in the repository."
+    },
+    {
+      "number": 6,
+      "icon": "⚠️",
+      "title": "AI Risk",
+      "description": "AI-specific risks (prompt injection, untrusted input, capability scoping, allowlists, cost ceilings) and data protection for AI workflows."
+    },
+    {
+      "number": 7,
+      "icon": "🧭",
+      "title": "Oversight",
+      "description": "Human approval, guardrail evidence, policy ownership, AI licensing and attribution, AI credential lifecycle, model/provider changes, and AI incident response."
+    }
+  ],
+  "levels": [
+    {
+      "id": "L0",
+      "order": 0,
+      "label": "Baseline Hygiene",
+      "description": "The repository satisfies the baseline requirements in §1, §2, and §5: no secrets in version control, placeholder-only env examples when contributor-supplied or runtime environment variables exist, documented credential handling, a clean setup path, committed lockfile, pinned runtime, pinned package manager, and automated formatting. AI is not yet part of the contribution workflow. A repository at Level 0 publishes `conformance_level: 0`."
+    },
+    {
+      "id": "L1",
+      "order": 1,
+      "label": "Hardened",
+      "description": "Level 0, plus the remaining unconditional `MUST` rows in Pillars 1–4 and the oversight MUSTs in §23, §24, and §25. A Level 1 repository is strong enough for AI tooling to read repository content. AI-specific MUSTs in Pillars 5–6 are not yet evaluated."
+    },
+    {
+      "id": "L2",
+      "order": 2,
+      "label": "AI Assisted",
+      "description": "Level 1, plus AI instructions, AI data classification, AI-surface redaction, AI-generated-content licensing, and authorship tracking. Any triggered §18–§22 or §26 rows must also be satisfied. AI may assist humans, but every change passes through human acceptance."
+    },
+    {
+      "id": "L3",
+      "order": 3,
+      "label": "AI Authored",
+      "description": "Level 2, plus the rows triggered by AI-authored work, shared skills, MCP servers, delegated agents, or other AI tooling that materially authors code. `AIC-prompt-audit-trail` always applies because Level 3 means AI materially authors code that ships. Humans still review before merge."
+    },
+    {
+      "id": "L4",
+      "order": 4,
+      "label": "AI Autonomous",
+      "description": "Level 3, plus any autonomous-runner rows and every applicable `SHOULD`. Each `SHOULD` row must be `Fulfilled` or `Not relevant` with a documented reason. `⚠️ Warning` is not passing for Level 4. This level is for repositories where AI ships changes without human review for each change."
+    },
+    {
+      "id": "—",
+      "order": 99,
+      "label": "Optional",
+      "description": "Optional rules are not required for any conformance level."
+    }
+  ],
+  "clauses": [
+    {
+      "number": 1,
+      "pillar": 1,
+      "title": "Reproducible environment"
+    },
+    {
+      "number": 2,
+      "pillar": 1,
+      "title": "Static correctness"
+    },
+    {
+      "number": 3,
+      "pillar": 1,
+      "title": "Architecture boundaries"
+    },
+    {
+      "number": 4,
+      "pillar": 1,
+      "title": "Pre-commit and CI gates"
+    },
+    {
+      "number": 5,
+      "pillar": 2,
+      "title": "Secrets and credentials"
+    },
+    {
+      "number": 6,
+      "pillar": 2,
+      "title": "Security scanning and dependency security"
+    },
+    {
+      "number": 7,
+      "pillar": 2,
+      "title": "Authorization and trusted boundaries"
+    },
+    {
+      "number": 8,
+      "pillar": 2,
+      "title": "CI/CD workflow hardening"
+    },
+    {
+      "number": 9,
+      "pillar": 2,
+      "title": "Threat modeling and security design review"
+    },
+    {
+      "number": 10,
+      "pillar": 3,
+      "title": "Runtime validation and invariants"
+    },
+    {
+      "number": 11,
+      "pillar": 3,
+      "title": "Testing strategy"
+    },
+    {
+      "number": 12,
+      "pillar": 3,
+      "title": "Accessibility"
+    },
+    {
+      "number": 13,
+      "pillar": 3,
+      "title": "Failure handling and observability"
+    },
+    {
+      "number": 14,
+      "pillar": 3,
+      "title": "Performance and reliability"
+    },
+    {
+      "number": 15,
+      "pillar": 4,
+      "title": "Supply-chain transparency and artifact integrity"
+    },
+    {
+      "number": 16,
+      "pillar": 4,
+      "title": "Branch protection, ownership, and release governance"
+    },
+    {
+      "number": 17,
+      "pillar": 5,
+      "title": "AI operating model"
+    },
+    {
+      "number": 18,
+      "pillar": 5,
+      "title": "Skills and shared workflow modules"
+    },
+    {
+      "number": 19,
+      "pillar": 5,
+      "title": "MCP servers and external tool governance"
+    },
+    {
+      "number": 20,
+      "pillar": 5,
+      "title": "Agents and delegation governance"
+    },
+    {
+      "number": 21,
+      "pillar": 6,
+      "title": "AI-specific risks"
+    },
+    {
+      "number": 22,
+      "pillar": 6,
+      "title": "Data protection and privacy"
+    },
+    {
+      "number": 23,
+      "pillar": 7,
+      "title": "Human approval and manual checkpoints"
+    },
+    {
+      "number": 24,
+      "pillar": 7,
+      "title": "Guardrail documentation and evidence"
+    },
+    {
+      "number": 25,
+      "pillar": 7,
+      "title": "Policy governance"
+    },
+    {
+      "number": 26,
+      "pillar": 7,
+      "title": "AI-generated content: licensing and attribution"
+    },
+    {
+      "number": 27,
+      "pillar": 7,
+      "title": "AI credential lifecycle"
+    },
+    {
+      "number": 28,
+      "pillar": 7,
+      "title": "AI model and provider deprecation"
+    },
+    {
+      "number": 29,
+      "pillar": 7,
+      "title": "AI incident response and guardrail-update loop"
+    }
+  ],
   "rules": [
     {
       "id": "AIC-clean-clone-bootstrap",

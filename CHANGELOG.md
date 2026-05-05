@@ -31,6 +31,10 @@ Every released entry lists the release date (the day the version lands on `main`
 - The specification clause section now uses a proper nested heading hierarchy:
   pillars under `###`, clauses under `####`, and scope groups under `#####`.
   Rule IDs and normative text did not change.
+- `AI-CONTRIBUTOR-RULE-CATALOG.json` now includes canonical pillar, clause,
+  and conformance-level metadata. Shipped audit templates now carry
+  `spec_version: "0.2"` to match the current specification. Rule semantics did
+  not change.
 
 ## [0.1] — 2026-05-03
 

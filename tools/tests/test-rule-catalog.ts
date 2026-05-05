@@ -32,12 +32,14 @@ function assert(name: string, condition: boolean, detail = ''): void {
 const specContent = [
   '# Spec',
   '',
+  '> **Version:** 0.2 · **Owner:** Example',
+  '',
   '## Pillars',
   '',
   '| # | Pillar | Clauses | Scope |',
   '|---:|---|---|---|',
-  '| 1 | Foundation | §1–1 | setup |',
-  '| 2 | Oversight | §2–2 | review |',
+  '| 1 | 🏗️ Foundation | §1–1 | setup |',
+  '| 2 | 🧭 Oversight | §2–2 | review |',
   '',
   '## Specification clauses',
   '',
@@ -56,6 +58,11 @@ const specContent = [
   '### `MUST`',
   '',
   '- AI-authored changes MUST receive human review. <sup>`AIC-human-review-required`</sup>',
+  '',
+  '## Conformance levels',
+  '',
+  '- **Level 0 — Baseline.** Basic hygiene.',
+  '- **Level 1 — Hardened.** Stronger checks.',
 ].join('\n');
 
 const checklistContent = [
@@ -78,6 +85,25 @@ const catalog = buildRuleCatalog({
 });
 
 assert('builds one entry per AIC ID', catalog.rules.length === 2);
+assert('extracts catalog spec version from spec', catalog.specVersion === '0.2');
+assert(
+  'builds pillar metadata',
+  catalog.pillars[0]?.number === 1 &&
+    catalog.pillars[0]?.icon === '🏗️' &&
+    catalog.pillars[0]?.title === 'Foundation' &&
+    catalog.pillars[0]?.description === 'setup',
+);
+assert(
+  'builds clause metadata',
+  catalog.clauses[1]?.number === 2 &&
+    catalog.clauses[1]?.pillar === 2 &&
+    catalog.clauses[1]?.title === 'Review',
+);
+assert(
+  'builds level metadata including optional rows',
+  catalog.levels.some((level) => level.id === 'L0' && level.label === 'Baseline') &&
+    catalog.levels.some((level) => level.id === '—' && level.label === 'Optional'),
+);
 assert(
   'does not store presentation order fields in catalog entries',
   !('specOrder' in catalog.rules[0]!) &&
@@ -102,6 +128,9 @@ assert(
 
 const unsortedCatalog = {
   ...catalog,
+  pillars: [catalog.pillars[1]!, catalog.pillars[0]!],
+  levels: [catalog.levels[1]!, catalog.levels[0]!],
+  clauses: [catalog.clauses[1]!, catalog.clauses[0]!],
   rules: [catalog.rules[1]!, catalog.rules[0]!],
 };
 const canonicalCatalog = canonicalizeRuleCatalog(unsortedCatalog);
@@ -109,6 +138,12 @@ assert(
   'canonicalizes catalog rule order without markdown input',
   canonicalCatalog.rules.map((rule) => rule.id).join(',') ===
     'AIC-clean-clone-bootstrap,AIC-human-review-required',
+);
+assert(
+  'canonicalizes catalog document metadata order',
+  canonicalCatalog.pillars.map((pillar) => pillar.number).join(',') === '1,2' &&
+    canonicalCatalog.levels[0]?.id === 'L0' &&
+    canonicalCatalog.clauses.map((clause) => clause.number).join(',') === '1,2',
 );
 
 const problems = validateRuleCatalog({
@@ -118,6 +153,15 @@ const problems = validateRuleCatalog({
 assert(
   'rejects blank IDs',
   problems.some((problem) => problem.includes('rules[0].id')),
+);
+const referenceProblems = validateRuleCatalog({
+  ...catalog,
+  rules: [{ ...catalog.rules[0]!, clause: 99, level: 'L9' }],
+});
+assert(
+  'rejects missing clause and level references',
+  referenceProblems.some((problem) => problem.includes('references missing clause 99')) &&
+    referenceProblems.some((problem) => problem.includes('references missing level L9')),
 );
 
 const groupedCoverageRows = coverageRowsFromCatalog({
@@ -270,6 +314,24 @@ const projectionProblems = ruleCatalogProjectionProblems({
 assert(
   'detects spec projection drift from catalog',
   projectionProblems.some((problem) => problem.includes('AIC-clean-clone-bootstrap text mismatch')),
+);
+const metadataProjectionProblems = ruleCatalogProjectionProblems({
+  catalog: {
+    ...catalog,
+    specVersion: '0.1',
+    pillars: [{ ...catalog.pillars[0]!, title: 'Wrong' }, catalog.pillars[1]!],
+    levels: [{ ...catalog.levels[0]!, label: 'Wrong' }, ...catalog.levels.slice(1)],
+    clauses: [{ ...catalog.clauses[0]!, title: 'Wrong' }, catalog.clauses[1]!],
+  },
+  specContent,
+  checklistContent,
+});
+assert(
+  'detects document metadata projection drift from catalog',
+  metadataProjectionProblems.some((problem) => problem.includes('specVersion mismatch')) &&
+    metadataProjectionProblems.some((problem) => problem.includes('pillar 1 title mismatch')) &&
+    metadataProjectionProblems.some((problem) => problem.includes('level L0 label mismatch')) &&
+    metadataProjectionProblems.some((problem) => problem.includes('clause 1 title mismatch')),
 );
 
 assert(

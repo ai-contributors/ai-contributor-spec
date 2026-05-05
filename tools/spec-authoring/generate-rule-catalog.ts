@@ -7,8 +7,15 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import type { SpecScope } from './shared/spec-model.ts';
-import { clauseToPillar, normativeRuleMap } from './shared/spec-model.ts';
+import type { ClauseDetail, LevelDetail, PillarDetail, SpecScope } from './shared/spec-model.ts';
+import {
+  clauseDetails,
+  clauseToPillar,
+  levelDetails,
+  normativeRuleMap,
+  pillarDetails,
+  specVersion,
+} from './shared/spec-model.ts';
 import { parseChecklistRows } from './shared/checklist-parser.ts';
 import { RULE_AIC_IDS } from '../../skills/ai-contributor-audit/scripts/internal/collector-registry.ts';
 import type { ChecklistScope } from './shared/checklist-parser.ts';
@@ -31,8 +38,17 @@ export interface RuleCatalog {
     checklist: string;
     collectorRegistry: string;
   };
+  pillars: RuleCatalogPillar[];
+  levels: RuleCatalogLevel[];
+  clauses: RuleCatalogClause[];
   rules: RuleCatalogEntry[];
 }
+
+export type RuleCatalogPillar = PillarDetail;
+
+export type RuleCatalogLevel = LevelDetail;
+
+export type RuleCatalogClause = ClauseDetail;
 
 export interface RuleCatalogEntry {
   id: string;
@@ -69,6 +85,9 @@ export function buildRuleCatalog(input: {
 }): RuleCatalog {
   const specRules = normativeRuleMap(input.specContent);
   const clausePillars = clauseToPillar(input.specContent);
+  const pillars = pillarDetails(input.specContent);
+  const levels = levelDetails(input.specContent);
+  const clauses = clauseDetails(input.specContent);
   const checklistById = checklistRowsByAicId(input.checklistContent);
   const detectorsById = collectorRulesByAicId(input.collectorAicIds);
   const rules: RuleCatalogEntry[] = [];
@@ -123,13 +142,16 @@ export function buildRuleCatalog(input: {
   return {
     $schema: CATALOG_SCHEMA,
     schemaVersion: '0.2',
-    specVersion: specVersionFromChecklist(input.checklistContent),
+    specVersion: specVersion(input.specContent),
     sourceOfTruth: CATALOG,
     projections: {
       specification: 'AI-CONTRIBUTOR-SPECIFICATION.md',
       checklist: '.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md',
       collectorRegistry: COLLECTOR_REGISTRY,
     },
+    pillars,
+    levels,
+    clauses,
     rules,
   };
 }
@@ -141,6 +163,11 @@ export function renderRuleCatalog(catalog: RuleCatalog): string {
 export function canonicalizeRuleCatalog(catalog: RuleCatalog): RuleCatalog {
   return {
     ...catalog,
+    pillars: [...(catalog.pillars ?? [])].sort((a, b) => a.number - b.number),
+    levels: [...(catalog.levels ?? [])].sort(
+      (a, b) => a.order - b.order || a.id.localeCompare(b.id),
+    ),
+    clauses: [...(catalog.clauses ?? [])].sort((a, b) => a.number - b.number),
     rules: [...catalog.rules].sort(compareCatalogEntries),
   };
 }
@@ -175,8 +202,13 @@ export function validateRuleCatalog(catalog: RuleCatalog): string[] {
   if (catalog.projections.collectorRegistry.trim() === '') {
     problems.push('projections.collectorRegistry must not be blank');
   }
+  validatePillars(catalog.pillars, problems);
+  validateLevels(catalog.levels, problems);
+  validateClauses(catalog.clauses, catalog.pillars, problems);
   if (catalog.rules.length === 0) problems.push('rules must contain at least one entry');
 
+  const knownClauses = new Map(catalog.clauses.map((clause) => [clause.number, clause]));
+  const knownLevels = new Set(catalog.levels.map((level) => level.id));
   const seen = new Set<string>();
   for (const [i, rule] of catalog.rules.entries()) {
     const prefix = `rules[${i}]`;
@@ -189,9 +221,20 @@ export function validateRuleCatalog(catalog: RuleCatalog): string[] {
     if (!Number.isInteger(rule.pillar) || rule.pillar < 1) {
       problems.push(`${prefix}.pillar must be a positive integer`);
     }
+    const clause = knownClauses.get(rule.clause);
+    if (!clause) {
+      problems.push(`${prefix} references missing clause ${rule.clause}`);
+    } else if (clause.pillar !== rule.pillar) {
+      problems.push(
+        `${prefix}.pillar ${rule.pillar} does not match clause ${rule.clause} pillar ${clause.pillar}`,
+      );
+    }
     if (!VALID_SCOPES.has(rule.scope)) problems.push(`${prefix}.scope is invalid`);
     if (!/^L\d+$/.test(rule.level) && rule.level !== '—')
       problems.push(`${prefix}.level is invalid`);
+    if (!knownLevels.has(rule.level)) {
+      problems.push(`${prefix} references missing level ${rule.level}`);
+    }
     if (rule.text.trim() === '') problems.push(`${prefix}.text must not be blank`);
     if (rule.checklist.rule.trim() === '')
       problems.push(`${prefix}.checklist.rule must not be blank`);
@@ -220,6 +263,62 @@ export function validateRuleCatalog(catalog: RuleCatalog): string[] {
   }
 
   return problems;
+}
+
+function validatePillars(pillars: readonly RuleCatalogPillar[], problems: string[]): void {
+  if (pillars.length === 0) problems.push('pillars must contain at least one entry');
+  const seen = new Set<number>();
+  for (const [i, pillar] of pillars.entries()) {
+    const prefix = `pillars[${i}]`;
+    if (!Number.isInteger(pillar.number) || pillar.number < 1) {
+      problems.push(`${prefix}.number must be a positive integer`);
+    }
+    if (seen.has(pillar.number)) problems.push(`${prefix}.number duplicates ${pillar.number}`);
+    seen.add(pillar.number);
+    if (pillar.title.trim() === '') problems.push(`${prefix}.title must not be blank`);
+    if (pillar.description.trim() === '') problems.push(`${prefix}.description must not be blank`);
+  }
+}
+
+function validateLevels(levels: readonly RuleCatalogLevel[], problems: string[]): void {
+  if (levels.length === 0) problems.push('levels must contain at least one entry');
+  const seenIds = new Set<string>();
+  const seenOrders = new Set<number>();
+  for (const [i, level] of levels.entries()) {
+    const prefix = `levels[${i}]`;
+    if (!/^L\d+$/.test(level.id) && level.id !== '—') problems.push(`${prefix}.id is invalid`);
+    if (seenIds.has(level.id)) problems.push(`${prefix}.id duplicates ${level.id}`);
+    seenIds.add(level.id);
+    if (!Number.isInteger(level.order) || level.order < 0) {
+      problems.push(`${prefix}.order must be a non-negative integer`);
+    }
+    if (seenOrders.has(level.order)) problems.push(`${prefix}.order duplicates ${level.order}`);
+    seenOrders.add(level.order);
+    if (level.label.trim() === '') problems.push(`${prefix}.label must not be blank`);
+    if (level.description.trim() === '') problems.push(`${prefix}.description must not be blank`);
+  }
+}
+
+function validateClauses(
+  clauses: readonly RuleCatalogClause[],
+  pillars: readonly RuleCatalogPillar[],
+  problems: string[],
+): void {
+  if (clauses.length === 0) problems.push('clauses must contain at least one entry');
+  const seen = new Set<number>();
+  const knownPillars = new Set(pillars.map((pillar) => pillar.number));
+  for (const [i, clause] of clauses.entries()) {
+    const prefix = `clauses[${i}]`;
+    if (!Number.isInteger(clause.number) || clause.number < 1) {
+      problems.push(`${prefix}.number must be a positive integer`);
+    }
+    if (seen.has(clause.number)) problems.push(`${prefix}.number duplicates ${clause.number}`);
+    seen.add(clause.number);
+    if (!knownPillars.has(clause.pillar)) {
+      problems.push(`${prefix} references missing pillar ${clause.pillar}`);
+    }
+    if (clause.title.trim() === '') problems.push(`${prefix}.title must not be blank`);
+  }
 }
 
 function checklistRowsByAicId(
@@ -269,11 +368,6 @@ function levelSortValue(level: string): number {
   if (level === '—') return Number.MAX_SAFE_INTEGER;
   const m = level.match(/^L(\d+)$/);
   return m ? Number(m[1]) : Number.MAX_SAFE_INTEGER - 1;
-}
-
-function specVersionFromChecklist(content: string): string {
-  const m = content.match(/^spec_version:\s*["']?([^"'\s#]+)["']?/m);
-  return m?.[1] ?? 'unknown';
 }
 
 function catalogFromMarkdown(): RuleCatalog {

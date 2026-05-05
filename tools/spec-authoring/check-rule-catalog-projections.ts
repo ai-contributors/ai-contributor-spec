@@ -10,10 +10,21 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
   validateRuleCatalog,
   type RuleCatalog,
+  type RuleCatalogClause,
   type RuleCatalogEntry,
+  type RuleCatalogLevel,
+  type RuleCatalogPillar,
 } from './generate-rule-catalog.ts';
 import { parseChecklistRows, type ChecklistScope } from './shared/checklist-parser.ts';
-import { clauseToPillar, normativeRuleMap, type SpecScope } from './shared/spec-model.ts';
+import {
+  clauseDetails,
+  clauseToPillar,
+  levelDetails,
+  normativeRuleMap,
+  pillarDetails,
+  specVersion,
+  type SpecScope,
+} from './shared/spec-model.ts';
 
 const CATALOG = 'AI-CONTRIBUTOR-RULE-CATALOG.json';
 const SPEC = 'AI-CONTRIBUTOR-SPECIFICATION.md';
@@ -32,6 +43,12 @@ export function ruleCatalogProjectionProblems(input: {
   checklistContent: string;
 }): string[] {
   const problems = validateRuleCatalog(input.catalog);
+  compareDocumentMetadataProjection(
+    input.catalog,
+    input.specContent,
+    input.checklistContent,
+    problems,
+  );
   const catalogById = catalogEntriesById(input.catalog.rules, problems);
   const specRules = normativeRuleMap(input.specContent);
   const specPillars = clauseToPillar(input.specContent);
@@ -84,6 +101,138 @@ export function ruleCatalogProjectionProblems(input: {
   }
 
   return problems;
+}
+
+function compareDocumentMetadataProjection(
+  catalog: RuleCatalog,
+  specContent: string,
+  checklistContent: string,
+  problems: string[],
+): void {
+  const projectedSpecVersion = specVersion(specContent);
+  if (catalog.specVersion !== projectedSpecVersion) {
+    problems.push(
+      `specVersion mismatch: catalog "${catalog.specVersion}" vs ${SPEC} "${projectedSpecVersion}"`,
+    );
+  }
+  const projectedChecklistSpecVersion = checklistSpecVersion(checklistContent);
+  if (projectedChecklistSpecVersion && catalog.specVersion !== projectedChecklistSpecVersion) {
+    problems.push(
+      `specVersion mismatch: catalog "${catalog.specVersion}" vs ${CHECKLIST} "${projectedChecklistSpecVersion}"`,
+    );
+  }
+
+  comparePillarProjection(catalog.pillars, pillarDetails(specContent), problems);
+  compareLevelProjection(catalog.levels, levelDetails(specContent), problems);
+  compareClauseProjection(catalog.clauses, clauseDetails(specContent), problems);
+}
+
+function checklistSpecVersion(checklistContent: string): string | null {
+  const m = checklistContent.match(/^spec_version:\s*["']?([^"'\s#]+)["']?/m);
+  return m?.[1] ?? null;
+}
+
+function comparePillarProjection(
+  catalogPillars: readonly RuleCatalogPillar[],
+  projectedPillars: readonly RuleCatalogPillar[],
+  problems: string[],
+): void {
+  const projected = new Map(projectedPillars.map((pillar) => [pillar.number, pillar]));
+  for (const pillar of catalogPillars) {
+    const row = projected.get(pillar.number);
+    if (!row) {
+      problems.push(`pillar ${pillar.number} is present in ${CATALOG} but missing from ${SPEC}`);
+      continue;
+    }
+    if (pillar.icon !== row.icon) {
+      problems.push(
+        `pillar ${pillar.number} icon mismatch: catalog "${pillar.icon}" vs ${SPEC} "${row.icon}"`,
+      );
+    }
+    if (pillar.title !== row.title) {
+      problems.push(
+        `pillar ${pillar.number} title mismatch: catalog "${pillar.title}" vs ${SPEC} "${row.title}"`,
+      );
+    }
+    if (pillar.description !== row.description) {
+      problems.push(
+        `pillar ${pillar.number} description mismatch: catalog "${pillar.description}" vs ${SPEC} "${row.description}"`,
+      );
+    }
+  }
+  const catalogNumbers = new Set(catalogPillars.map((pillar) => pillar.number));
+  for (const pillar of projectedPillars) {
+    if (!catalogNumbers.has(pillar.number)) {
+      problems.push(`pillar ${pillar.number} is present in ${SPEC} but missing from ${CATALOG}`);
+    }
+  }
+}
+
+function compareLevelProjection(
+  catalogLevels: readonly RuleCatalogLevel[],
+  projectedLevels: readonly RuleCatalogLevel[],
+  problems: string[],
+): void {
+  const projected = new Map(projectedLevels.map((level) => [level.id, level]));
+  for (const level of catalogLevels) {
+    const row = projected.get(level.id);
+    if (!row) {
+      problems.push(`level ${level.id} is present in ${CATALOG} but missing from ${SPEC}`);
+      continue;
+    }
+    if (level.order !== row.order) {
+      problems.push(
+        `level ${level.id} order mismatch: catalog "${level.order}" vs ${SPEC} "${row.order}"`,
+      );
+    }
+    if (level.label !== row.label) {
+      problems.push(
+        `level ${level.id} label mismatch: catalog "${level.label}" vs ${SPEC} "${row.label}"`,
+      );
+    }
+    if (level.description !== row.description) {
+      problems.push(
+        `level ${level.id} description mismatch: catalog "${level.description}" vs ${SPEC} "${row.description}"`,
+      );
+    }
+  }
+  const catalogIds = new Set(catalogLevels.map((level) => level.id));
+  for (const level of projectedLevels) {
+    if (!catalogIds.has(level.id)) {
+      problems.push(`level ${level.id} is present in ${SPEC} but missing from ${CATALOG}`);
+    }
+  }
+}
+
+function compareClauseProjection(
+  catalogClauses: readonly RuleCatalogClause[],
+  projectedClauses: readonly RuleCatalogClause[],
+  problems: string[],
+): void {
+  const projected = new Map(projectedClauses.map((clause) => [clause.number, clause]));
+  for (const clause of catalogClauses) {
+    const row = projected.get(clause.number);
+    if (!row) {
+      problems.push(`clause ${clause.number} is present in ${CATALOG} but missing from ${SPEC}`);
+      continue;
+    }
+    if (clause.pillar !== row.pillar) {
+      problems.push(
+        `clause ${clause.number} pillar mismatch: catalog "${clause.pillar}" vs ${SPEC} "${row.pillar}"`,
+      );
+    }
+    if (clause.title !== row.title) {
+      problems.push(
+        `clause ${clause.number} title mismatch: catalog "${clause.title}" vs ${SPEC} "${row.title}"`,
+      );
+    }
+  }
+  const catalogNumbers = new Set(catalogClauses.map((clause) => clause.number));
+  for (const clause of projectedClauses) {
+    if (!catalogNumbers.has(clause.number)) {
+      problems.push(`clause ${clause.number} is present in ${SPEC} but missing from ${CATALOG}`);
+    }
+  }
 }
 
 function catalogEntriesById(

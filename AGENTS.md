@@ -4,8 +4,9 @@ Authoritative AI instruction file for `ai-contributor-spec`. Both human
 contributors and AI agents (Claude Code, Copilot, Cursor, Codex, autonomous
 runners, etc.) MUST follow this document. Tool-specific instruction files
 (e.g. `CLAUDE.md`, `.cursorrules`, `.github/copilot-instructions.md`) MUST
-either be absent or contain only a pointer back here. Rule metadata source of
-truth: [`AI-CONTRIBUTOR-RULE-CATALOG.json`](AI-CONTRIBUTOR-RULE-CATALOG.json).
+either be absent or contain only a pointer back here. Rule and document
+metadata source of truth:
+[`AI-CONTRIBUTOR-RULE-CATALOG.json`](AI-CONTRIBUTOR-RULE-CATALOG.json).
 The human-facing specification and audit checklist are projection/frame assets
 that MUST stay synchronized with that catalog. The checklist rule tables are
 generated from the catalog.
@@ -24,9 +25,9 @@ catalog, specification, and templates that adopters fetch**, plus
 
 ## Architecture
 
-- `AI-CONTRIBUTOR-RULE-CATALOG.json` — canonical rule metadata: `AIC-` IDs,
-  clause, pillar, normative scope, conformance level, rule text, checklist
-  metadata, and detector linkage.
+- `AI-CONTRIBUTOR-RULE-CATALOG.json` — canonical catalog metadata: pillars,
+  conformance levels, clauses, `AIC-` IDs, normative scope, rule text,
+  checklist metadata, and detector linkage.
 - `AI-CONTRIBUTOR-SPECIFICATION.md` — human-facing specification frame and
   normative clause projection from the rule catalog.
 - `AI-CONTRIBUTOR-GUIDE.md`, `AI-CONTRIBUTOR-AUDIT-MODEL.md`, `AI-CONTRIBUTOR-COVERAGE.md` — companion docs.
@@ -61,7 +62,7 @@ The following are **never** permitted without explicit, in-band human approval
 from a CODEOWNER on the relevant path:
 
 - **No edits to `AI-CONTRIBUTOR-SPECIFICATION.md` outside an open PR with a normative version bump** (see `CONTRIBUTING.md` "When to bump").
-- **No edits to `AI-CONTRIBUTOR-RULE-CATALOG.json` that are not synchronized with its markdown projections and generator/check updates.** It is the canonical rule metadata source; mutating it without projection checks creates silent spec/checklist drift.
+- **No edits to `AI-CONTRIBUTOR-RULE-CATALOG.json` that are not synchronized with its markdown projections and generator/check updates.** It is the canonical rule and document metadata source; mutating it without projection checks creates silent spec/checklist drift.
 - **No hand edits to the generated checklist rule tables.** Use `npm --prefix tools run generate:checklist-assets` after catalog changes.
 - **No edits to `.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md` or `.ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-LOG.md` that aren't synchronised with the corresponding catalog/spec change.** These are templates; mutating them in isolation breaks every adopter.
 - **No bypassing pre-commit, lint, type-check, or other CI gates** (`--no-verify`, `--ignore-scripts`, `continue-on-error`, masked exit codes, deleting failing checks instead of fixing the cause).
