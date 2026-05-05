@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {
-  buildRuleCatalog,
   canonicalizeRuleCatalog,
   collectorAicIdsFromCatalog,
+  type RuleCatalog,
   validateRuleCatalog,
 } from '../spec-authoring/generate-rule-catalog.ts';
 import {
@@ -27,7 +27,6 @@ import {
 } from '../spec-authoring/generate-coverage.ts';
 import { rowScopeProblemsFromCatalog } from '../spec-authoring/check-row-scope-vs-spec.ts';
 import { collectorRowCoverageProblemsFromCatalog } from '../spec-authoring/check-collector-row-coverage.ts';
-import { ruleCatalogProjectionProblems } from '../spec-authoring/check-rule-catalog-projections.ts';
 
 let failed = 0;
 
@@ -41,60 +40,81 @@ function assert(name: string, condition: boolean, detail = ''): void {
   if (detail) console.error(detail);
 }
 
-const specContent = [
-  '# Spec',
-  '',
-  '> **Version:** 0.2 · **Owner:** Example',
-  '',
-  '## Pillars',
-  '',
-  '| # | Pillar | Clauses | Scope |',
-  '|---:|---|---|---|',
-  '| 1 | 🏗️ Foundation | §1–1 | setup |',
-  '| 2 | 🧭 Oversight | §2–2 | review |',
-  '',
-  '## Specification clauses',
-  '',
-  '### Pillar 1 — Foundation',
-  '',
-  '## 1. Setup',
-  '',
-  '### `MUST`',
-  '',
-  '- Repositories MUST bootstrap cleanly. <sup>`AIC-clean-clone-bootstrap`</sup>',
-  '',
-  '### Pillar 2 — Oversight',
-  '',
-  '## 2. Review',
-  '',
-  '### `MUST`',
-  '',
-  '- AI-authored changes MUST receive human review. <sup>`AIC-human-review-required`</sup>',
-  '',
-  '## Conformance levels',
-  '',
-  '- **Level 0 — Baseline.** Basic hygiene.',
-  '- **Level 1 — Hardened.** Stronger checks.',
-].join('\n');
-
-const checklistContent = [
-  '# Checklist',
-  '',
-  '## Level 0 — Baseline',
-  '',
-  '| Scope | Rule | A | Status | Comment | Requirement | Pillar | IDs |',
-  '|---|---|---|---|---|---|---:|---|',
-  '| `MUST` | `Clean Setup` | - |  |  | Repository bootstraps from a clean clone. | 1 | `AIC-clean-clone-bootstrap` |',
-  '| `MUST` | `Human Review Required` | - |  |  | AI-authored changes receive human review. | 2 | `AIC-human-review-required` |',
-].join('\n');
-
-const catalog = buildRuleCatalog({
-  specContent,
-  checklistContent,
-  collectorAicIds: {
-    'clean-clone-bootstrap': ['AIC-clean-clone-bootstrap'],
+const catalog: RuleCatalog = {
+  $schema: './AI-CONTRIBUTOR-RULE-CATALOG.schema.json',
+  schemaVersion: '0.2',
+  specVersion: '0.2',
+  sourceOfTruth: 'AI-CONTRIBUTOR-RULE-CATALOG.json',
+  projections: {
+    specification: 'AI-CONTRIBUTOR-SPECIFICATION.md',
+    checklist: '.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md',
+    coverage: 'AI-CONTRIBUTOR-COVERAGE.md',
+    collectorRegistry: 'skills/ai-contributor-audit/scripts/internal/collector-registry.ts',
   },
-});
+  pillars: [
+    { number: 1, icon: '🏗️', title: 'Foundation', description: 'setup' },
+    { number: 2, icon: '🧭', title: 'Oversight', description: 'review' },
+  ],
+  levels: [
+    { id: 'L0', order: 0, label: 'Baseline', description: 'Basic hygiene.' },
+    { id: 'L1', order: 1, label: 'Hardened', description: 'Stronger checks.' },
+    {
+      id: '—',
+      order: 99,
+      label: 'Optional',
+      description: 'Optional rules are not required for any conformance level.',
+    },
+  ],
+  clauses: [
+    { number: 1, pillar: 1, title: 'Setup' },
+    { number: 2, pillar: 2, title: 'Review' },
+  ],
+  rules: [
+    {
+      id: 'AIC-clean-clone-bootstrap',
+      clause: 1,
+      pillar: 1,
+      scope: 'MUST',
+      level: 'L0',
+      text: 'Repositories MUST bootstrap cleanly.',
+      checklist: {
+        rule: 'Clean Setup',
+        scope: 'MUST',
+        requirement: 'Repository bootstraps from a clean clone.',
+      },
+      detectors: [
+        {
+          id: 'clean-clone-bootstrap',
+          kind: 'collector-rule',
+          path: 'skills/ai-contributor-audit/scripts/internal/collector-registry.ts',
+        },
+      ],
+      detectorConfidence: 'indicative',
+    },
+    {
+      id: 'AIC-human-review-required',
+      clause: 2,
+      pillar: 2,
+      scope: 'MUST',
+      level: 'L0',
+      text: 'AI-authored changes MUST receive human review.',
+      checklist: {
+        rule: 'Human Review Required',
+        scope: 'MUST',
+        requirement: 'AI-authored changes receive human review.',
+      },
+      detectors: [
+        {
+          id: 'manual-review',
+          kind: 'manual',
+          manualEvidence:
+            'Review checklist row "Human Review Required" and record current-run evidence.',
+        },
+      ],
+      detectorConfidence: 'manual',
+    },
+  ],
+};
 const catalogWithWorkflowSummaries = {
   ...catalog,
   levels: catalog.levels.map((level) =>
@@ -132,27 +152,27 @@ const catalogWithChecklistLevelMetadata = {
   ),
 };
 
-assert('builds one entry per AIC ID', catalog.rules.length === 2);
-assert('extracts catalog spec version from spec', catalog.specVersion === '0.2');
+assert('uses one catalog entry per AIC ID', catalog.rules.length === 2);
+assert('uses catalog spec version', catalog.specVersion === '0.2');
 assert(
   'records coverage as a catalog projection',
   (catalog.projections as Record<string, string>).coverage === 'AI-CONTRIBUTOR-COVERAGE.md',
 );
 assert(
-  'builds pillar metadata',
+  'uses pillar metadata',
   catalog.pillars[0]?.number === 1 &&
     catalog.pillars[0]?.icon === '🏗️' &&
     catalog.pillars[0]?.title === 'Foundation' &&
     catalog.pillars[0]?.description === 'setup',
 );
 assert(
-  'builds clause metadata',
+  'uses clause metadata',
   catalog.clauses[1]?.number === 2 &&
     catalog.clauses[1]?.pillar === 2 &&
     catalog.clauses[1]?.title === 'Review',
 );
 assert(
-  'builds level metadata including optional rows',
+  'uses level metadata including optional rows',
   catalog.levels.some((level) => level.id === 'L0' && level.label === 'Baseline') &&
     catalog.levels.some((level) => level.id === '—' && level.label === 'Optional'),
 );
@@ -429,37 +449,6 @@ assert(
     partialCollectorRowProblems[0]?.includes('AIC-human-review-required') === true,
 );
 
-const projectionProblems = ruleCatalogProjectionProblems({
-  catalog,
-  specContent: specContent.replace(
-    'Repositories MUST bootstrap cleanly.',
-    'Repositories MUST drift.',
-  ),
-  checklistContent,
-});
-assert(
-  'detects spec projection drift from catalog',
-  projectionProblems.some((problem) => problem.includes('AIC-clean-clone-bootstrap text mismatch')),
-);
-const metadataProjectionProblems = ruleCatalogProjectionProblems({
-  catalog: {
-    ...catalog,
-    specVersion: '0.1',
-    pillars: [{ ...catalog.pillars[0]!, title: 'Wrong' }, catalog.pillars[1]!],
-    levels: [{ ...catalog.levels[0]!, label: 'Wrong' }, ...catalog.levels.slice(1)],
-    clauses: [{ ...catalog.clauses[0]!, title: 'Wrong' }, catalog.clauses[1]!],
-  },
-  specContent,
-  checklistContent,
-});
-assert(
-  'detects document metadata projection drift from catalog',
-  metadataProjectionProblems.some((problem) => problem.includes('specVersion mismatch')) &&
-    metadataProjectionProblems.some((problem) => problem.includes('pillar 1 title mismatch')) &&
-    metadataProjectionProblems.some((problem) => problem.includes('level L0 label mismatch')) &&
-    metadataProjectionProblems.some((problem) => problem.includes('clause 1 title mismatch')),
-);
-
 assert(
   'renders checklist rule tables from catalog',
   renderChecklistRuleTables(catalog).includes(
@@ -534,27 +523,11 @@ assert(
 const checklistAssetDriftProblems = checklistAssetProblems({
   catalog,
   templateContent: checklistTemplateContent,
-  checklistContent: checklistContent.replace('Clean Setup', 'Dirty Setup'),
+  checklistContent: renderedChecklistAssets.replace('Clean Setup', 'Dirty Setup'),
 });
 assert(
   'detects checklist asset drift from catalog',
   checklistAssetDriftProblems.some((problem) => problem.includes('does not match')),
-);
-assert(
-  'does not allow checklist ID bindings',
-  checklistAssetProblems({
-    catalog,
-    templateContent: checklistTemplateContent,
-    checklistContent: [
-      '# Checklist',
-      '',
-      '<!-- BEGIN:CHECKLIST-ID-BINDINGS',
-      '{}',
-      'END:CHECKLIST-ID-BINDINGS -->',
-      '',
-      renderChecklistRuleTables(catalog),
-    ].join('\n'),
-  }).some((problem) => problem.includes('checklist ID bindings')),
 );
 
 const auditSummaryTemplateContent = [
@@ -676,23 +649,7 @@ const specTemplateContent = [
   '',
   '## Specification clauses',
   '',
-  '{{generated:pillar-heading:1}}',
-  '',
-  '{{generated:clause-heading:1}}',
-  '',
-  'This non-normative clause prose stays in the template.',
-  '',
-  '### `MUST`',
-  '',
-  '{{generated:spec-rules:1:MUST}}',
-  '',
-  '{{generated:pillar-heading:2}}',
-  '',
-  '{{generated:clause-heading:2}}',
-  '',
-  '### `MUST`',
-  '',
-  '{{generated:spec-rules:2:MUST}}',
+  '{{generated:specification-clauses}}',
   '',
   '## Conformance levels',
   '',
@@ -735,85 +692,23 @@ assert(
     ) &&
     !renderedSpecification.includes('{{generated:'),
 );
-
-const renderedSpecificationWithGeneratedClauses = renderSpecification(
-  catalogWithWorkflowSummaries,
-  [
-    '# Spec',
-    '',
-    '> **Version:** {{specVersion}} · **Owner:** Example',
-    '',
-    '{{generated:clause-count}} clauses use {{generated:spec-scope-list}}.',
-    '',
-    '## Pillars',
-    '',
-    '{{generated:pillars-table}}',
-    '',
-    '## Specification clauses',
-    '',
-    '{{generated:specification-clauses}}',
-    '',
-    '## Conformance levels',
-    '',
-    '{{generated:conformance-levels}}',
-    '',
-    '{{generated:level-workflow-table}}',
-  ].join('\n'),
-);
 assert(
   'renders complete specification clauses section from catalog',
-  renderedSpecificationWithGeneratedClauses.includes('### Pillar 1 — 🏗️ Foundation') &&
-    renderedSpecificationWithGeneratedClauses.includes('#### 1. Setup') &&
-    renderedSpecificationWithGeneratedClauses.includes('##### `MUST`') &&
-    renderedSpecificationWithGeneratedClauses.includes(
-      '- Repositories MUST bootstrap cleanly. <sup>`AIC-clean-clone-bootstrap`</sup>',
+  renderedSpecification.includes('### Pillar 1 — 🏗️ Foundation') &&
+    renderedSpecification.includes('#### 1. Setup') &&
+    renderedSpecification.includes('##### `MUST`') &&
+    renderedSpecification.includes(
+      '- Repositories MUST render rule text from the catalog. <sup>`AIC-clean-clone-bootstrap`</sup>',
     ) &&
-    renderedSpecificationWithGeneratedClauses.includes('### Pillar 2 — 🧭 Oversight') &&
-    renderedSpecificationWithGeneratedClauses.includes('#### 2. Review') &&
-    !renderedSpecificationWithGeneratedClauses.includes('{{generated:clause-heading') &&
-    !renderedSpecificationWithGeneratedClauses.includes('{{generated:spec-rules'),
-);
-
-const mixedSpecificationClauseDirectiveProblems = specificationAssetProblems({
-  catalog: catalogWithWorkflowSummaries,
-  templateContent: [
-    '# Spec',
-    '',
-    '> **Version:** {{specVersion}} · **Owner:** Example',
-    '',
-    '{{generated:clause-count}} clauses use {{generated:spec-scope-list}}.',
-    '',
-    '## Pillars',
-    '',
-    '{{generated:pillars-table}}',
-    '',
-    '## Specification clauses',
-    '',
-    '{{generated:specification-clauses}}',
-    '',
-    '{{generated:clause-heading:1}}',
-    '',
-    '## Conformance levels',
-    '',
-    '{{generated:conformance-levels}}',
-    '',
-    '{{generated:level-workflow-table}}',
-  ].join('\n'),
-  specContent: renderedSpecificationWithGeneratedClauses,
-});
-assert(
-  'rejects mixed full-section and granular specification clause directives',
-  mixedSpecificationClauseDirectiveProblems.some((problem) =>
-    problem.includes(
-      'must use either generated:specification-clauses or granular clause directives',
-    ),
-  ),
+    renderedSpecification.includes('### Pillar 2 — 🧭 Oversight') &&
+    renderedSpecification.includes('#### 2. Review') &&
+    !renderedSpecification.includes('{{generated:'),
 );
 
 assert(
   'preserves non-normative specification frame prose',
   renderSpecification(catalogWithWorkflowSummaries, specTemplateContent).includes(
-    'This non-normative clause prose stays in the template.',
+    'Introductory prose stays hand-authored.',
   ),
 );
 
@@ -836,23 +731,23 @@ assert(
 
 const unknownDirectiveProblems = specificationAssetProblems({
   catalog: catalogWithWorkflowSummaries,
-  templateContent: `${specTemplateContent}\n{{generated:clause-heading:99}}\n`,
+  templateContent: `${specTemplateContent}\n{{generated:unknown}}\n`,
   specContent: renderedSpecificationFromCatalog,
 });
 assert(
   'reports unknown specification template directives',
-  unknownDirectiveProblems.some((problem) => problem.includes('references unknown clause 99')),
+  unknownDirectiveProblems.some((problem) => problem.includes('unknown template directive')),
 );
 
-const missingRuleDirectiveProblems = specificationAssetProblems({
+const missingSpecificationClausesDirectiveProblems = specificationAssetProblems({
   catalog: catalogWithWorkflowSummaries,
-  templateContent: specTemplateContent.replace('{{generated:spec-rules:1:MUST}}', ''),
+  templateContent: specTemplateContent.replace('{{generated:specification-clauses}}', ''),
   specContent: renderedSpecificationFromCatalog,
 });
 assert(
-  'reports missing specification rule group directives',
-  missingRuleDirectiveProblems.some((problem) =>
-    problem.includes('No template directive found for §1 `MUST`'),
+  'reports missing specification clauses directive',
+  missingSpecificationClausesDirectiveProblems.some((problem) =>
+    problem.includes('No template directive found for generated:specification-clauses'),
   ),
 );
 

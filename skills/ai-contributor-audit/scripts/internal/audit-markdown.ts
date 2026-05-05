@@ -2,10 +2,9 @@
 //
 // Importable Audit Markdown helpers for repository-local checks.
 //
-// audit-stamp.ts and audit-validate.ts currently duplicate a compatible helper
-// block because mirrored skill scripts must remain self-contained with only
-// node:* imports. Keep behaviour here aligned with that block when changing
-// checklist, summary, or evidence-comment parsing.
+// Shared Markdown helpers for audit-stamp.ts, audit-validate.ts, and
+// repository-local tests. Keep behavior here aligned with the shipped audit
+// artifact shape when changing checklist, summary, or evidence-comment parsing.
 
 import fs from 'node:fs';
 
@@ -212,7 +211,6 @@ export function extractBacktickTokens(cell: string): string[] {
 }
 
 export function modernChecklistLayout(cells: string[]): {
-  hasMechanicalColumn: boolean;
   statusIndex: number;
   commentIndex: number;
   requirementIndex: number;
@@ -221,7 +219,6 @@ export function modernChecklistLayout(cells: string[]): {
 } | null {
   if (cells.length >= 8 && (cells[2] === 'A' || Number.isFinite(Number(cells[6])))) {
     return {
-      hasMechanicalColumn: true,
       statusIndex: 3,
       commentIndex: 4,
       requirementIndex: 5,
@@ -229,50 +226,22 @@ export function modernChecklistLayout(cells: string[]): {
       idsIndex: 7,
     };
   }
-  if (cells.length >= 7) {
-    return {
-      hasMechanicalColumn: false,
-      statusIndex: 2,
-      commentIndex: 3,
-      requirementIndex: 4,
-      pillarIndex: 5,
-      idsIndex: 6,
-    };
-  }
   return null;
 }
 
 export function parseChecklistRules(lines: string[]): ChecklistRow[] {
   const out: ChecklistRow[] = [];
-  let legacyScope: Scope | null = null;
   let sectionLevel: string | null = null;
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     const levelMatch = line.match(/^## Level (\d)\s+—/);
     if (levelMatch) {
       sectionLevel = `L${levelMatch[1]}`;
-      legacyScope = null;
       continue;
     }
     if (/^## Optional\s*$/.test(line)) {
       sectionLevel = '—';
-      legacyScope = null;
-      continue;
-    }
-    if (/^## `MUST`\s*$/.test(line)) {
-      legacyScope = 'MUST';
-      sectionLevel = null;
-    } else if (/^## `MUST when applicable`\s*$/.test(line)) {
-      legacyScope = 'MUST when applicable';
-      sectionLevel = null;
-    } else if (/^## `SHOULD`\s*$/.test(line)) {
-      legacyScope = 'SHOULD';
-      sectionLevel = null;
-    } else if (/^## `MAY`\s*$/.test(line)) {
-      legacyScope = 'MAY';
-      sectionLevel = null;
     } else if (/^## /.test(line)) {
-      legacyScope = null;
       sectionLevel = null;
     }
 
@@ -292,7 +261,7 @@ export function parseChecklistRules(lines: string[]): ChecklistRow[] {
         cells[layout.pillarIndex],
         sectionLevel,
         cells[layout.requirementIndex],
-        layout.hasMechanicalColumn ? cells[2] : '',
+        cells[2],
         cells[layout.statusIndex],
         cells[layout.commentIndex],
         extractBacktickTokens(cells[layout.idsIndex]),
@@ -300,23 +269,6 @@ export function parseChecklistRules(lines: string[]): ChecklistRow[] {
       if (row) out.push(row);
       continue;
     }
-
-    if (!legacyScope) continue;
-    if (cells.length < 6) continue;
-    if (cells[0] === 'Rule') continue;
-    const row = makeRow(
-      i + 1,
-      cells[0],
-      legacyScope,
-      cells[1],
-      cells[2],
-      cells[3],
-      '',
-      cells[4],
-      cells[5],
-      [],
-    );
-    if (row) out.push(row);
   }
   return out;
 }

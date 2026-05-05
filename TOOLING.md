@@ -99,8 +99,6 @@ Common focused commands:
 | `npm --prefix tools run check:checklist-assets` | Verify `.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md` is current with the checklist template and rule catalog. |
 | `npm --prefix tools run check:audit-templates` | Verify `AI-CONTRIBUTOR-AUDIT.md` and `.ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-LOG.md` are current with their templates and rule catalog. |
 | `npm --prefix tools run check:specification` | Verify `AI-CONTRIBUTOR-SPECIFICATION.md` is current with the specification template and rule catalog. |
-| `npm --prefix tools run check:spec-clauses` | Compatibility alias for `check:specification`. |
-| `npm --prefix tools run check:rule-catalog-projections` | Verify specification and checklist markdown projections match the canonical rule catalog. |
 | `npm --prefix tools run check:audit-profile-template` | Verify the audit-profile template applicability table is in sync with `PROFILE_QUESTIONS`. |
 | `npm --prefix tools run check:conformance-levels` | Check accepted `conformance_level` values across docs and code. |
 | `npm --prefix tools run check:audit-validate` | Validate the repository's blank audit templates in template mode. |
@@ -115,7 +113,6 @@ Common focused commands:
 | `npm --prefix tools run generate:checklist-assets` | Rewrite `.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md` from the checklist template and rule catalog. |
 | `npm --prefix tools run generate:audit-templates` | Rewrite `AI-CONTRIBUTOR-AUDIT.md` and `.ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-LOG.md` from their templates and rule catalog. |
 | `npm --prefix tools run generate:specification` | Rewrite `AI-CONTRIBUTOR-SPECIFICATION.md` from the specification template and rule catalog. |
-| `npm --prefix tools run generate:spec-clauses` | Compatibility alias for `generate:specification`. |
 | `npm --prefix tools run generate:audit-profile-template` | Rewrite the audit-profile template applicability table from `PROFILE_QUESTIONS`. |
 | `npm --prefix tools run audit` | Self-audit this repository through the skill runtime. |
 | `npm --prefix tools run audit:collect` | Collect self-audit evidence into `.ai-contributor-audit/AI-CONTRIBUTOR-EVIDENCE.json`. |

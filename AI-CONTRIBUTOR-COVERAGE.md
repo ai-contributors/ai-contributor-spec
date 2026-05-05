@@ -16,8 +16,8 @@ For a conformance claim, use [`AI-CONTRIBUTOR-CHECKLIST.md`](.ai-contributor-aud
 
 - **207** total rows
 - **34** unconditional `MUST` + **57** `MUST when applicable` + **76** `SHOULD` + **40** `MAY`
-- **6** rows at Level 0; **40** rows at Level 1; **28** rows at Level 2; **14** rows at Level 3
-- Level 4 adds **3** autonomous-runner `MUST when applicable` rows plus **76** `SHOULD` rows
+- **6** rows at L0 — Baseline Hygiene; **40** rows at L1 — Hardened; **28** rows at L2 — AI Assisted; **14** rows at L3 — AI Authored; **79** rows at L4 — AI Autonomous
+- **40** optional `MAY` rows
 
 ## By scope
 

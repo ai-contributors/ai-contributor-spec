@@ -1,31 +1,15 @@
 #!/usr/bin/env node
 // SPDX-License-Identifier: Apache-2.0
 //
-// Validates and canonicalizes AI-CONTRIBUTOR-RULE-CATALOG.json. The legacy
-// markdown extractor remains available behind --from-markdown for migration.
+// Validates and canonicalizes AI-CONTRIBUTOR-RULE-CATALOG.json.
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type { ClauseDetail, LevelDetail, PillarDetail, SpecScope } from './shared/spec-model.ts';
-import {
-  clauseDetails,
-  clauseToPillar,
-  levelDetails,
-  normativeRuleMap,
-  pillarDetails,
-  specVersion,
-} from './shared/spec-model.ts';
-import { parseChecklistRows } from './shared/checklist-parser.ts';
-import { RULE_AIC_IDS } from '../../skills/ai-contributor-audit/scripts/internal/collector-registry.ts';
-import type { ChecklistScope } from './shared/checklist-parser.ts';
 
 const CATALOG = 'AI-CONTRIBUTOR-RULE-CATALOG.json';
 const CATALOG_SCHEMA = './AI-CONTRIBUTOR-RULE-CATALOG.schema.json';
-const SPEC = 'AI-CONTRIBUTOR-SPECIFICATION.md';
-const CHECKLIST = '.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md';
-const COVERAGE = 'AI-CONTRIBUTOR-COVERAGE.md';
-const COLLECTOR_REGISTRY = 'skills/ai-contributor-audit/scripts/internal/collector-registry.ts';
 const VALID_SCOPES = new Set(['MUST', 'MUST when applicable', 'SHOULD', 'MAY']);
 const VALID_DETECTOR_CONFIDENCE = new Set(['indicative', 'manual']);
 
@@ -79,85 +63,6 @@ export type RuleCatalogDetector =
       kind: 'manual';
       manualEvidence: string;
     };
-
-export function buildRuleCatalog(input: {
-  specContent: string;
-  checklistContent: string;
-  collectorAicIds: Record<string, readonly string[]>;
-}): RuleCatalog {
-  const specRules = normativeRuleMap(input.specContent);
-  const clausePillars = clauseToPillar(input.specContent);
-  const pillars = pillarDetails(input.specContent);
-  const levels = levelDetails(input.specContent);
-  const clauses = clauseDetails(input.specContent);
-  const checklistById = checklistRowsByAicId(input.checklistContent);
-  const detectorsById = collectorRulesByAicId(input.collectorAicIds);
-  const rules: RuleCatalogEntry[] = [];
-
-  for (const [id, specRule] of specRules) {
-    const checklistRow = checklistById.get(id);
-    if (!checklistRow) {
-      throw new Error(`No checklist row found for ${id}`);
-    }
-    const pillar = clausePillars.get(specRule.clause) ?? checklistRow.pillar;
-    if (pillar !== checklistRow.pillar) {
-      throw new Error(
-        `${id} pillar mismatch: specification maps clause ${specRule.clause} to pillar ${pillar}, ` +
-          `but checklist row "${checklistRow.rule}" uses pillar ${checklistRow.pillar}`,
-      );
-    }
-    const detectorIds = detectorsById.get(id) ?? [];
-    const detectors: RuleCatalogDetector[] =
-      detectorIds.length === 0
-        ? [
-            {
-              id: 'manual-review',
-              kind: 'manual',
-              manualEvidence: `Review checklist row "${checklistRow.rule}" and record current-run evidence.`,
-            },
-          ]
-        : detectorIds.map((detectorId) => ({
-            id: detectorId,
-            kind: 'collector-rule',
-            path: 'skills/ai-contributor-audit/scripts/internal/collector-registry.ts',
-          }));
-
-    rules.push({
-      id,
-      clause: specRule.clause,
-      pillar,
-      scope: specRule.scope,
-      level: checklistRow.level,
-      text: specRule.text,
-      checklist: {
-        rule: checklistRow.rule,
-        scope: catalogScopeFromChecklistScope(checklistRow.scope),
-        requirement: checklistRow.requirement,
-      },
-      detectors,
-      detectorConfidence: detectorIds.length === 0 ? 'manual' : 'indicative',
-    });
-  }
-
-  rules.sort(compareCatalogEntries);
-
-  return {
-    $schema: CATALOG_SCHEMA,
-    schemaVersion: '0.2',
-    specVersion: specVersion(input.specContent),
-    sourceOfTruth: CATALOG,
-    projections: {
-      specification: 'AI-CONTRIBUTOR-SPECIFICATION.md',
-      checklist: '.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md',
-      coverage: COVERAGE,
-      collectorRegistry: COLLECTOR_REGISTRY,
-    },
-    pillars,
-    levels,
-    clauses,
-    rules,
-  };
-}
 
 export function renderRuleCatalog(catalog: RuleCatalog): string {
   return `${JSON.stringify(catalog, null, 2)}\n`;
@@ -330,36 +235,6 @@ function validateClauses(
   }
 }
 
-function checklistRowsByAicId(
-  content: string,
-): Map<string, ReturnType<typeof parseChecklistRows>[number]> {
-  const out = new Map<string, ReturnType<typeof parseChecklistRows>[number]>();
-  for (const row of parseChecklistRows(content)) {
-    for (const id of row.ids) {
-      if (out.has(id)) {
-        throw new Error(`${id} appears in multiple checklist rows`);
-      }
-      out.set(id, row);
-    }
-  }
-  return out;
-}
-
-function collectorRulesByAicId(
-  collectorAicIds: Record<string, readonly string[]>,
-): Map<string, string[]> {
-  const out = new Map<string, string[]>();
-  for (const [collectorRuleId, aicIds] of Object.entries(collectorAicIds)) {
-    for (const aicId of aicIds) {
-      const existing = out.get(aicId) ?? [];
-      existing.push(collectorRuleId);
-      out.set(aicId, existing);
-    }
-  }
-  for (const collectorIds of out.values()) collectorIds.sort();
-  return out;
-}
-
 function compareCatalogEntries(a: RuleCatalogEntry, b: RuleCatalogEntry): number {
   return (
     a.clause - b.clause ||
@@ -369,22 +244,10 @@ function compareCatalogEntries(a: RuleCatalogEntry, b: RuleCatalogEntry): number
   );
 }
 
-function catalogScopeFromChecklistScope(scope: ChecklistScope): SpecScope {
-  return scope === 'MwA' ? 'MUST when applicable' : scope;
-}
-
 function levelSortValue(level: string): number {
   if (level === '—') return Number.MAX_SAFE_INTEGER;
   const m = level.match(/^L(\d+)$/);
   return m ? Number(m[1]) : Number.MAX_SAFE_INTEGER - 1;
-}
-
-function catalogFromMarkdown(): RuleCatalog {
-  return buildRuleCatalog({
-    specContent: fs.readFileSync(SPEC, 'utf8'),
-    checklistContent: fs.readFileSync(CHECKLIST, 'utf8'),
-    collectorAicIds: RULE_AIC_IDS,
-  });
 }
 
 function catalogFromDisk(): RuleCatalog {
@@ -392,9 +255,7 @@ function catalogFromDisk(): RuleCatalog {
 }
 
 function main(): void {
-  const catalog = canonicalizeRuleCatalog(
-    process.argv.includes('--from-markdown') ? catalogFromMarkdown() : catalogFromDisk(),
-  );
+  const catalog = canonicalizeRuleCatalog(catalogFromDisk());
   const problems = validateRuleCatalog(catalog);
   if (problems.length > 0) {
     console.error('Rule catalog validation failed:');

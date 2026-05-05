@@ -11,10 +11,11 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
   validateRuleCatalog,
   type RuleCatalog,
+  type RuleCatalogClause,
   type RuleCatalogEntry,
   type RuleCatalogPillar,
 } from './generate-rule-catalog.ts';
-import type { ClauseDetail, SpecScope } from './shared/spec-model.ts';
+import type { SpecScope } from './shared/spec-model.ts';
 
 const CATALOG = 'AI-CONTRIBUTOR-RULE-CATALOG.json';
 const SPEC = 'AI-CONTRIBUTOR-SPECIFICATION.md';
@@ -33,16 +34,11 @@ interface RenderResult {
 }
 
 interface RenderContext {
-  pillarsByNumber: Map<number, RuleCatalogPillar>;
-  clausesByNumber: Map<number, ClauseDetail>;
   ruleGroups: Map<string, RuleCatalogEntry[]>;
   usedSpecVersion: number;
   usedPillarsTable: number;
   usedConformanceLevels: number;
   usedSpecificationClauses: number;
-  usedPillarHeadings: Map<number, number>;
-  usedClauseHeadings: Map<number, number>;
-  usedRuleGroups: Map<string, number>;
 }
 
 export function renderSpecification(catalog: RuleCatalog, templateContent: string): string {
@@ -84,7 +80,7 @@ function renderSpecificationResult(catalog: RuleCatalog, templateContent: string
     return rendered ?? marker;
   });
 
-  validateDirectiveCoverage(catalog, context, problems);
+  validateDirectiveCoverage(context, problems);
   if (TEMPLATE_DIRECTIVE.test(content)) {
     problems.push(`${TEMPLATE} rendered output still contains unresolved template directives.`);
   }
@@ -105,16 +101,11 @@ function buildRenderContext(catalog: RuleCatalog): RenderContext {
   for (const group of ruleGroups.values()) group.sort(compareEntriesForSpecification);
 
   return {
-    pillarsByNumber: new Map(catalog.pillars.map((pillar) => [pillar.number, pillar])),
-    clausesByNumber: new Map(catalog.clauses.map((clause) => [clause.number, clause])),
     ruleGroups,
     usedSpecVersion: 0,
     usedPillarsTable: 0,
     usedConformanceLevels: 0,
     usedSpecificationClauses: 0,
-    usedPillarHeadings: new Map(),
-    usedClauseHeadings: new Map(),
-    usedRuleGroups: new Map(),
   };
 }
 
@@ -156,57 +147,11 @@ function renderDirective(
     return renderSpecificationClauses(catalog, context);
   }
 
-  const pillarHeading = directive.match(/^generated:pillar-heading:(\d+)$/);
-  if (pillarHeading) {
-    const number = Number(pillarHeading[1]);
-    increment(context.usedPillarHeadings, number);
-    const pillar = context.pillarsByNumber.get(number);
-    if (!pillar) {
-      problems.push(`${TEMPLATE} directive ${directive} references unknown pillar ${number}.`);
-      return null;
-    }
-    return renderPillarHeading(pillar);
-  }
-
-  const clauseHeading = directive.match(/^generated:clause-heading:(\d+)$/);
-  if (clauseHeading) {
-    const number = Number(clauseHeading[1]);
-    increment(context.usedClauseHeadings, number);
-    const clause = context.clausesByNumber.get(number);
-    if (!clause) {
-      problems.push(`${TEMPLATE} directive ${directive} references unknown clause ${number}.`);
-      return null;
-    }
-    return renderClauseHeading(clause);
-  }
-
-  const ruleGroup = directive.match(
-    /^generated:spec-rules:(\d+):(MUST|MUST when applicable|SHOULD|MAY)$/,
-  );
-  if (ruleGroup) {
-    const clause = Number(ruleGroup[1]);
-    const scope = ruleGroup[2] as SpecScope;
-    const key = ruleGroupKey(clause, scope);
-    increment(context.usedRuleGroups, key);
-    const entries = context.ruleGroups.get(key);
-    if (!entries) {
-      problems.push(
-        `${TEMPLATE} directive ${directive} references empty §${clause} \`${scope}\` rule group.`,
-      );
-      return null;
-    }
-    return entries.map(renderSpecificationRuleBullet).join('\n');
-  }
-
   problems.push(`${TEMPLATE} contains unknown template directive {{${directive}}}.`);
   return null;
 }
 
-function validateDirectiveCoverage(
-  catalog: RuleCatalog,
-  context: RenderContext,
-  problems: string[],
-): void {
+function validateDirectiveCoverage(context: RenderContext, problems: string[]): void {
   validateSingleton('specVersion', context.usedSpecVersion, problems);
   validateSingleton('generated:pillars-table', context.usedPillarsTable, problems);
   validateSingleton('generated:conformance-levels', context.usedConformanceLevels, problems);
@@ -214,49 +159,8 @@ function validateDirectiveCoverage(
     problems.push(
       `${TEMPLATE} contains ${context.usedSpecificationClauses} directives for generated:specification-clauses.`,
     );
-  }
-
-  if (context.usedSpecificationClauses > 0) {
-    const granularDirectiveCount =
-      countUsedDirectives(context.usedPillarHeadings) +
-      countUsedDirectives(context.usedClauseHeadings) +
-      countUsedDirectives(context.usedRuleGroups);
-    if (granularDirectiveCount > 0) {
-      problems.push(
-        `${TEMPLATE} must use either generated:specification-clauses or granular clause directives, not both.`,
-      );
-    }
-    return;
-  }
-
-  for (const pillar of catalog.pillars) {
-    validateSingleton(
-      `generated:pillar-heading:${pillar.number}`,
-      context.usedPillarHeadings.get(pillar.number) ?? 0,
-      problems,
-    );
-  }
-
-  for (const clause of catalog.clauses) {
-    validateSingleton(
-      `generated:clause-heading:${clause.number}`,
-      context.usedClauseHeadings.get(clause.number) ?? 0,
-      problems,
-    );
-  }
-
-  for (const [key, entries] of context.ruleGroups) {
-    const [clause, scope] = splitRuleGroupKey(key);
-    const count = context.usedRuleGroups.get(key) ?? 0;
-    if (count === 0) {
-      problems.push(
-        `No template directive found for §${clause} \`${scope}\` (${entries
-          .map((entry) => entry.id)
-          .join(', ')}).`,
-      );
-    } else if (count > 1) {
-      problems.push(`${TEMPLATE} contains ${count} directives for §${clause} \`${scope}\`.`);
-    }
+  } else if (context.usedSpecificationClauses === 0) {
+    problems.push('No template directive found for generated:specification-clauses.');
   }
 }
 
@@ -266,10 +170,6 @@ function validateSingleton(name: string, count: number, problems: string[]): voi
   } else if (count > 1) {
     problems.push(`${TEMPLATE} contains ${count} directives for ${name}.`);
   }
-}
-
-function countUsedDirectives(used: Map<unknown, number>): number {
-  return [...used.values()].reduce((sum, count) => sum + count, 0);
 }
 
 function renderPillarsTable(catalog: RuleCatalog): string {
@@ -313,7 +213,7 @@ function renderPillarHeading(pillar: RuleCatalogPillar): string {
   return `### Pillar ${pillar.number} — ${pillarDisplayName(pillar)}`;
 }
 
-function renderClauseHeading(clause: ClauseDetail): string {
+function renderClauseHeading(clause: RuleCatalogClause): string {
   return `#### ${clause.number}. ${clause.title}`;
 }
 
@@ -391,15 +291,6 @@ function levelSortValue(level: string): number {
 
 function ruleGroupKey(clause: number, scope: SpecScope): string {
   return `${clause}\u0000${scope}`;
-}
-
-function splitRuleGroupKey(key: string): [number, SpecScope] {
-  const [clause, scope] = key.split('\u0000');
-  return [Number(clause), scope as SpecScope];
-}
-
-function increment<K>(map: Map<K, number>, key: K): void {
-  map.set(key, (map.get(key) ?? 0) + 1);
 }
 
 function markdownTableCell(value: string): string {

@@ -4,14 +4,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import {
-  extractBacktickTokens,
-  modernChecklistLayout,
-  parseChecklistRules,
-  renderLooseTableRow,
-  splitRow,
-  type ChecklistRow,
-} from './audit-markdown.ts';
+import { parseChecklistRules, renderLooseTableRow, type ChecklistRow } from './audit-markdown.ts';
 import { renderStampedBlock, validateStampedBlockLines } from './stamped-block.ts';
 
 const COLLECTOR_ROWS_BEGIN = '<!-- BEGIN:STAMPED-COLLECTOR-ROWS -->';
@@ -107,7 +100,7 @@ export function stampAuditLogCollectorRows(
   const lines = original.split(/\r?\n/);
 
   const markerRange = findMarkerRange(lines, COLLECTOR_ROWS_BEGIN, COLLECTOR_ROWS_END);
-  if (!markerRange) return null;
+  if (!markerRange) return `Cannot rewrite STAMPED-COLLECTOR-ROWS: marker block is missing.`;
   const blockErr = validateStampedBlockBeforeRewrite(
     lines,
     markerRange.beginIdx,
@@ -156,7 +149,7 @@ export function stampVerificationGaps(
   const lines = original.split(/\r?\n/);
 
   const markerRange = findMarkerRange(lines, VGAPS_BEGIN, VGAPS_END);
-  if (!markerRange) return null;
+  if (!markerRange) return `Cannot rewrite STAMPED-VERIFICATION-GAPS: marker block is missing.`;
   const blockErr = validateStampedBlockBeforeRewrite(
     lines,
     markerRange.beginIdx,
@@ -169,13 +162,7 @@ export function stampVerificationGaps(
   const checklistRows = parseChecklistRules(lines);
   const rowByAic = new Map<string, ChecklistRow>();
   for (const r of checklistRows) {
-    // Re-derive AIC IDs from the row line in source: parseChecklistRules does
-    // not retain the IDs cell, so re-scan the row text directly.
-    const raw = lines[r.line - 1];
-    const rawCells = splitRow(raw);
-    const layout = modernChecklistLayout(rawCells);
-    const ids = layout ? extractBacktickTokens(rawCells[layout.idsIndex] ?? '') : [];
-    for (const id of ids) {
+    for (const id of r.ids) {
       if (!rowByAic.has(id)) rowByAic.set(id, r);
     }
   }

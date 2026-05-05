@@ -71,7 +71,7 @@ export function coverageBlocksFromCatalog(catalog: RuleCatalog): CoverageBlocks 
   const pillars = coveragePillarsFromCatalog(catalog);
   const levels = coverageLevelsFromCatalog(catalog);
   return {
-    atAGlance: blockAtAGlance(rows),
+    atAGlance: blockAtAGlance(rows, levels),
     byScope: blockByScope(rows),
     byPillar: blockByPillar(rows, pillars),
     byLevel: blockByLevel(rows, levels),
@@ -183,23 +183,21 @@ function coverageLevelsFromCatalog(catalog: RuleCatalog): CoverageLevel[] {
     .sort((a, b) => a.order - b.order);
 }
 
-function blockAtAGlance(rows: CoverageRow[]): string {
+function blockAtAGlance(rows: CoverageRow[], levels: readonly CoverageLevel[]): string {
   const total = rows.length;
   const must = count(rows, (r) => r.scope === 'MUST');
   const mwa = count(rows, (r) => r.scope === 'MwA');
   const should = count(rows, (r) => r.scope === 'SHOULD');
   const may = count(rows, (r) => r.scope === 'MAY');
-  const l0 = count(rows, (r) => r.level === 'L0');
-  const l1 = count(rows, (r) => r.level === 'L1');
-  const l2 = count(rows, (r) => r.level === 'L2');
-  const l3 = count(rows, (r) => r.level === 'L3');
-  const l4Mwa = count(rows, (r) => r.level === 'L4' && r.scope === 'MwA');
-  const l4Should = count(rows, (r) => r.level === 'L4' && r.scope === 'SHOULD');
+  const requiredLevelCounts = levels
+    .map((level) => `**${count(rows, (r) => r.level === level.id)}** rows at ${level.label}`)
+    .join('; ');
+  const optional = count(rows, (r) => r.level === '—');
   return [
     `- **${total}** total rows`,
     `- **${must}** unconditional \`MUST\` + **${mwa}** \`MUST when applicable\` + **${should}** \`SHOULD\` + **${may}** \`MAY\``,
-    `- **${l0}** rows at Level 0; **${l1}** rows at Level 1; **${l2}** rows at Level 2; **${l3}** rows at Level 3`,
-    `- Level 4 adds **${l4Mwa}** autonomous-runner \`MUST when applicable\` rows plus **${l4Should}** \`SHOULD\` rows`,
+    `- ${requiredLevelCounts}`,
+    `- **${optional}** optional \`MAY\` rows`,
   ].join('\n');
 }
 

@@ -26,9 +26,6 @@ const CHECKLIST_PATH = path.join(REPO_ROOT, CHECKLIST);
 const TEMPLATE_PATH = path.join(REPO_ROOT, TEMPLATE);
 const TEMPLATE_DIRECTIVE = /{{\s*([^{}]+?)\s*}}/g;
 
-const LEGACY_ID_BINDINGS_START = '<!-- BEGIN:CHECKLIST-ID-BINDINGS';
-const LEGACY_ID_BINDINGS_END = 'END:CHECKLIST-ID-BINDINGS -->';
-
 const SCOPE_ORDER = ['MUST', 'MUST when applicable', 'SHOULD', 'MAY'];
 const CHECKLIST_HEADER = '| Scope | Rule | A | Status | Comment | Requirement | Pillar | IDs |';
 const CHECKLIST_SEPARATOR = '|-------|------|---|--------|---------|-------------|--------|-----|';
@@ -129,15 +126,6 @@ export function checklistAssetProblems(input: {
 }): string[] {
   const problems = validateRuleCatalog(input.catalog);
   if (problems.length > 0) return problems;
-
-  if (
-    extractLegacyIdBindingsRegion(input.templateContent) ||
-    extractLegacyIdBindingsRegion(input.checklistContent)
-  ) {
-    problems.push(
-      `${CHECKLIST} still contains legacy checklist ID bindings. Run 'npm --prefix tools run generate:checklist-assets'.`,
-    );
-  }
 
   const result = renderChecklistResult(input.catalog, input.templateContent);
   problems.push(...result.problems);
@@ -370,15 +358,6 @@ function renderChecklistTableRow(row: ChecklistAssetRow): string {
 
 function escapeMarkdownCell(value: string): string {
   return value.replace(/\|/g, '\\|');
-}
-
-function extractLegacyIdBindingsRegion(content: string): string | null {
-  const start = content.indexOf(LEGACY_ID_BINDINGS_START);
-  if (start < 0) return null;
-  const endMarkerStart = content.indexOf(LEGACY_ID_BINDINGS_END, start);
-  if (endMarkerStart < 0) return null;
-  const end = endMarkerStart + LEGACY_ID_BINDINGS_END.length;
-  return content.slice(start, end);
 }
 
 function ensureTrailingNewline(content: string): string {

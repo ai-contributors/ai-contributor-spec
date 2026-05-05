@@ -85,10 +85,9 @@ interchangeable:
 Use `{{generated:...}}` when catalog/template authoring should produce text.
 Use `<!-- BEGIN:... -->` only when the shipped artifact needs a stable runtime
 anchor for the audit lifecycle. Do not introduce new shipped markers without
-the corresponding parser/stamper/validator behavior and tests. Do not re-add
-generation metadata blocks such as the removed `BEGIN:CHECKLIST-ID-BINDINGS`;
-generation facts belong in `AI-CONTRIBUTOR-RULE-CATALOG.json` plus template
-directives.
+the corresponding parser/stamper/validator behavior and tests. Do not add
+generation metadata blocks that duplicate catalog facts; generation facts belong
+in `AI-CONTRIBUTOR-RULE-CATALOG.json` plus template directives.
 
 ## Commands
 
@@ -158,11 +157,9 @@ reproducible subset through `npm --prefix tools run check:ci-local`):
   plus catalog; `check:coverage` verifies
   `AI-CONTRIBUTOR-COVERAGE.md` matches the coverage template plus catalog;
   `check:specification` verifies `AI-CONTRIBUTOR-SPECIFICATION.md` matches the
-  specification template plus catalog; `check:spec-clauses` is a compatibility
-  alias for that full specification check;
+  specification template plus catalog;
   `check:checklist-pillars` verifies visible checklist IDs against the catalog
-  and specification; `check:rule-catalog-projections` verifies the current
-  specification and checklist projections match that catalog.
+  and specification.
 - `.github/workflows/` is the source of truth for GitHub-hosted gates such as
   CodeQL, dependency review, documentation checks, coverage, template
   verification, and release-tag dry runs.

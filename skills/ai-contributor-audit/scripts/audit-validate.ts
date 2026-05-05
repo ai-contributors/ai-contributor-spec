@@ -58,7 +58,6 @@ import {
 } from './internal/validator-audit-log.ts';
 import { checkBacklog, parseBacklog } from './internal/validator-backlog.ts';
 import {
-  checkAutomationMarkerHeader,
   checkCollectorDerivedRowsMatchEvidence,
   checkDerivedEvidenceArtifactCitations,
   checkEvidenceLinkage,
@@ -336,7 +335,6 @@ export function runValidator(argv: string[]): ValidatorResult {
   const { checklist: checklistFm } = checkFrontmatter(context, fail, {
     validatorVersion: VALIDATOR_VERSION,
   });
-  checkAutomationMarkerHeader(context, fail);
   const rules = parseChecklistRules(context.checklistLines);
   const auditAll = parseAuditLog(context.auditLines);
   const summary = parseSummary(context.checklistLines);
