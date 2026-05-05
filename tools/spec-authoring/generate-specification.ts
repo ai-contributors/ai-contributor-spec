@@ -9,13 +9,17 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
-  validateRuleCatalog,
-  type RuleCatalog,
   type RuleCatalogClause,
   type RuleCatalogEntry,
   type RuleCatalogPillar,
+  type ValidatedRuleCatalog,
 } from './generate-rule-catalog.ts';
+import { loadValidatedCatalog } from './shared/catalog-loader.ts';
 import type { SpecScope } from './shared/spec-model.ts';
+import {
+  renderTemplateDirectives,
+  type TemplateDirectiveRenderer,
+} from './shared/template-renderer.ts';
 
 const CATALOG = 'AI-CONTRIBUTOR-RULE-CATALOG.json';
 const SPEC = 'AI-CONTRIBUTOR-SPECIFICATION.md';
@@ -25,7 +29,6 @@ const REPO_ROOT = path.resolve(HERE, '..', '..');
 const CATALOG_PATH = path.join(REPO_ROOT, CATALOG);
 const SPEC_PATH = path.join(REPO_ROOT, SPEC);
 const TEMPLATE_PATH = path.join(REPO_ROOT, TEMPLATE);
-const TEMPLATE_DIRECTIVE = /{{\s*([^{}]+?)\s*}}/g;
 const SCOPE_ORDER: readonly SpecScope[] = ['MUST', 'MUST when applicable', 'SHOULD', 'MAY'];
 
 interface RenderResult {
@@ -35,18 +38,12 @@ interface RenderResult {
 
 interface RenderContext {
   ruleGroups: Map<string, RuleCatalogEntry[]>;
-  usedSpecVersion: number;
-  usedPillarsTable: number;
-  usedConformanceLevels: number;
-  usedSpecificationClauses: number;
 }
 
-export function renderSpecification(catalog: RuleCatalog, templateContent: string): string {
-  const catalogProblems = validateRuleCatalog(catalog);
-  if (catalogProblems.length > 0) {
-    throw new Error(`Rule catalog validation failed:\n${catalogProblems.join('\n')}`);
-  }
-
+export function renderSpecification(
+  catalog: ValidatedRuleCatalog,
+  templateContent: string,
+): string {
   const result = renderSpecificationResult(catalog, templateContent);
   if (result.problems.length > 0) {
     throw new Error(result.problems.join('\n'));
@@ -54,13 +51,12 @@ export function renderSpecification(catalog: RuleCatalog, templateContent: strin
   return result.content;
 }
 
-export function specificationAssetProblems(input: {
-  catalog: RuleCatalog;
+function specificationAssetProblems(input: {
+  catalog: ValidatedRuleCatalog;
   templateContent: string;
   specContent: string;
 }): string[] {
-  const problems = validateRuleCatalog(input.catalog);
-  if (problems.length > 0) return problems;
+  const problems: string[] = [];
 
   const result = renderSpecificationResult(input.catalog, input.templateContent);
   problems.push(...result.problems);
@@ -72,27 +68,41 @@ export function specificationAssetProblems(input: {
   return problems;
 }
 
-function renderSpecificationResult(catalog: RuleCatalog, templateContent: string): RenderResult {
-  const problems: string[] = [];
+function renderSpecificationResult(
+  catalog: ValidatedRuleCatalog,
+  templateContent: string,
+): RenderResult {
   const context = buildRenderContext(catalog);
-  const content = templateContent.replace(TEMPLATE_DIRECTIVE, (marker, directive: string) => {
-    const rendered = renderDirective(catalog, context, directive.trim(), problems);
-    return rendered ?? marker;
+  const directives: Record<string, TemplateDirectiveRenderer> = {
+    specVersion: () => catalog.specVersion,
+    'generated:pillars-table': () => renderPillarsTable(catalog),
+    'generated:conformance-levels': () => renderConformanceLevels(catalog),
+    'generated:clause-count': () => String(catalog.clauses.length),
+    'generated:spec-scope-list': () => renderCodeList(SCOPE_ORDER),
+    'generated:level-workflow-table': (problems) => renderLevelWorkflowTable(catalog, problems),
+    'generated:specification-clauses': () => renderSpecificationClauses(catalog, context),
+  };
+  const result = renderTemplateDirectives({
+    templateContent,
+    directives,
+    requiredDirectives: [
+      'specVersion',
+      'generated:pillars-table',
+      'generated:conformance-levels',
+      'generated:specification-clauses',
+    ],
+    messages: {
+      templatePath: TEMPLATE,
+    },
   });
 
-  validateDirectiveCoverage(context, problems);
-  if (TEMPLATE_DIRECTIVE.test(content)) {
-    problems.push(`${TEMPLATE} rendered output still contains unresolved template directives.`);
-  }
-  TEMPLATE_DIRECTIVE.lastIndex = 0;
-
   return {
-    content: ensureTrailingNewline(content),
-    problems,
+    content: result.content,
+    problems: result.problems,
   };
 }
 
-function buildRenderContext(catalog: RuleCatalog): RenderContext {
+function buildRenderContext(catalog: ValidatedRuleCatalog): RenderContext {
   const ruleGroups = new Map<string, RuleCatalogEntry[]>();
   for (const entry of catalog.rules) {
     const key = ruleGroupKey(entry.clause, entry.scope);
@@ -102,77 +112,10 @@ function buildRenderContext(catalog: RuleCatalog): RenderContext {
 
   return {
     ruleGroups,
-    usedSpecVersion: 0,
-    usedPillarsTable: 0,
-    usedConformanceLevels: 0,
-    usedSpecificationClauses: 0,
   };
 }
 
-function renderDirective(
-  catalog: RuleCatalog,
-  context: RenderContext,
-  directive: string,
-  problems: string[],
-): string | null {
-  if (directive === 'specVersion') {
-    context.usedSpecVersion++;
-    return catalog.specVersion;
-  }
-
-  if (directive === 'generated:pillars-table') {
-    context.usedPillarsTable++;
-    return renderPillarsTable(catalog);
-  }
-
-  if (directive === 'generated:conformance-levels') {
-    context.usedConformanceLevels++;
-    return renderConformanceLevels(catalog);
-  }
-
-  if (directive === 'generated:clause-count') {
-    return String(catalog.clauses.length);
-  }
-
-  if (directive === 'generated:spec-scope-list') {
-    return renderCodeList(SCOPE_ORDER);
-  }
-
-  if (directive === 'generated:level-workflow-table') {
-    return renderLevelWorkflowTable(catalog, problems);
-  }
-
-  if (directive === 'generated:specification-clauses') {
-    context.usedSpecificationClauses++;
-    return renderSpecificationClauses(catalog, context);
-  }
-
-  problems.push(`${TEMPLATE} contains unknown template directive {{${directive}}}.`);
-  return null;
-}
-
-function validateDirectiveCoverage(context: RenderContext, problems: string[]): void {
-  validateSingleton('specVersion', context.usedSpecVersion, problems);
-  validateSingleton('generated:pillars-table', context.usedPillarsTable, problems);
-  validateSingleton('generated:conformance-levels', context.usedConformanceLevels, problems);
-  if (context.usedSpecificationClauses > 1) {
-    problems.push(
-      `${TEMPLATE} contains ${context.usedSpecificationClauses} directives for generated:specification-clauses.`,
-    );
-  } else if (context.usedSpecificationClauses === 0) {
-    problems.push('No template directive found for generated:specification-clauses.');
-  }
-}
-
-function validateSingleton(name: string, count: number, problems: string[]): void {
-  if (count === 0) {
-    problems.push(`No template directive found for ${name}.`);
-  } else if (count > 1) {
-    problems.push(`${TEMPLATE} contains ${count} directives for ${name}.`);
-  }
-}
-
-function renderPillarsTable(catalog: RuleCatalog): string {
+function renderPillarsTable(catalog: ValidatedRuleCatalog): string {
   const lines = ['| Pillar | Name | Clauses | Scope |', '|---|---|---|---|'];
   for (const pillar of [...catalog.pillars].sort((a, b) => a.number - b.number)) {
     lines.push(
@@ -185,7 +128,7 @@ function renderPillarsTable(catalog: RuleCatalog): string {
   return lines.join('\n');
 }
 
-function renderSpecificationClauses(catalog: RuleCatalog, context: RenderContext): string {
+function renderSpecificationClauses(catalog: ValidatedRuleCatalog, context: RenderContext): string {
   const lines: string[] = [];
   const pillars = [...catalog.pillars].sort((a, b) => a.number - b.number);
   const clauses = [...catalog.clauses].sort((a, b) => a.number - b.number);
@@ -221,7 +164,7 @@ function renderSpecificationRuleBullet(entry: RuleCatalogEntry): string {
   return `- ${entry.text} <sup>\`${entry.id}\`</sup>`;
 }
 
-function renderConformanceLevels(catalog: RuleCatalog): string {
+function renderConformanceLevels(catalog: ValidatedRuleCatalog): string {
   return [...catalog.levels]
     .filter((level) => level.id !== '—')
     .sort((a, b) => a.order - b.order || a.id.localeCompare(b.id))
@@ -229,7 +172,10 @@ function renderConformanceLevels(catalog: RuleCatalog): string {
     .join('\n');
 }
 
-function renderLevelWorkflowTable(catalog: RuleCatalog, problems: string[]): string | null {
+function renderLevelWorkflowTable(
+  catalog: ValidatedRuleCatalog,
+  problems: string[],
+): string | null {
   const levels = [...catalog.levels]
     .filter((level) => level.id !== '—')
     .sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
@@ -260,7 +206,7 @@ function renderCodeList(values: readonly string[]): string {
   return `${items.slice(0, -1).join(', ')}, and ${items[items.length - 1]}`;
 }
 
-function clauseRange(catalog: RuleCatalog, pillarNumber: number): string {
+function clauseRange(catalog: ValidatedRuleCatalog, pillarNumber: number): string {
   const clauses = catalog.clauses
     .filter((clause) => clause.pillar === pillarNumber)
     .map((clause) => clause.number)
@@ -297,12 +243,8 @@ function markdownTableCell(value: string): string {
   return value.replace(/\|/g, '\\|');
 }
 
-function ensureTrailingNewline(value: string): string {
-  return value.endsWith('\n') ? value : `${value}\n`;
-}
-
 function main(): void {
-  const catalog = JSON.parse(fs.readFileSync(CATALOG_PATH, 'utf8')) as RuleCatalog;
+  const catalog = loadValidatedCatalog(CATALOG_PATH, CATALOG);
   const templateContent = fs.readFileSync(TEMPLATE_PATH, 'utf8');
   const specContent = fs.readFileSync(SPEC_PATH, 'utf8');
   const problems = specificationAssetProblems({ catalog, templateContent, specContent });

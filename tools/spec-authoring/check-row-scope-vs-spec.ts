@@ -14,10 +14,10 @@
 // are enumerated below — adding a new entry requires that the spec bullet
 // actually carries an embedded trigger; otherwise change the row scope.
 
-import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { validateRuleCatalog, type RuleCatalog } from './generate-rule-catalog.ts';
+import type { ValidatedRuleCatalog } from './generate-rule-catalog.ts';
+import { loadValidatedCatalog } from './shared/catalog-loader.ts';
 
 const CATALOG = 'AI-CONTRIBUTOR-RULE-CATALOG.json';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -31,7 +31,7 @@ const MUST_TO_MWA_EXCEPTIONS = new Set<string>([
   'AIC-data-integrity-constraints',
 ]);
 
-export function rowScopeProblemsFromCatalog(catalog: RuleCatalog): string[] {
+export function rowScopeProblemsFromCatalog(catalog: ValidatedRuleCatalog): string[] {
   const problems: string[] = [];
   for (const entry of catalog.rules) {
     const specScope = entry.scope;
@@ -52,8 +52,8 @@ export function rowScopeProblemsFromCatalog(catalog: RuleCatalog): string[] {
 }
 
 function main(): void {
-  const catalog = JSON.parse(fs.readFileSync(CATALOG_PATH, 'utf8')) as RuleCatalog;
-  const problems = [...validateRuleCatalog(catalog), ...rowScopeProblemsFromCatalog(catalog)];
+  const catalog = loadValidatedCatalog(CATALOG_PATH, CATALOG);
+  const problems = rowScopeProblemsFromCatalog(catalog);
 
   if (problems.length) {
     console.error('Problems:');
@@ -67,7 +67,7 @@ function main(): void {
   );
 }
 
-function checklistRowCount(catalog: RuleCatalog): number {
+function checklistRowCount(catalog: ValidatedRuleCatalog): number {
   return new Set(catalog.rules.map((entry) => `${entry.level}\0${entry.checklist.rule}`)).size;
 }
 

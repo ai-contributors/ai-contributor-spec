@@ -8,7 +8,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { pathToFileURL } from 'node:url';
-import { validateRuleCatalog, type RuleCatalog } from './generate-rule-catalog.ts';
+import { type ValidatedRuleCatalog } from './generate-rule-catalog.ts';
+import { loadValidatedCatalog } from './shared/catalog-loader.ts';
+import {
+  renderTemplateDirectives,
+  type TemplateDirectiveRenderer,
+} from './shared/template-renderer.ts';
 
 const CATALOG = 'AI-CONTRIBUTOR-RULE-CATALOG.json';
 const COVERAGE = 'AI-CONTRIBUTOR-COVERAGE.md';
@@ -18,11 +23,10 @@ const REPO_ROOT = path.resolve(HERE, '..', '..');
 const CATALOG_PATH = path.join(REPO_ROOT, CATALOG);
 const COVERAGE_PATH = path.join(REPO_ROOT, COVERAGE);
 const TEMPLATE_PATH = path.join(REPO_ROOT, TEMPLATE);
-const TEMPLATE_DIRECTIVE = /{{\s*([^{}]+?)\s*}}/g;
 
-export type CoverageScope = 'MUST' | 'MwA' | 'SHOULD' | 'MAY';
+type CoverageScope = 'MUST' | 'MwA' | 'SHOULD' | 'MAY';
 
-export interface CoverageRow {
+interface CoverageRow {
   rule: string;
   pillar: number;
   level: string;
@@ -40,7 +44,7 @@ interface CoverageLevel {
   order: number;
 }
 
-export interface CoverageBlocks {
+interface CoverageBlocks {
   atAGlance: string;
   byScope: string;
   byPillar: string;
@@ -57,16 +61,7 @@ const COVERAGE_DIRECTIVES = {
 } satisfies Record<string, keyof CoverageBlocks>;
 const REQUIRED_COVERAGE_DIRECTIVES = ['specVersion', ...Object.keys(COVERAGE_DIRECTIVES)];
 
-function loadCatalog(): RuleCatalog {
-  const catalog = JSON.parse(fs.readFileSync(CATALOG_PATH, 'utf8')) as RuleCatalog;
-  const problems = validateRuleCatalog(catalog);
-  if (problems.length > 0) {
-    throw new Error(`Invalid ${CATALOG}:\n${problems.map((problem) => `- ${problem}`).join('\n')}`);
-  }
-  return catalog;
-}
-
-export function coverageBlocksFromCatalog(catalog: RuleCatalog): CoverageBlocks {
+function coverageBlocksFromCatalog(catalog: ValidatedRuleCatalog): CoverageBlocks {
   const rows = coverageRowsFromCatalog(catalog);
   const pillars = coveragePillarsFromCatalog(catalog);
   const levels = coverageLevelsFromCatalog(catalog);
@@ -79,53 +74,29 @@ export function coverageBlocksFromCatalog(catalog: RuleCatalog): CoverageBlocks 
   };
 }
 
-export function renderCoverageMap(catalog: RuleCatalog, templateContent: string): string {
-  const catalogProblems = validateRuleCatalog(catalog);
-  if (catalogProblems.length > 0) {
-    throw new Error(`Rule catalog validation failed:\n${catalogProblems.join('\n')}`);
-  }
-
+export function renderCoverageMap(catalog: ValidatedRuleCatalog, templateContent: string): string {
   const blocks = coverageBlocksFromCatalog(catalog);
-  const usedDirectives = new Map<string, number>();
-  const problems: string[] = [];
-  const content = templateContent.replace(TEMPLATE_DIRECTIVE, (marker, directive: string) => {
-    const directiveName = directive.trim();
-    if (directiveName === 'specVersion') {
-      usedDirectives.set(directiveName, (usedDirectives.get(directiveName) ?? 0) + 1);
-      return catalog.specVersion;
-    }
-
-    const blockName = COVERAGE_DIRECTIVES[directiveName as keyof typeof COVERAGE_DIRECTIVES];
-    if (!blockName) {
-      problems.push(
-        `${TEMPLATE} contains unknown coverage template directive {{${directiveName}}}.`,
-      );
-      return marker;
-    }
-    usedDirectives.set(directiveName, (usedDirectives.get(directiveName) ?? 0) + 1);
-    return blocks[blockName];
+  const directives: Record<string, TemplateDirectiveRenderer> = {
+    specVersion: () => catalog.specVersion,
+  };
+  for (const [directiveName, blockName] of Object.entries(COVERAGE_DIRECTIVES)) {
+    directives[directiveName] = () => blocks[blockName];
+  }
+  const result = renderTemplateDirectives({
+    templateContent,
+    directives,
+    requiredDirectives: REQUIRED_COVERAGE_DIRECTIVES,
+    messages: {
+      templatePath: TEMPLATE,
+      directiveLabel: 'coverage template directive',
+    },
   });
 
-  for (const directiveName of REQUIRED_COVERAGE_DIRECTIVES) {
-    const count = usedDirectives.get(directiveName) ?? 0;
-    if (count === 0) {
-      problems.push(`${TEMPLATE} is missing coverage template directive {{${directiveName}}}.`);
-    } else if (count > 1) {
-      problems.push(
-        `${TEMPLATE} contains ${count} coverage template directives for {{${directiveName}}}.`,
-      );
-    }
-  }
-  if (TEMPLATE_DIRECTIVE.test(content)) {
-    problems.push(`${TEMPLATE} rendered output still contains unresolved template directives.`);
-  }
-  TEMPLATE_DIRECTIVE.lastIndex = 0;
-
-  if (problems.length > 0) throw new Error(problems.join('\n'));
-  return ensureTrailingNewline(content);
+  if (result.problems.length > 0) throw new Error(result.problems.join('\n'));
+  return result.content;
 }
 
-export function coverageRowsFromCatalog(catalog: RuleCatalog): CoverageRow[] {
+function coverageRowsFromCatalog(catalog: ValidatedRuleCatalog): CoverageRow[] {
   const out = new Map<string, CoverageRow>();
   for (const entry of catalog.rules) {
     const row = {
@@ -154,7 +125,7 @@ export function coverageRowsFromCatalog(catalog: RuleCatalog): CoverageRow[] {
 }
 
 function coverageScopeFromCatalogScope(
-  scope: RuleCatalog['rules'][number]['checklist']['scope'],
+  scope: ValidatedRuleCatalog['rules'][number]['checklist']['scope'],
 ): CoverageScope {
   return scope === 'MUST when applicable' ? 'MwA' : scope;
 }
@@ -163,7 +134,7 @@ function count(rows: CoverageRow[], pred: (row: CoverageRow) => boolean): number
   return rows.filter(pred).length;
 }
 
-function coveragePillarsFromCatalog(catalog: RuleCatalog): CoveragePillar[] {
+function coveragePillarsFromCatalog(catalog: ValidatedRuleCatalog): CoveragePillar[] {
   return [...catalog.pillars]
     .sort((a, b) => a.number - b.number)
     .map((pillar) => ({
@@ -172,7 +143,7 @@ function coveragePillarsFromCatalog(catalog: RuleCatalog): CoveragePillar[] {
     }));
 }
 
-function coverageLevelsFromCatalog(catalog: RuleCatalog): CoverageLevel[] {
+function coverageLevelsFromCatalog(catalog: ValidatedRuleCatalog): CoverageLevel[] {
   return catalog.levels
     .filter((level) => level.id !== '—')
     .map((level) => ({
@@ -277,12 +248,8 @@ function blockCumulative(rows: CoverageRow[], levels: readonly CoverageLevel[]):
   return out.join('\n');
 }
 
-function ensureTrailingNewline(content: string): string {
-  return content.endsWith('\n') ? content : `${content}\n`;
-}
-
 function main(): void {
-  const catalog = loadCatalog();
+  const catalog = loadValidatedCatalog(CATALOG_PATH, CATALOG);
   const templateContent = fs.readFileSync(TEMPLATE_PATH, 'utf8');
   const content = renderCoverageMap(catalog, templateContent);
   if (process.argv.includes('--check')) {

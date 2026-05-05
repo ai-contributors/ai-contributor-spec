@@ -17,6 +17,11 @@
 //   - checklist `IDs` entries that don't exist in the spec (dangling refs)
 //   - spec IDs that do not appear in any checklist row
 //
+// The catalog is the canonical rule source, and the generated-asset checks
+// already verify projection freshness. This script intentionally remains a
+// rendered-artifact smoke check: it parses the shipped Markdown exactly where
+// adopters and auditors see visible IDs.
+//
 import fs from 'node:fs';
 import { parseChecklistRows } from './shared/checklist-parser.ts';
 import { parseNormativeIds, type SpecId } from './shared/spec-model.ts';

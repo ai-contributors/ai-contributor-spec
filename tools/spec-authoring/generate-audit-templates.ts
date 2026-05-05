@@ -9,12 +9,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import {
-  validateRuleCatalog,
-  type RuleCatalog,
-  type RuleCatalogLevel,
-} from './generate-rule-catalog.ts';
+import { type RuleCatalogLevel, type ValidatedRuleCatalog } from './generate-rule-catalog.ts';
 import { renderMarkdownTable } from '../../skills/ai-contributor-audit/scripts/internal/audit-markdown.ts';
+import { loadValidatedCatalog } from './shared/catalog-loader.ts';
+import {
+  renderTemplateDirectives,
+  type TemplateDirectiveRenderer,
+} from './shared/template-renderer.ts';
 
 const CATALOG = 'AI-CONTRIBUTOR-RULE-CATALOG.json';
 const AUDIT_SUMMARY = 'AI-CONTRIBUTOR-AUDIT.md';
@@ -28,7 +29,6 @@ const AUDIT_SUMMARY_PATH = path.join(REPO_ROOT, AUDIT_SUMMARY);
 const AUDIT_LOG_PATH = path.join(REPO_ROOT, AUDIT_LOG);
 const AUDIT_SUMMARY_TEMPLATE_PATH = path.join(REPO_ROOT, AUDIT_SUMMARY_TEMPLATE);
 const AUDIT_LOG_TEMPLATE_PATH = path.join(REPO_ROOT, AUDIT_LOG_TEMPLATE);
-const TEMPLATE_DIRECTIVE = /{{\s*([^{}]+?)\s*}}/g;
 
 interface AuditTemplateOutput {
   summaryContent: string;
@@ -39,29 +39,24 @@ interface AuditTemplateRenderResult extends AuditTemplateOutput {
   problems: string[];
 }
 
-type DirectiveRenderer = (catalog: RuleCatalog) => string;
+type DirectiveRenderer = (catalog: ValidatedRuleCatalog) => string;
 
 const AUDIT_SUMMARY_DIRECTIVES = {
   'generated:conformance-level-summary-rows': renderConformanceLevelSummaryRows,
 } satisfies Record<string, DirectiveRenderer>;
 
 const AUDIT_LOG_DIRECTIVES = {
-  specVersion: (catalog: RuleCatalog) => catalog.specVersion,
+  specVersion: (catalog: ValidatedRuleCatalog) => catalog.specVersion,
   'generated:conformance-level-values': renderConformanceLevelValues,
 } satisfies Record<string, DirectiveRenderer>;
 
 export function renderAuditTemplates(
-  catalog: RuleCatalog,
+  catalog: ValidatedRuleCatalog,
   templates: {
     summaryTemplateContent: string;
     auditLogTemplateContent: string;
   },
 ): AuditTemplateOutput {
-  const catalogProblems = validateRuleCatalog(catalog);
-  if (catalogProblems.length > 0) {
-    throw new Error(`Rule catalog validation failed:\n${catalogProblems.join('\n')}`);
-  }
-
   const result = renderAuditTemplateResult(catalog, templates);
   if (result.problems.length > 0) {
     throw new Error(result.problems.join('\n'));
@@ -72,15 +67,14 @@ export function renderAuditTemplates(
   };
 }
 
-export function auditTemplateProblems(input: {
-  catalog: RuleCatalog;
+function auditTemplateProblems(input: {
+  catalog: ValidatedRuleCatalog;
   summaryTemplateContent: string;
   auditLogTemplateContent: string;
   summaryContent: string;
   auditLogContent: string;
 }): string[] {
-  const problems = validateRuleCatalog(input.catalog);
-  if (problems.length > 0) return problems;
+  const problems: string[] = [];
 
   const result = renderAuditTemplateResult(input.catalog, {
     summaryTemplateContent: input.summaryTemplateContent,
@@ -101,7 +95,7 @@ export function auditTemplateProblems(input: {
 }
 
 function renderAuditTemplateResult(
-  catalog: RuleCatalog,
+  catalog: ValidatedRuleCatalog,
   templates: {
     summaryTemplateContent: string;
     auditLogTemplateContent: string;
@@ -112,7 +106,6 @@ function renderAuditTemplateResult(
     catalog,
     templateContent: templates.summaryTemplateContent,
     templatePath: AUDIT_SUMMARY_TEMPLATE,
-    label: 'audit summary template',
     directives: AUDIT_SUMMARY_DIRECTIVES,
     problems,
   });
@@ -120,7 +113,6 @@ function renderAuditTemplateResult(
     catalog,
     templateContent: templates.auditLogTemplateContent,
     templatePath: AUDIT_LOG_TEMPLATE,
-    label: 'audit log template',
     directives: AUDIT_LOG_DIRECTIVES,
     problems,
   });
@@ -133,53 +125,35 @@ function renderAuditTemplateResult(
 }
 
 function renderTemplate(input: {
-  catalog: RuleCatalog;
+  catalog: ValidatedRuleCatalog;
   templateContent: string;
   templatePath: string;
-  label: string;
   directives: Record<string, DirectiveRenderer>;
   problems: string[];
 }): string {
-  const usedDirectives = new Map<string, number>();
-  const content = input.templateContent.replace(TEMPLATE_DIRECTIVE, (marker, directive: string) => {
-    const directiveName = directive.trim();
-    const renderDirective = input.directives[directiveName];
-    if (!renderDirective) {
-      input.problems.push(
-        `${input.templatePath} contains unknown audit template directive {{${directiveName}}}.`,
-      );
-      return marker;
-    }
-    usedDirectives.set(directiveName, (usedDirectives.get(directiveName) ?? 0) + 1);
-    return renderDirective(input.catalog);
+  const directives: Record<string, TemplateDirectiveRenderer> = {};
+  for (const [directiveName, renderDirective] of Object.entries(input.directives)) {
+    directives[directiveName] = () => renderDirective(input.catalog);
+  }
+  const result = renderTemplateDirectives({
+    templateContent: input.templateContent,
+    directives,
+    requiredDirectives: Object.keys(input.directives),
+    messages: {
+      templatePath: input.templatePath,
+      directiveLabel: 'audit template directive',
+    },
   });
 
-  for (const directiveName of Object.keys(input.directives)) {
-    const count = usedDirectives.get(directiveName) ?? 0;
-    if (count === 0) {
-      input.problems.push(`No ${input.label} directive found for ${directiveName}.`);
-    } else if (count > 1) {
-      input.problems.push(
-        `${input.label} contains ${count} template directives for ${directiveName}.`,
-      );
-    }
-  }
-
-  if (TEMPLATE_DIRECTIVE.test(content)) {
-    input.problems.push(
-      `${input.templatePath} rendered output still contains unresolved directives.`,
-    );
-  }
-  TEMPLATE_DIRECTIVE.lastIndex = 0;
-
-  return ensureTrailingNewline(content);
+  input.problems.push(...result.problems);
+  return result.content;
 }
 
-function renderConformanceLevelValues(catalog: RuleCatalog): string {
+function renderConformanceLevelValues(catalog: ValidatedRuleCatalog): string {
   return conformanceLevelsFromCatalog(catalog).map(conformanceLevelValue).join(', ');
 }
 
-function renderConformanceLevelSummaryRows(catalog: RuleCatalog): string {
+function renderConformanceLevelSummaryRows(catalog: ValidatedRuleCatalog): string {
   return renderMarkdownTable(
     ['Level', 'Status', 'Date reached', 'Notes'],
     conformanceLevelsFromCatalog(catalog).map((level) => [
@@ -193,7 +167,7 @@ function renderConformanceLevelSummaryRows(catalog: RuleCatalog): string {
     .join('\n');
 }
 
-function conformanceLevelsFromCatalog(catalog: RuleCatalog): RuleCatalogLevel[] {
+function conformanceLevelsFromCatalog(catalog: ValidatedRuleCatalog): RuleCatalogLevel[] {
   return catalog.levels
     .filter((level) => level.id !== '—')
     .sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
@@ -209,21 +183,8 @@ function conformanceLevelValue(level: RuleCatalogLevel): string {
   return m ? m[1]! : level.id;
 }
 
-function ensureTrailingNewline(content: string): string {
-  return content.endsWith('\n') ? content : `${content}\n`;
-}
-
-function loadCatalog(): RuleCatalog {
-  const catalog = JSON.parse(fs.readFileSync(CATALOG_PATH, 'utf8')) as RuleCatalog;
-  const problems = validateRuleCatalog(catalog);
-  if (problems.length > 0) {
-    throw new Error(`Invalid ${CATALOG}:\n${problems.map((problem) => `- ${problem}`).join('\n')}`);
-  }
-  return catalog;
-}
-
 function main(): void {
-  const catalog = loadCatalog();
+  const catalog = loadValidatedCatalog(CATALOG_PATH, CATALOG);
   const summaryTemplateContent = fs.readFileSync(AUDIT_SUMMARY_TEMPLATE_PATH, 'utf8');
   const auditLogTemplateContent = fs.readFileSync(AUDIT_LOG_TEMPLATE_PATH, 'utf8');
 

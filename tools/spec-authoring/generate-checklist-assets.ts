@@ -9,12 +9,16 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
-  validateRuleCatalog,
-  type RuleCatalog,
   type RuleCatalogEntry,
   type RuleCatalogLevel,
+  type ValidatedRuleCatalog,
 } from './generate-rule-catalog.ts';
 import { renderMarkdownTable } from '../../skills/ai-contributor-audit/scripts/internal/audit-markdown.ts';
+import { loadValidatedCatalog } from './shared/catalog-loader.ts';
+import {
+  renderTemplateDirectives,
+  type TemplateDirectiveRenderer,
+} from './shared/template-renderer.ts';
 
 const CATALOG = 'AI-CONTRIBUTOR-RULE-CATALOG.json';
 const CHECKLIST = '.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md';
@@ -24,7 +28,6 @@ const REPO_ROOT = path.resolve(HERE, '..', '..');
 const CATALOG_PATH = path.join(REPO_ROOT, CATALOG);
 const CHECKLIST_PATH = path.join(REPO_ROOT, CHECKLIST);
 const TEMPLATE_PATH = path.join(REPO_ROOT, TEMPLATE);
-const TEMPLATE_DIRECTIVE = /{{\s*([^{}]+?)\s*}}/g;
 
 const SCOPE_ORDER = ['MUST', 'MUST when applicable', 'SHOULD', 'MAY'];
 const CHECKLIST_HEADER = '| Scope | Rule | A | Status | Comment | Requirement | Pillar | IDs |';
@@ -49,15 +52,7 @@ interface RenderResult {
   problems: string[];
 }
 
-interface RenderContext {
-  usedSpecVersion: number;
-  usedConformanceLevelValues: number;
-  usedConformanceLevelSummaryRows: number;
-  usedConformanceLevelBullets: number;
-  usedRuleTables: number;
-}
-
-export function renderChecklistRuleTables(catalog: RuleCatalog): string {
+function renderChecklistRuleTables(catalog: ValidatedRuleCatalog): string {
   const rows = checklistRowsFromCatalog(catalog);
   const lines = [
     '## Checklist row tables',
@@ -106,12 +101,10 @@ export function renderChecklistRuleTables(catalog: RuleCatalog): string {
   return `${lines.join('\n')}\n\n`;
 }
 
-export function renderChecklistAssets(catalog: RuleCatalog, templateContent: string): string {
-  const catalogProblems = validateRuleCatalog(catalog);
-  if (catalogProblems.length > 0) {
-    throw new Error(`Rule catalog validation failed:\n${catalogProblems.join('\n')}`);
-  }
-
+export function renderChecklistAssets(
+  catalog: ValidatedRuleCatalog,
+  templateContent: string,
+): string {
   const result = renderChecklistResult(catalog, templateContent);
   if (result.problems.length > 0) {
     throw new Error(result.problems.join('\n'));
@@ -119,13 +112,12 @@ export function renderChecklistAssets(catalog: RuleCatalog, templateContent: str
   return result.content;
 }
 
-export function checklistAssetProblems(input: {
-  catalog: RuleCatalog;
+function checklistAssetProblems(input: {
+  catalog: ValidatedRuleCatalog;
   templateContent: string;
   checklistContent: string;
 }): string[] {
-  const problems = validateRuleCatalog(input.catalog);
-  if (problems.length > 0) return problems;
+  const problems: string[] = [];
 
   const result = renderChecklistResult(input.catalog, input.templateContent);
   problems.push(...result.problems);
@@ -138,96 +130,40 @@ export function checklistAssetProblems(input: {
   return problems;
 }
 
-function renderChecklistResult(catalog: RuleCatalog, templateContent: string): RenderResult {
-  const problems: string[] = [];
-  const context: RenderContext = {
-    usedSpecVersion: 0,
-    usedConformanceLevelValues: 0,
-    usedConformanceLevelSummaryRows: 0,
-    usedConformanceLevelBullets: 0,
-    usedRuleTables: 0,
+function renderChecklistResult(
+  catalog: ValidatedRuleCatalog,
+  templateContent: string,
+): RenderResult {
+  const directives: Record<string, TemplateDirectiveRenderer> = {
+    specVersion: () => catalog.specVersion,
+    'generated:conformance-level-values': () => renderConformanceLevelValues(catalog),
+    'generated:conformance-level-summary-rows': () => renderConformanceLevelSummaryRows(catalog),
+    'generated:conformance-level-bullets': () => renderConformanceLevelBullets(catalog),
+    'generated:checklist-rule-tables': () => renderChecklistRuleTables(catalog).trimEnd(),
   };
-  const content = templateContent.replace(TEMPLATE_DIRECTIVE, (marker, directive: string) => {
-    const rendered = renderDirective(catalog, context, directive.trim(), problems);
-    return rendered ?? marker;
+  const result = renderTemplateDirectives({
+    templateContent,
+    directives,
+    requiredDirectives: [
+      'specVersion',
+      'generated:conformance-level-values',
+      'generated:conformance-level-summary-rows',
+      'generated:conformance-level-bullets',
+      'generated:checklist-rule-tables',
+    ],
+    messages: {
+      templatePath: TEMPLATE,
+      directiveLabel: 'checklist template directive',
+    },
   });
 
-  validateDirectiveCoverage(context, problems);
-  if (TEMPLATE_DIRECTIVE.test(content)) {
-    problems.push(`${TEMPLATE} rendered output still contains unresolved template directives.`);
-  }
-  TEMPLATE_DIRECTIVE.lastIndex = 0;
-
   return {
-    content: ensureTrailingNewline(content),
-    problems,
+    content: result.content,
+    problems: result.problems,
   };
 }
 
-function renderDirective(
-  catalog: RuleCatalog,
-  context: RenderContext,
-  directive: string,
-  problems: string[],
-): string | null {
-  if (directive === 'specVersion') {
-    context.usedSpecVersion++;
-    return catalog.specVersion;
-  }
-
-  if (directive === 'generated:conformance-level-values') {
-    context.usedConformanceLevelValues++;
-    return renderConformanceLevelValues(catalog);
-  }
-
-  if (directive === 'generated:conformance-level-summary-rows') {
-    context.usedConformanceLevelSummaryRows++;
-    return renderConformanceLevelSummaryRows(catalog);
-  }
-
-  if (directive === 'generated:conformance-level-bullets') {
-    context.usedConformanceLevelBullets++;
-    return renderConformanceLevelBullets(catalog);
-  }
-
-  if (directive === 'generated:checklist-rule-tables') {
-    context.usedRuleTables++;
-    return renderChecklistRuleTables(catalog).trimEnd();
-  }
-
-  problems.push(`${TEMPLATE} contains unknown checklist template directive {{${directive}}}.`);
-  return null;
-}
-
-function validateDirectiveCoverage(context: RenderContext, problems: string[]): void {
-  validateSingleton('specVersion', context.usedSpecVersion, problems);
-  validateSingleton(
-    'generated:conformance-level-values',
-    context.usedConformanceLevelValues,
-    problems,
-  );
-  validateSingleton(
-    'generated:conformance-level-summary-rows',
-    context.usedConformanceLevelSummaryRows,
-    problems,
-  );
-  validateSingleton(
-    'generated:conformance-level-bullets',
-    context.usedConformanceLevelBullets,
-    problems,
-  );
-  validateSingleton('generated:checklist-rule-tables', context.usedRuleTables, problems);
-}
-
-function validateSingleton(name: string, count: number, problems: string[]): void {
-  if (count === 0) {
-    problems.push(`No checklist template directive found for ${name}.`);
-  } else if (count > 1) {
-    problems.push(`${TEMPLATE} contains ${count} checklist template directives for ${name}.`);
-  }
-}
-
-function checklistRowsFromCatalog(catalog: RuleCatalog): ChecklistAssetRow[] {
+function checklistRowsFromCatalog(catalog: ValidatedRuleCatalog): ChecklistAssetRow[] {
   const rows = new Map<string, ChecklistAssetRowData>();
 
   for (const entry of catalog.rules) {
@@ -308,11 +244,11 @@ function assertSameRowMetadata(row: ChecklistAssetRowData, entry: RuleCatalogEnt
   }
 }
 
-function renderConformanceLevelValues(catalog: RuleCatalog): string {
+function renderConformanceLevelValues(catalog: ValidatedRuleCatalog): string {
   return conformanceLevelsFromCatalog(catalog).map(conformanceLevelValue).join(', ');
 }
 
-function renderConformanceLevelSummaryRows(catalog: RuleCatalog): string {
+function renderConformanceLevelSummaryRows(catalog: ValidatedRuleCatalog): string {
   return renderMarkdownTable(
     ['Level', 'Status', 'Date reached', 'Notes'],
     conformanceLevelsFromCatalog(catalog).map((level) => [
@@ -326,13 +262,13 @@ function renderConformanceLevelSummaryRows(catalog: RuleCatalog): string {
     .join('\n');
 }
 
-function renderConformanceLevelBullets(catalog: RuleCatalog): string {
+function renderConformanceLevelBullets(catalog: ValidatedRuleCatalog): string {
   return conformanceLevelsFromCatalog(catalog)
     .map((level) => `- **${levelDisplayName(level)}:** ${level.description}`)
     .join('\n');
 }
 
-function conformanceLevelsFromCatalog(catalog: RuleCatalog): RuleCatalogLevel[] {
+function conformanceLevelsFromCatalog(catalog: ValidatedRuleCatalog): RuleCatalogLevel[] {
   return catalog.levels
     .filter((level) => level.id !== '—')
     .sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
@@ -360,12 +296,8 @@ function escapeMarkdownCell(value: string): string {
   return value.replace(/\|/g, '\\|');
 }
 
-function ensureTrailingNewline(content: string): string {
-  return content.endsWith('\n') ? content : `${content}\n`;
-}
-
 function main(): void {
-  const catalog = JSON.parse(fs.readFileSync(CATALOG_PATH, 'utf8')) as RuleCatalog;
+  const catalog = loadValidatedCatalog(CATALOG_PATH, CATALOG);
   const templateContent = fs.readFileSync(TEMPLATE_PATH, 'utf8');
   const checklistContent = fs.readFileSync(CHECKLIST_PATH, 'utf8');
   const problems = checklistAssetProblems({ catalog, templateContent, checklistContent });

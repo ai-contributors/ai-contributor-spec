@@ -79,14 +79,22 @@ Common focused commands:
 | Command | Purpose |
 | --- | --- |
 | `npm --prefix tools run check:ci-local` | Run the locally reproducible PR gates: aggregate repository check, audit-runtime coverage gate, and TypeScript pnpm scaffold verification. |
+| `npm --prefix tools run check:quality` | Run TypeScript, ESLint, and Prettier checks. |
+| `npm --prefix tools run check:docs` | Run the full documentation guardrail group. |
+| `npm --prefix tools run check:docs-core` | Run core documentation checks for links, clause references, hints, pillar structure, evergreen wording, and stamped blocks. |
+| `npm --prefix tools run check:docs-release` | Run release and tooling documentation checks for version alignment, runbook paths, audit-flow docs, and command coverage. |
+| `npm --prefix tools run check:docs-audit` | Run audit-frontmatter documentation alignment checks. |
+| `npm --prefix tools run check:catalog-assets` | Run catalog, generated projection, checklist, coverage, and conformance-level checks. |
+| `npm --prefix tools run check:audit-runtime` | Run the repository audit-template validation check. |
+| `npm --prefix tools run check:test-suite` | Run the test shard reachability check plus the aggregate test suite. |
 | `npm --prefix tools run typecheck` | Typecheck `tools/` plus the skill audit runtime. |
 | `npm --prefix tools run check:template-scaffold` | Verify the TypeScript pnpm reference scaffold with install, typecheck, lint, format check, tests, and build. |
 | `npm --prefix tools run check:markdown` | Lint tracked Markdown files. |
 | `npm --prefix tools run check:links` | Check internal Markdown links and anchors. |
 | `npm --prefix tools run check:clauses` | Check that `§N` references resolve to real spec clauses. |
 | `npm --prefix tools run check:hints` | Check example hint headings against their clause index. |
-| `npm --prefix tools run check:checklist-pillars` | Check checklist rows sit under the pillar that owns their visible IDs. |
-| `npm --prefix tools run check:normative-ids` | Verify every normative bullet has a valid visible `AIC-*` ID. |
+| `npm --prefix tools run check:checklist-pillars` | Smoke-check rendered checklist rows against visible spec IDs, pillar headings, and catalog row bindings. |
+| `npm --prefix tools run check:normative-ids` | Smoke-check rendered specification bullets and checklist rows for visible `AIC-*` ID coverage. |
 | `npm --prefix tools run check:row-scope-vs-spec` | Check checklist row scopes against the referenced spec IDs. |
 | `npm --prefix tools run check:collector-row-coverage` | Check collector mappings do not stamp partial multi-ID rows. |
 | `npm --prefix tools run check:audit-evidence` | Cross-check audit-log evidence IDs against fulfilled checklist rows. |

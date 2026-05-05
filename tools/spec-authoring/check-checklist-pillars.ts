@@ -11,11 +11,18 @@
 // Pillar membership is derived from `### Pillar N — …` headings in
 // AI-CONTRIBUTOR-SPECIFICATION.md, so a clause renumber reshapes the map
 // automatically.
+//
+// The catalog is the canonical rule source, and the generated-asset checks
+// already verify projection freshness. This script intentionally remains a
+// rendered-artifact smoke check: it validates the visible checklist IDs and
+// pillar values in the shipped Markdown, then compares the row bindings back
+// to the catalog.
 
 import fs from 'node:fs';
 import { parseChecklistRows, type ChecklistScope } from './shared/checklist-parser.ts';
 import { clauseToPillar, specIdMap, validMinLevels } from './shared/spec-model.ts';
-import { validateRuleCatalog, type RuleCatalog } from './generate-rule-catalog.ts';
+import type { ValidatedRuleCatalog } from './generate-rule-catalog.ts';
+import { loadValidatedCatalog } from './shared/catalog-loader.ts';
 
 const SPEC = 'AI-CONTRIBUTOR-SPECIFICATION.md';
 const CATALOG = 'AI-CONTRIBUTOR-RULE-CATALOG.json';
@@ -24,12 +31,11 @@ const CHECKLIST = '.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md';
 type Scope = ChecklistScope;
 type ChecklistRow = ReturnType<typeof parseChecklistRows>[number];
 
-function catalogIdBindings(catalog: RuleCatalog, problems: string[]): Map<string, string[]> {
+function catalogIdBindings(
+  catalog: ValidatedRuleCatalog,
+  problems: string[],
+): Map<string, string[]> {
   const bindings = new Map<string, string[]>();
-  for (const problem of validateRuleCatalog(catalog)) {
-    problems.push(`${CATALOG}: ${problem}`);
-  }
-
   for (const entry of catalog.rules) {
     const ids = bindings.get(entry.checklist.rule) ?? [];
     if (ids.includes(entry.id)) {
@@ -47,7 +53,7 @@ function catalogIdBindings(catalog: RuleCatalog, problems: string[]): Map<string
 const specText = fs.readFileSync(SPEC, 'utf8');
 const c2p = clauseToPillar(specText);
 const idMap = specIdMap(specText);
-const catalog = JSON.parse(fs.readFileSync(CATALOG, 'utf8')) as RuleCatalog;
+const catalog = loadValidatedCatalog(CATALOG, CATALOG);
 const checklistText = fs.readFileSync(CHECKLIST, 'utf8');
 const rows: ChecklistRow[] = parseChecklistRows(checklistText);
 const problems: string[] = [];

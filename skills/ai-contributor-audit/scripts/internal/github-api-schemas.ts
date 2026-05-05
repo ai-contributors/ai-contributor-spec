@@ -13,14 +13,14 @@
 // reason; callers downgrade to a verification gap with the reason recorded
 // when validation fails — they do not silently coerce.
 
-export type ValidationResult<T> = { ok: true; value: T } | { ok: false; reason: string };
+type ValidationResult<T> = { ok: true; value: T } | { ok: false; reason: string };
 
-export interface RuleSummaryEntry {
+interface RuleSummaryEntry {
   type: string;
   parameters?: Record<string, unknown>;
 }
 
-export interface BranchProtectionShape {
+interface BranchProtectionShape {
   required_status_checks?: { contexts?: unknown };
   required_pull_request_reviews?: {
     required_approving_review_count?: number;
@@ -30,16 +30,16 @@ export interface BranchProtectionShape {
   restrictions?: unknown;
 }
 
-export interface RepoMetadataShape {
+interface RepoMetadataShape {
   security_and_analysis?: Record<string, { status?: string } | undefined>;
 }
 
-export interface DeploymentEnvironmentShape {
+interface DeploymentEnvironmentShape {
   name?: string;
   protection_rules?: Array<{ type?: string; reviewers?: unknown[] }>;
 }
 
-export interface DeploymentEnvironmentsShape {
+interface DeploymentEnvironmentsShape {
   environments?: DeploymentEnvironmentShape[];
 }
 

@@ -5,18 +5,14 @@
 // row from partial evidence. A row is safe to stamp only when every visible
 // AIC-* ID in that row has decisive collector evidence.
 
-import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
   decisiveRulesByAic,
   expectedCollectorStamp,
 } from '../../skills/ai-contributor-audit/scripts/internal/audit-evidence.ts';
-import {
-  collectorAicIdsFromCatalog,
-  validateRuleCatalog,
-  type RuleCatalog,
-} from './generate-rule-catalog.ts';
+import { collectorAicIdsFromCatalog, type ValidatedRuleCatalog } from './generate-rule-catalog.ts';
+import { loadValidatedCatalog } from './shared/catalog-loader.ts';
 
 const CATALOG = 'AI-CONTRIBUTOR-RULE-CATALOG.json';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -53,13 +49,7 @@ const ALLOWED_PARTIAL_ROWS = new Map<string, string[]>([
 ]);
 
 function main(): void {
-  const catalog = JSON.parse(fs.readFileSync(CATALOG_PATH, 'utf8')) as RuleCatalog;
-  const catalogProblems = validateRuleCatalog(catalog);
-  if (catalogProblems.length > 0) {
-    console.error(`${CATALOG} is invalid:`);
-    for (const problem of catalogProblems) console.error(`- ${problem}`);
-    process.exit(1);
-  }
+  const catalog = loadValidatedCatalog(CATALOG_PATH, CATALOG);
   const problems = collectorRowCoverageProblemsFromCatalog(catalog);
 
   if (problems.length) {
@@ -75,7 +65,7 @@ function main(): void {
 }
 
 export function collectorRowCoverageProblemsFromCatalog(
-  catalog: RuleCatalog,
+  catalog: ValidatedRuleCatalog,
   options: CollectorCoverageOptions = {},
 ): string[] {
   const rows = collectorRowsFromCatalog(catalog);
@@ -130,7 +120,7 @@ export function collectorRowCoverageProblemsFromCatalog(
   return problems;
 }
 
-function collectorRowsFromCatalog(catalog: RuleCatalog): CollectorChecklistRow[] {
+function collectorRowsFromCatalog(catalog: ValidatedRuleCatalog): CollectorChecklistRow[] {
   const rows = new Map<string, CollectorChecklistRow>();
   for (const entry of catalog.rules) {
     const key = `${entry.level}\0${entry.checklist.rule}`;

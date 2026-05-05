@@ -24,7 +24,7 @@
     },
     "specVersion": {
       "type": "string",
-      "minLength": 1
+      "pattern": "\\S"
     },
     "sourceOfTruth": {
       "const": "AI-CONTRIBUTOR-RULE-CATALOG.json"
@@ -36,19 +36,19 @@
       "properties": {
         "specification": {
           "type": "string",
-          "minLength": 1
+          "pattern": "\\S"
         },
         "checklist": {
           "type": "string",
-          "minLength": 1
+          "pattern": "\\S"
         },
         "coverage": {
           "type": "string",
-          "minLength": 1
+          "pattern": "\\S"
         },
         "collectorRegistry": {
           "type": "string",
-          "minLength": 1
+          "pattern": "\\S"
         }
       }
     },
@@ -65,15 +65,16 @@
             "minimum": 1
           },
           "icon": {
-            "type": "string"
+            "type": "string",
+            "pattern": "\\S"
           },
           "title": {
             "type": "string",
-            "minLength": 1
+            "pattern": "\\S"
           },
           "description": {
             "type": "string",
-            "minLength": 1
+            "pattern": "\\S"
           }
         }
       }
@@ -96,15 +97,15 @@
           },
           "label": {
             "type": "string",
-            "minLength": 1
+            "pattern": "\\S"
           },
           "description": {
             "type": "string",
-            "minLength": 1
+            "pattern": "\\S"
           },
           "workflowSummary": {
             "type": "string",
-            "minLength": 1
+            "pattern": "\\S"
           }
         }
       }
@@ -127,7 +128,7 @@
           },
           "title": {
             "type": "string",
-            "minLength": 1
+            "pattern": "\\S"
           }
         }
       }
@@ -171,7 +172,7 @@
           },
           "text": {
             "type": "string",
-            "minLength": 1
+            "pattern": "\\S"
           },
           "checklist": {
             "type": "object",
@@ -180,14 +181,14 @@
             "properties": {
               "rule": {
                 "type": "string",
-                "minLength": 1
+                "pattern": "\\S"
               },
               "scope": {
                 "enum": ["MUST", "MUST when applicable", "SHOULD", "MAY"]
               },
               "requirement": {
                 "type": "string",
-                "minLength": 1
+                "pattern": "\\S"
               }
             }
           },
@@ -203,14 +204,14 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "minLength": 1
+                      "pattern": "\\S"
                     },
                     "kind": {
                       "const": "collector-rule"
                     },
                     "path": {
                       "type": "string",
-                      "minLength": 1
+                      "pattern": "\\S"
                     }
                   }
                 },
@@ -221,14 +222,14 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "minLength": 1
+                      "pattern": "\\S"
                     },
                     "kind": {
                       "const": "manual"
                     },
                     "manualEvidence": {
                       "type": "string",
-                      "minLength": 1
+                      "pattern": "\\S"
                     }
                   }
                 }

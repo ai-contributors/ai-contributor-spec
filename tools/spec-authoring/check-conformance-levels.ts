@@ -8,7 +8,7 @@
 // of drift Copilot flagged after the Level 0 rollout.
 
 import fs from 'node:fs';
-import type { RuleCatalog } from './generate-rule-catalog.ts';
+import { loadValidatedCatalog } from './shared/catalog-loader.ts';
 
 interface Source {
   path: string;
@@ -35,9 +35,10 @@ const SOURCES: Source[] = [
 ];
 
 function canonicalLevels(): string[] {
-  const catalog = JSON.parse(
-    fs.readFileSync('AI-CONTRIBUTOR-RULE-CATALOG.json', 'utf8'),
-  ) as RuleCatalog;
+  const catalog = loadValidatedCatalog(
+    'AI-CONTRIBUTOR-RULE-CATALOG.json',
+    'AI-CONTRIBUTOR-RULE-CATALOG.json',
+  );
   const numericLevels = catalog.levels
     .filter((level) => /^L\d+$/.test(level.id))
     .sort((a, b) => a.order - b.order || a.id.localeCompare(b.id))
