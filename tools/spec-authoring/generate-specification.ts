@@ -240,7 +240,7 @@ function ruleGroupKey(clause: number, scope: SpecScope): string {
 }
 
 function markdownTableCell(value: string): string {
-  return value.replace(/\|/g, '\\|');
+  return value.replace(/\\/g, '\\\\').replace(/\|/g, '\\|');
 }
 
 function main(): void {
