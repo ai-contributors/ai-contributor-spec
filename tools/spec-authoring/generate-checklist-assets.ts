@@ -293,7 +293,7 @@ function renderChecklistTableRow(row: ChecklistAssetRow): string {
 }
 
 function escapeMarkdownCell(value: string): string {
-  return value.replace(/\|/g, '\\|');
+  return value.replace(/\\/g, '\\\\').replace(/\|/g, '\\|');
 }
 
 function main(): void {
