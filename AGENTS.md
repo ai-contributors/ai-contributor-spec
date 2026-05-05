@@ -124,7 +124,8 @@ from a CODEOWNER on the relevant path:
 - **No new runtime dependencies** in `tools/` or `skills/ai-contributor-audit/scripts/` without maintainer approval — the runbook MUST stay reproducible from a SHA-pinned bootstrap.
 - **No outbound network calls from runbook scripts except the documented bootstrap fetch/staleness probe and explicit GitHub hosted-setting collection through `gh` when network collection is enabled.**
 - **No edits to `.github/workflows/` or `.github/CODEOWNERS`** without explicit maintainer approval — these are the gate definitions.
-- **No regenerating `AI-CONTRIBUTOR-COVERAGE.md` by hand**; use `npm --prefix tools run generate:coverage`.
+- **No regenerating generated Markdown by hand**; use the matching
+  `generate:*` command for the catalog/template source you changed.
 - **No deletion or rewrite of audit evidence files** (`.ai-contributor-audit/AI-CONTRIBUTOR-EVIDENCE.json` once produced) outside a re-audit run.
 
 When in doubt, ask in the PR before acting. "Asking" means leaving a comment
@@ -403,7 +404,8 @@ A change is ready to merge when:
    accounts do not satisfy required-review counts.
 4. AI-authored contributions disclose the model/agent in the PR body.
 5. Normative changes carry the matching version bump and `CHANGELOG.md`
-   entry, with `AI-CONTRIBUTOR-COVERAGE.md` regenerated.
+   entry, with every affected generated projection refreshed from the catalog
+   and templates.
 
 ## Policy ownership
 

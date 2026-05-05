@@ -2,8 +2,12 @@
 
 Thanks for considering a contribution. This repository maintains:
 
-- the normative specification: [`AI-CONTRIBUTOR-SPECIFICATION.md`](AI-CONTRIBUTOR-SPECIFICATION.md)
-- the companion checklist: [`.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md`](.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md)
+- the canonical rule and document metadata catalog:
+  [`AI-CONTRIBUTOR-RULE-CATALOG.json`](AI-CONTRIBUTOR-RULE-CATALOG.json)
+- the generated normative specification:
+  [`AI-CONTRIBUTOR-SPECIFICATION.md`](AI-CONTRIBUTOR-SPECIFICATION.md)
+- the generated companion checklist:
+  [`.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md`](.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md)
 - the step-by-step GitHub + TypeScript + web guide: [`AI-CONTRIBUTOR-GUIDE.md`](AI-CONTRIBUTOR-GUIDE.md)
 - the repository tooling described in [`TOOLING.md`](TOOLING.md)
 
@@ -11,13 +15,18 @@ Contributions should improve clarity, tighten requirements, close real gaps, ref
 
 ## Low-barrier contribution path
 
-For a small editorial improvement:
+For a small editorial improvement to a hand-authored document:
 
 1. Edit only the affected document.
 2. Run `npm --prefix tools run check`.
 3. Open a focused pull request and explain what became clearer.
 
-For any change that adds, removes, promotes, demotes, or renames a requirement, follow the full process below. Those changes are normative. The specification, checklist, audit-log template, guide, README, and changelog must stay aligned.
+For a small editorial improvement to generated output, edit the source template
+under `tools/spec-authoring/templates/`, regenerate the projection, then run
+the relevant check. For any change that adds, removes, promotes, demotes, or
+renames a requirement, follow the full process below. Those changes are
+normative. The catalog, generated projections, guide, README, and changelog
+must stay aligned.
 
 ## Scope
 
@@ -26,7 +35,8 @@ In scope:
 - Corrections, clarifications, and tightening of existing clauses.
 - New `MUST`, `SHOULD`, or `MAY` items that address a credible, recurring risk in AI-assisted development.
 - Better definitions, examples, or cross-references.
-- Keeping the checklist and the specification synchronized.
+- Keeping the catalog, generated projections, checklist, and specification
+  synchronized.
 
 Out of scope:
 
@@ -39,8 +49,29 @@ Out of scope:
 
 1. **Open an issue first** for anything beyond a typo or minor wording fix. Describe the risk or ambiguity and the outcome you want. This avoids duplicate work and lets review start before drafting.
 2. **Submit a pull request** referencing the issue. Keep PRs focused — one change of substance per PR.
-3. **Update the specification, audit summary, checklist, and audit-log template together.** If a clause in `AI-CONTRIBUTOR-SPECIFICATION.md` changes, update `.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md` in the same PR. Keep `AI-CONTRIBUTOR-AUDIT.md` and `.ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-LOG.md` aligned with the checklist, even if their bodies do not change.
-4. **Bump versions for normative changes.** Update `spec_version` in `.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md` and `.ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-LOG.md`. Update the **Version** field in `AI-CONTRIBUTOR-SPECIFICATION.md`, `AI-CONTRIBUTOR-GUIDE.md`, and `README.md`. Add a matching [`CHANGELOG.md`](CHANGELOG.md) entry with the release date and a short summary. Specification versions use the compact notation defined in [`CHANGELOG.md`](CHANGELOG.md): patch-zero releases are `MAJOR.MINOR`, while real patch releases are `MAJOR.MINOR.PATCH`. Purely editorial changes do not need a version bump. Adopter-filled frontmatter fields stay empty in this repository, with their inline hint comments preserved.
+3. **Update source files, then regenerate projections.** Structured rule facts
+   and document metadata belong in
+   [`AI-CONTRIBUTOR-RULE-CATALOG.json`](AI-CONTRIBUTOR-RULE-CATALOG.json).
+   Long-form prose and placement belong in the relevant Markdown template under
+   `tools/spec-authoring/templates/`. Do not hand-edit generated specification,
+   coverage, checklist, root audit summary, or audit-log output to make a
+   normative change.
+4. **Keep generated artifacts aligned.** If the catalog or a source template
+   changes, run the matching generator: `generate:rule-catalog`,
+   `generate:specification`, `generate:coverage`, `generate:checklist-assets`,
+   or `generate:audit-templates`. The PR should include both the source edit
+   and the regenerated projection.
+5. **Bump versions for normative changes.** Update `specVersion` in
+   `AI-CONTRIBUTOR-RULE-CATALOG.json`; rerun the generators so generated
+   `Version` and `spec_version` fields update from the catalog. Update the
+   hand-authored **Version** fields in `AI-CONTRIBUTOR-GUIDE.md` and
+   `README.md`. Add a matching [`CHANGELOG.md`](CHANGELOG.md) entry with the
+   release date and a short summary. Specification versions use the compact
+   notation defined in [`CHANGELOG.md`](CHANGELOG.md): patch-zero releases are
+   `MAJOR.MINOR`, while real patch releases are `MAJOR.MINOR.PATCH`. Purely
+   editorial changes do not need a version bump. Adopter-filled frontmatter
+   fields stay empty in this repository, with their inline hint comments
+   preserved.
 
 ## Local validation
 
@@ -76,15 +107,20 @@ npm --prefix tools run check
 
 It typechecks scripts, checks Markdown links and anchors, validates clause
 references, stack hints, checklist metadata, pillar tables, and evergreen
-wording, and fails if generated coverage tables are stale.
+wording, and fails if generated projections are stale.
 
 For the architecture behind the script layer and the purpose of each tooling
 directory, see [`TOOLING.md`](TOOLING.md).
 
-To refresh only the generated coverage tables, run:
+To refresh generated projections after editing catalog or template sources, run
+the relevant generator:
 
 ```sh
+npm --prefix tools run generate:rule-catalog
+npm --prefix tools run generate:specification
 npm --prefix tools run generate:coverage
+npm --prefix tools run generate:checklist-assets
+npm --prefix tools run generate:audit-templates
 ```
 
 ## AI-authored contributions
@@ -133,20 +169,54 @@ If a PR is a mix, such as a typo fix plus a new `MUST`, pick the highest bump it
 
 Before version `1.0`, breaking changes may be released in minor versions. SemVer allows this below `1.0`. From `1.0` onward, breaking changes use a major bump only. Every release MUST be tagged so adopters can pin the audit skill and specification to an immutable version.
 
-### Files to update on every normative PR
+### Source files and projections for every normative PR
 
-Keep this list in the PR checklist — drift between these files is the most common maintenance failure.
+Keep this list in the PR checklist — drift between source files and generated
+projections is the most common maintenance failure.
 
-- [`AI-CONTRIBUTOR-SPECIFICATION.md`](AI-CONTRIBUTOR-SPECIFICATION.md) — the clause itself; bump the **Version** field at the top.
-- [`AI-CONTRIBUTOR-AUDIT.md`](AI-CONTRIBUTOR-AUDIT.md) — root-level summary template; keep it aligned with the conformance summary in the full checklist.
-- [`.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md`](.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md) — mirror the clause change into a checklist row; bump `spec_version` in the YAML frontmatter.
-- [`.ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-LOG.md`](.ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-LOG.md) — bump `spec_version` in the YAML frontmatter so it stays aligned with the checklist, even if the body did not change.
-- [`AI-CONTRIBUTOR-GUIDE.md`](AI-CONTRIBUTOR-GUIDE.md) — bump the **Version** field at the top; update any step that references the changed clause.
-- [`README.md`](README.md) — bump the **Version** field at the top.
+- [`AI-CONTRIBUTOR-RULE-CATALOG.json`](AI-CONTRIBUTOR-RULE-CATALOG.json) —
+  canonical structured facts: specification version, pillars, clauses,
+  conformance levels, `AIC-*` IDs, normative text, checklist row metadata,
+  coverage projections, and detector linkage.
+- [`tools/spec-authoring/templates/AI-CONTRIBUTOR-SPECIFICATION.md.template`](tools/spec-authoring/templates/AI-CONTRIBUTOR-SPECIFICATION.md.template)
+  — hand-authored specification prose and placement directives.
+- [`tools/spec-authoring/templates/AI-CONTRIBUTOR-COVERAGE.md.template`](tools/spec-authoring/templates/AI-CONTRIBUTOR-COVERAGE.md.template)
+  — hand-authored coverage-map prose and placement directives.
+- [`tools/spec-authoring/templates/AI-CONTRIBUTOR-CHECKLIST.md.template`](tools/spec-authoring/templates/AI-CONTRIBUTOR-CHECKLIST.md.template)
+  — checklist instructions, frontmatter comments, template-only auditor blocks,
+  and placement directives.
+- [`tools/spec-authoring/templates/AI-CONTRIBUTOR-AUDIT.md.template`](tools/spec-authoring/templates/AI-CONTRIBUTOR-AUDIT.md.template)
+  and
+  [`tools/spec-authoring/templates/AI-CONTRIBUTOR-AUDIT-LOG.md.template`](tools/spec-authoring/templates/AI-CONTRIBUTOR-AUDIT-LOG.md.template)
+  — root audit summary and audit-log prose, frontmatter comments, stamped-block
+  markers, and placement directives.
+- Generated projections:
+  [`AI-CONTRIBUTOR-SPECIFICATION.md`](AI-CONTRIBUTOR-SPECIFICATION.md),
+  [`AI-CONTRIBUTOR-COVERAGE.md`](AI-CONTRIBUTOR-COVERAGE.md),
+  [`AI-CONTRIBUTOR-AUDIT.md`](AI-CONTRIBUTOR-AUDIT.md),
+  [`.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md`](.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md),
+  and
+  [`.ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-LOG.md`](.ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-LOG.md).
+  Regenerate these from catalog and templates; do not hand-edit generated
+  content.
+- [`AI-CONTRIBUTOR-GUIDE.md`](AI-CONTRIBUTOR-GUIDE.md) — bump the
+  hand-authored **Version** field and update any step that references the
+  changed clause.
+- [`README.md`](README.md) — bump the hand-authored **Version** field when the
+  specification version changes.
 - [`CHANGELOG.md`](CHANGELOG.md) — add an entry under the next version heading with the release date (ISO `YYYY-MM-DD`) and a short summary of the normative change.
 - [`skills/ai-contributor-audit/SKILL.md`](skills/ai-contributor-audit/SKILL.md) — update the runbook if the change affects the audit workflow (new frontmatter field, new Status value, etc.). No `spec_version` to bump here; the skill references the spec repo at runtime.
 
-`spec_source`, `audited_commit`, `auditor`, `runner_agent`, and `runner_model` are supplied once through `audit-stamp.ts` flags or environment variables and then stamped into both audit files. `assessment_started_at`, `assessment_completed_at`, `assessment_duration`, `validator_version`, `collector_version`, and `conformance_level` are stamped automatically by `audit-stamp.ts` (timestamps from the collector's evidence JSON and current stamp run; versions from the running scripts; conformance level from the just-stamped Conformance level summary table). Keep stamper-owned frontmatter empty in this repository and preserve the inline hint comments.
+`spec_version` in generated audit templates comes from catalog `specVersion`.
+`spec_source`, `audited_commit`, `auditor`, `runner_agent`, and `runner_model`
+are supplied once through `audit-stamp.ts` flags or environment variables and
+then stamped into both audit files. `assessment_started_at`,
+`assessment_completed_at`, `assessment_duration`, `validator_version`,
+`collector_version`, and `conformance_level` are stamped automatically by
+`audit-stamp.ts` (timestamps from the collector's evidence JSON and current
+stamp run; versions from the running scripts; conformance level from the
+just-stamped Conformance level summary table). Keep stamper-owned frontmatter
+empty in this repository and preserve the inline hint comments.
 
 `audit-stamp.ts` also owns: collector-derived row `Status` + `Comment` cells in the checklist, the Backlog derived columns (`Priority` / `Level` / `Rule` / `Scope` / `Current status`), the Conformance level summary `Status` cells, the root `AI-CONTRIBUTOR-AUDIT.md` summary, the audit-log evidence rows between `<!-- BEGIN:STAMPED-COLLECTOR-ROWS -->` and `<!-- END:STAMPED-COLLECTOR-ROWS -->`, the verification-gaps rows between `<!-- BEGIN:STAMPED-VERIFICATION-GAPS -->` and `<!-- END:STAMPED-VERIFICATION-GAPS -->`, and cross-file equality for stamper-owned frontmatter fields between the checklist and audit log. `Date reached` is hybrid: the auditor enters it when a level is first claimed as `✅ Yes`, and the stamper preserves it while the level remains reached or clears it when the level drops. Do not hand-edit stamper-owned cells or marker blocks — the next stamp run overwrites them.
 
@@ -174,7 +244,9 @@ Use this process for every specification release. Do not commit release work dir
 
    Use `release/vX.Y.Z` for a real patch release. Use a feature branch name for non-release work, then let the release PR collect the final version and changelog updates.
 
-2. Make the release changes on the branch. Normative releases update the files listed in "Files to update on every normative PR"; editorial releases skip version and changelog bumps.
+2. Make the release changes on the branch. Normative releases update the source
+   files and projections listed in "Source files and projections for every
+   normative PR"; editorial releases skip version and changelog bumps.
 
 3. Run the full local guardrail suite:
 
@@ -218,7 +290,8 @@ The release-tagging workflow preserves the same boundaries as the manual fallbac
 ### When not to bump
 
 - PR is pure editorial: typo, formatting, link fix, whitespace, comment in a code sample, renaming a variable in the reference template.
-- PR updates adopter-filled example content in the example scaffold but does not change the spec, checklist, audit-log, guide, or skill.
+- PR updates adopter-filled example content in the example scaffold but does not
+  change catalog-owned rule semantics, generated projections, guide, or skill.
 - PR updates dependency versions in the reference template's `package.json` without touching any normative clause.
 
 Editorial PRs merge with a single reviewer, skip the version bump, and do not need a CHANGELOG entry.
