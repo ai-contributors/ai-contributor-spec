@@ -12,6 +12,10 @@ import {
   renderChecklistAssets,
   renderChecklistRuleTables,
 } from '../spec-authoring/generate-checklist-assets.ts';
+import {
+  renderSpecificationClauseRules,
+  specificationClauseAssetProblems,
+} from '../spec-authoring/generate-spec-clauses.ts';
 import { coverageRowsFromCatalog } from '../spec-authoring/generate-coverage.ts';
 import { rowScopeProblemsFromCatalog } from '../spec-authoring/check-row-scope-vs-spec.ts';
 import { collectorRowCoverageProblemsFromCatalog } from '../spec-authoring/check-collector-row-coverage.ts';
@@ -376,6 +380,59 @@ assert(
 assert(
   'does not require checklist ID bindings',
   !checklistAssetDriftProblems.some((problem) => problem.includes('checklist ID bindings')),
+);
+
+const renderedSpecificationClauses = renderSpecificationClauseRules(
+  {
+    ...catalog,
+    rules: [
+      {
+        ...catalog.rules[0]!,
+        text: 'Repositories MUST render rule text from the catalog.',
+      },
+      catalog.rules[1]!,
+    ],
+  },
+  specContent,
+);
+assert(
+  'renders specification rule bullets from catalog',
+  renderedSpecificationClauses.includes(
+    '- Repositories MUST render rule text from the catalog. <sup>`AIC-clean-clone-bootstrap`</sup>',
+  ) && !renderedSpecificationClauses.includes('- Repositories MUST bootstrap cleanly.'),
+);
+
+const specFrameWithProse = specContent.replace(
+  '## 1. Setup\n\n### `MUST`',
+  '## 1. Setup\n\nThis non-normative frame text stays hand-authored.\n\n### `MUST`',
+);
+assert(
+  'preserves non-normative specification frame prose',
+  renderSpecificationClauseRules(catalog, specFrameWithProse).includes(
+    'This non-normative frame text stays hand-authored.',
+  ),
+);
+
+const specClauseDriftProblems = specificationClauseAssetProblems({
+  catalog,
+  specContent: specContent.replace('Repositories MUST bootstrap cleanly.', 'Repositories drift.'),
+});
+assert(
+  'detects specification rule bullet drift from catalog',
+  specClauseDriftProblems.some((problem) =>
+    problem.includes('specification rule bullets are stale'),
+  ),
+);
+
+const missingSpecClauseFrameProblems = specificationClauseAssetProblems({
+  catalog,
+  specContent: specContent.replace('### `MUST`', '### `SHOULD`'),
+});
+assert(
+  'reports missing specification clause scope locations',
+  missingSpecClauseFrameProblems.some((problem) =>
+    problem.includes('No specification clause frame found for §1 `MUST`'),
+  ),
 );
 
 if (failed > 0) {

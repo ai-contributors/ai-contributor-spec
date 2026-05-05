@@ -35,6 +35,9 @@ Every released entry lists the release date (the day the version lands on `main`
   and conformance-level metadata. Shipped audit templates now carry
   `spec_version: "0.2"` to match the current specification. Rule semantics did
   not change.
+- The specification's normative `AIC-*` rule bullets are now generated from
+  `AI-CONTRIBUTOR-RULE-CATALOG.json`. The generator preserves hand-authored
+  non-normative clause prose, and rule semantics did not change.
 
 ## [0.1] — 2026-05-03
 

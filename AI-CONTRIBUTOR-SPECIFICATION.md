@@ -102,18 +102,18 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ##### `MUST`
 
-- The runtime version `MUST` be pinned. <sup>`AIC-runtime-version-pinned`</sup>
-- The package manager version `MUST` be pinned when the ecosystem allows it. <sup>`AIC-package-manager-pinned`</sup>
+- A clean clone `MUST` reach a working development state using documented steps. <sup>`AIC-clean-clone-bootstrap`</sup>
 - The dependency lockfile `MUST` be committed to version control. <sup>`AIC-lockfile-committed`</sup>
+- The package manager version `MUST` be pinned when the ecosystem allows it. <sup>`AIC-package-manager-pinned`</sup>
+- The runtime version `MUST` be pinned. <sup>`AIC-runtime-version-pinned`</sup>
+- Multi-package repositories `MUST` have a deterministic build order. <sup>`AIC-deterministic-build-order`</sup>
 - CI `MUST` reject changes that would invalidate the committed lockfile (for example via `--frozen-lockfile`, `npm ci`, `pip --require-hashes`, or equivalent). <sup>`AIC-lockfile-enforced-in-ci`</sup>
 - Dependency lockfiles `MUST` include integrity hashes where the ecosystem supports them, and CI `MUST` fail when integrity verification fails. <sup>`AIC-lockfile-integrity-hashes`</sup>
-- Multi-package repositories `MUST` have a deterministic build order. <sup>`AIC-deterministic-build-order`</sup>
-- A clean clone `MUST` reach a working development state using documented steps. <sup>`AIC-clean-clone-bootstrap`</sup>
 
 ##### `SHOULD`
 
-- Browser, runtime, and platform targets `SHOULD` be explicit. <sup>`AIC-platform-targets-explicit`</sup>
 - Heavy builds `SHOULD` document memory, CPU, or platform prerequisites. <sup>`AIC-heavy-build-prerequisites`</sup>
+- Browser, runtime, and platform targets `SHOULD` be explicit. <sup>`AIC-platform-targets-explicit`</sup>
 
 ##### `MAY`
 
@@ -127,16 +127,16 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ##### `MUST`
 
-- Strict typing or equivalent compile-time checks `MUST` be enabled. <sup>`AIC-strict-typing-enabled`</sup>
-- Linting `MUST` include correctness rules, not only style rules. <sup>`AIC-lint-correctness-rules`</sup>
 - Formatting `MUST` be automated and enforced. <sup>`AIC-formatting-automated`</sup>
 - Unused variables, dead code, import cycles, and unsafe dependency patterns `MUST` be surfaced automatically. <sup>`AIC-dead-code-and-cycles-surfaced`</sup>
+- Linting `MUST` include correctness rules, not only style rules. <sup>`AIC-lint-correctness-rules`</sup>
+- Strict typing or equivalent compile-time checks `MUST` be enabled. <sup>`AIC-strict-typing-enabled`</sup>
 
 ##### `SHOULD`
 
 - The repository `SHOULD` ban unsafe escape hatches such as untyped `any` unless explicitly justified. <sup>`AIC-ban-unsafe-escape-hatches`</sup>
-- It `SHOULD` enforce naming and export conventions where consistency materially improves maintenance. <sup>`AIC-naming-export-conventions`</sup>
 - Ad-hoc debug statements (for example `console.log`, `print`, `dump`, language-equivalent debug emitters) `SHOULD` be flagged or blocked by lint, leaving structured logging from §13 as the only sanctioned output path. Agents and humans alike scatter debug emitters during exploration and forget to remove them; without a lint-time backstop, the residue ships. <sup>`AIC-debug-statement-lint`</sup>
+- It `SHOULD` enforce naming and export conventions where consistency materially improves maintenance. <sup>`AIC-naming-export-conventions`</sup>
 
 ##### `MAY`
 
@@ -150,10 +150,10 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ##### `MUST`
 
-- The repository `MUST` define module, package, or layer responsibilities. <sup>`AIC-layer-responsibilities-defined`</sup>
-- Allowed dependency directions `MUST` be explicit. <sup>`AIC-dependency-directions-explicit`</sup>
-- Sensitive or shared layers `MUST` be protected from importing implementation-specific or infrastructure-specific code when architectural separation depends on that boundary. <sup>`AIC-shared-layer-import-protection`</sup>
 - Architectural rules that can be machine-enforced `MUST` be automated. <sup>`AIC-architecture-rules-automated`</sup>
+- Allowed dependency directions `MUST` be explicit. <sup>`AIC-dependency-directions-explicit`</sup>
+- The repository `MUST` define module, package, or layer responsibilities. <sup>`AIC-layer-responsibilities-defined`</sup>
+- Sensitive or shared layers `MUST` be protected from importing implementation-specific or infrastructure-specific code when architectural separation depends on that boundary. <sup>`AIC-shared-layer-import-protection`</sup>
 
 ##### `SHOULD`
 
@@ -172,16 +172,16 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ##### `MUST`
 
-- Pre-commit hooks `MUST` run meaningful local checks. <sup>`AIC-precommit-meaningful-checks`</sup>
 - CI `MUST` run the authoritative guardrail suite for protected branches. <sup>`AIC-ci-guardrail-suite`</sup>
 - CI `MUST` use the pinned toolchain and locked dependency state. <sup>`AIC-ci-pinned-toolchain`</sup>
 - Protected branches `MUST` require passing status checks before merge. <sup>`AIC-protected-branch-status-checks`</sup>
+- Pre-commit hooks `MUST` run meaningful local checks. <sup>`AIC-precommit-meaningful-checks`</sup>
 
 ##### `SHOULD`
 
-- The local and CI quality bars `SHOULD` stay closely aligned. <sup>`AIC-local-ci-aligned`</sup>
 - Expensive jobs `SHOULD` be separated intentionally rather than omitted silently. <sup>`AIC-expensive-jobs-explicit`</sup>
 - The repository `SHOULD` expose a fast-iteration command path — for example scoped tests, changed-file lint, or per-package verify scripts — so intermediate work can be validated cheaply without running the full guardrail suite on every iteration. The full suite remains the authoritative gate; the fast path is for the iteration loop. <sup>`AIC-fast-iteration-path`</sup>
+- The local and CI quality bars `SHOULD` stay closely aligned. <sup>`AIC-local-ci-aligned`</sup>
 
 ##### `MAY`
 
@@ -197,9 +197,9 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ##### `MUST`
 
+- Credential handling `MUST` be documented for contributors and automation. <sup>`AIC-credential-handling-documented`</sup>
 - Secret-bearing files `MUST` be excluded from version control. <sup>`AIC-secret-vcs-exclude`</sup>
 - Automated secret scanning `MUST` be enabled. <sup>`AIC-secret-scanning-enabled`</sup>
-- Credential handling `MUST` be documented for contributors and automation. <sup>`AIC-credential-handling-documented`</sup>
 
 ##### `MUST when applicable`
 
@@ -208,9 +208,9 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ##### `SHOULD`
 
+- The repository `SHOULD` document how contributors and automation obtain development credentials, how those credentials are rotated, and what triggers a rotation (suspected leak, contributor offboarding, scheduled cadence). This is particularly important for AI agents, which cannot complete interactive credential-issuance flows and otherwise accumulate static, long-lived tokens. <sup>`AIC-credential-rotation-documented`</sup>
 - The repository `SHOULD` define custom detection patterns for organization-specific secret formats. <sup>`AIC-custom-secret-patterns`</sup>
 - It `SHOULD` provide a safe mock mode or local fallback path that avoids requiring live secrets for common development flows. <sup>`AIC-mock-mode-fallback`</sup>
-- The repository `SHOULD` document how contributors and automation obtain development credentials, how those credentials are rotated, and what triggers a rotation (suspected leak, contributor offboarding, scheduled cadence). This is particularly important for AI agents, which cannot complete interactive credential-issuance flows and otherwise accumulate static, long-lived tokens. <sup>`AIC-credential-rotation-documented`</sup>
 
 ##### `MAY`
 
@@ -224,21 +224,21 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ##### `MUST when applicable`
 
-- Security-focused static analysis `MUST` run in CI for supported languages and platforms. <sup>`AIC-sast-in-ci`</sup>
-- Dependency vulnerability detection `MUST` be enabled. <sup>`AIC-dependency-vuln-detection`</sup>
 - Dependency changes in pull requests `MUST` be visible to reviewers through automation or policy. <sup>`AIC-dependency-review-visibility`</sup>
+- Dependency vulnerability detection `MUST` be enabled. <sup>`AIC-dependency-vuln-detection`</sup>
+- Security-focused static analysis `MUST` run in CI for supported languages and platforms. <sup>`AIC-sast-in-ci`</sup>
 
 ##### `SHOULD`
 
 - The repository `SHOULD` automate safe dependency update PRs. <sup>`AIC-automated-dep-updates`</sup>
-- It `SHOULD` track and assign ownership for unresolved vulnerability alerts. <sup>`AIC-vuln-alert-ownership`</sup>
 - It `SHOULD` automate license review if distribution or compliance requirements apply. <sup>`AIC-license-review-automation`</sup>
+- It `SHOULD` track and assign ownership for unresolved vulnerability alerts. <sup>`AIC-vuln-alert-ownership`</sup>
 
 ##### `MAY`
 
-- The repository `MAY` apply stricter policies to new dependencies than to existing ones. <sup>`AIC-strict-new-dep-policy`</sup>
 - Internet-facing applications `MAY` run dynamic application security testing (DAST) against a deployed environment to surface vulnerabilities that static analysis misses. <sup>`AIC-dast-internet-facing`</sup>
 - High-risk systems `MAY` undergo periodic penetration testing by an independent reviewer. <sup>`AIC-penetration-testing-periodic`</sup>
+- The repository `MAY` apply stricter policies to new dependencies than to existing ones. <sup>`AIC-strict-new-dep-policy`</sup>
 
 ---
 
@@ -248,10 +248,10 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ##### `MUST`
 
-- Authorization `MUST` be enforced in a trusted layer such as the backend, API, or data layer. <sup>`AIC-authz-trusted-layer`</sup>
-- Data integrity constraints `MUST` exist where the persistence layer supports them. <sup>`AIC-data-integrity-constraints`</sup>
-- Privileged credentials `MUST NOT` be present in untrusted client code. <sup>`AIC-no-privileged-creds-in-client`</sup>
 - Repositories `MUST` have checks or tests that detect dangerous credential or role leakage into the wrong layers. <sup>`AIC-credential-leakage-checks`</sup>
+- Data integrity constraints `MUST` exist where the persistence layer supports them. <sup>`AIC-data-integrity-constraints`</sup>
+- Authorization `MUST` be enforced in a trusted layer such as the backend, API, or data layer. <sup>`AIC-authz-trusted-layer`</sup>
+- Privileged credentials `MUST NOT` be present in untrusted client code. <sup>`AIC-no-privileged-creds-in-client`</sup>
 
 ##### `SHOULD`
 
@@ -269,16 +269,16 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ##### `MUST when applicable`
 
-- Workflow tokens `MUST` use least privilege. <sup>`AIC-workflow-token-least-privilege`</sup>
-- Deployment credentials `MUST` be short-lived where the platform supports it. <sup>`AIC-short-lived-deploy-creds`</sup>
 - Production deployment paths `MUST` be protected from arbitrary execution and unauthorized triggering. <sup>`AIC-prod-deploy-protected`</sup>
+- Deployment credentials `MUST` be short-lived where the platform supports it. <sup>`AIC-short-lived-deploy-creds`</sup>
+- Workflow tokens `MUST` use least privilege. <sup>`AIC-workflow-token-least-privilege`</sup>
 
 ##### `SHOULD`
 
-- The repository `SHOULD` use OIDC or equivalent identity federation instead of long-lived cloud secrets. <sup>`AIC-oidc-federation`</sup>
-- It `SHOULD` protect deployment environments with approval rules or environment policies. <sup>`AIC-deploy-env-approvals`</sup>
-- It `SHOULD` review workflow file changes with extra scrutiny. <sup>`AIC-workflow-change-review`</sup>
 - Third-party GitHub Actions `SHOULD` be referenced by a tagged version or release ref (for example `pnpm/action-setup@v6`) rather than a floating branch ref like `@main` or `@master`. A floating ref ships whatever is on that branch into CI on the next run; pinning to a release tag bounds what can change between deliberate bumps. Stronger SHA pinning is the `MAY` below, justified by threat model. <sup>`AIC-action-version-pinned`</sup>
+- It `SHOULD` protect deployment environments with approval rules or environment policies. <sup>`AIC-deploy-env-approvals`</sup>
+- The repository `SHOULD` use OIDC or equivalent identity federation instead of long-lived cloud secrets. <sup>`AIC-oidc-federation`</sup>
+- It `SHOULD` review workflow file changes with extra scrutiny. <sup>`AIC-workflow-change-review`</sup>
 
 ##### `MAY`
 
@@ -293,8 +293,8 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ##### `MUST when applicable`
 
-- Internet-facing, multi-tenant, regulated, or high-impact systems `MUST` undergo threat modeling or security design review. <sup>`AIC-threat-model-required`</sup>
 - Threat modeling `MUST` produce a durable artifact identifying assets, trust boundaries, entry points, and likely attacker paths. A verbal agreement does not satisfy this requirement. <sup>`AIC-threat-model-artifact`</sup>
+- Internet-facing, multi-tenant, regulated, or high-impact systems `MUST` undergo threat modeling or security design review. <sup>`AIC-threat-model-required`</sup>
 - Repositories subject to this requirement `MUST` record when the threat model was last reviewed. <sup>`AIC-threat-model-review-date`</sup>
 
 ##### `SHOULD`
@@ -315,14 +315,14 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ##### `MUST`
 
-- External inputs, configuration, and machine-readable product metadata `MUST` be validated before use. <sup>`AIC-input-validation`</sup>
 - Critical invariants `MUST` be documented in one authoritative place. <sup>`AIC-invariants-documented`</sup>
 - Critical invariants `MUST` be executable through tests, assertions, or validators wherever practical. <sup>`AIC-invariants-executable`</sup>
+- External inputs, configuration, and machine-readable product metadata `MUST` be validated before use. <sup>`AIC-input-validation`</sup>
 
 ##### `SHOULD`
 
-- Validation layers `SHOULD` separate structural validity from semantic validity. <sup>`AIC-structural-vs-semantic-validation`</sup>
 - The repository `SHOULD` fail fast on invalid inputs and emit actionable diagnostics. <sup>`AIC-fail-fast-diagnostics`</sup>
+- Validation layers `SHOULD` separate structural validity from semantic validity. <sup>`AIC-structural-vs-semantic-validation`</sup>
 
 ##### `MAY`
 
@@ -345,16 +345,16 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ##### `SHOULD`
 
-- Where coverage is used as a gate, the repository `SHOULD` assess test-suite strength through an independent mechanism such as mutation testing, property-based tests, or independent review. Coverage alone does not distinguish effective assertions from ones that pass trivially. <sup>`AIC-test-strength-independent`</sup>
-- Tests `SHOULD` be located close to the code they protect. <sup>`AIC-tests-colocated`</sup>
-- Test environments `SHOULD` be deterministic where possible. Tests at the integration and end-to-end layers `SHOULD NOT` reach live external networks or shared production-like services by default; they `SHOULD` run against in-process mocks, recorded fixtures, or sandboxed substitutes, with any deviation explicitly opted in. Network nondeterminism amplifies AI-generated flakiness and erodes the signal of every gate that depends on the suite. <sup>`AIC-test-network-isolation`</sup>
-- End-to-end and acceptance tests `SHOULD` execute against the same artifact the repository ships (for example the production build output, a built container image, or the published package), not the development server alone. Bundling, tree-shaking, asset rewriting, and environment-variable inlining produce divergence between dev and prod that only appears when the built artifact is exercised. <sup>`AIC-e2e-built-artifact`</sup>
 - Environment-specific or excluded test suites `SHOULD` be explicitly documented. <sup>`AIC-excluded-suites-documented`</sup>
+- End-to-end and acceptance tests `SHOULD` execute against the same artifact the repository ships (for example the production build output, a built container image, or the published package), not the development server alone. Bundling, tree-shaking, asset rewriting, and environment-variable inlining produce divergence between dev and prod that only appears when the built artifact is exercised. <sup>`AIC-e2e-built-artifact`</sup>
+- Where coverage is used as a gate, the repository `SHOULD` assess test-suite strength through an independent mechanism such as mutation testing, property-based tests, or independent review. Coverage alone does not distinguish effective assertions from ones that pass trivially. <sup>`AIC-test-strength-independent`</sup>
+- Test environments `SHOULD` be deterministic where possible. Tests at the integration and end-to-end layers `SHOULD NOT` reach live external networks or shared production-like services by default; they `SHOULD` run against in-process mocks, recorded fixtures, or sandboxed substitutes, with any deviation explicitly opted in. Network nondeterminism amplifies AI-generated flakiness and erodes the signal of every gate that depends on the suite. <sup>`AIC-test-network-isolation`</sup>
+- Tests `SHOULD` be located close to the code they protect. <sup>`AIC-tests-colocated`</sup>
 
 ##### `MAY`
 
-- The repository `MAY` use differential or risk-based test selection in CI if the full quality bar remains intact before release. <sup>`AIC-risk-based-test-selection`</sup>
 - Parser-heavy or security-sensitive components `MAY` use fuzzing to surface input-domain failures that example-based tests routinely miss. <sup>`AIC-fuzzing-parsers`</sup>
+- The repository `MAY` use differential or risk-based test selection in CI if the full quality bar remains intact before release. <sup>`AIC-risk-based-test-selection`</sup>
 
 ---
 
@@ -390,9 +390,9 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ##### `SHOULD`
 
-- The repository `SHOULD` define structured error handling patterns. <sup>`AIC-structured-error-patterns`</sup>
 - It `SHOULD` provide clear ownership for alerts, logs, and operational visibility. <sup>`AIC-alert-ownership`</sup>
 - It `SHOULD` preserve user work locally or durably when silent data loss would be unacceptable. <sup>`AIC-preserve-user-work`</sup>
+- The repository `SHOULD` define structured error handling patterns. <sup>`AIC-structured-error-patterns`</sup>
 
 ##### `MAY`
 
@@ -411,8 +411,8 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ##### `SHOULD`
 
-- Performance budgets `SHOULD` be measurable in automation. <sup>`AIC-budgets-automated`</sup>
 - Reliability targets `SHOULD` have clear consequences or escalation paths when missed. <sup>`AIC-reliability-consequences`</sup>
+- Performance budgets `SHOULD` be measurable in automation. <sup>`AIC-budgets-automated`</sup>
 
 ##### `MAY`
 
@@ -433,9 +433,9 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ##### `SHOULD`
 
-- Published artifacts `SHOULD` be built from CI rather than developer workstations. <sup>`AIC-release-from-ci`</sup>
-- Repositories `SHOULD` provide provenance or attestations when downstream consumers need build trust. <sup>`AIC-build-provenance-attestation`</sup>
 - Source, build instructions, and outputs `SHOULD` be linked through immutable references where practical. <sup>`AIC-build-immutable-refs`</sup>
+- Repositories `SHOULD` provide provenance or attestations when downstream consumers need build trust. <sup>`AIC-build-provenance-attestation`</sup>
+- Published artifacts `SHOULD` be built from CI rather than developer workstations. <sup>`AIC-release-from-ci`</sup>
 
 ##### `MAY`
 
@@ -452,15 +452,15 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 - The default branch `MUST` be protected. <sup>`AIC-default-branch-protected`</sup>
 - Required checks and required reviews `MUST` be enabled for protected branches. <sup>`AIC-required-checks-and-reviews`</sup>
-- Required-review approvals on protected branches `MUST` come from human reviewers; bot or agent accounts `MUST NOT` satisfy required-review counts and `MUST NOT` merge their own pull requests. <sup>`AIC-human-review-required`</sup>
 - Risky or sensitive changes `MUST` have clear ownership. <sup>`AIC-risky-change-ownership`</sup>
+- Required-review approvals on protected branches `MUST` come from human reviewers; bot or agent accounts `MUST NOT` satisfy required-review counts and `MUST NOT` merge their own pull requests. <sup>`AIC-human-review-required`</sup>
 
 For solo-maintainer repositories, the sole human maintainer may satisfy the human-review requirement for an agent-authored pull request only when the platform records a distinct human approval and the bot or agent account neither approves nor merges the pull request. If the same human account both authors or pushes the material change and supplies the only approval, that approval is not independent review for this requirement.
 
 ##### `MUST when applicable`
 
-- Public or externally consumed repositories `MUST` provide a vulnerability disclosure path such as `SECURITY.md`. <sup>`AIC-vuln-disclosure-path`</sup>
 - Repositories `MUST` identify sensitive paths — for example, authentication and authorization code, CI/CD workflow files, deployment configuration, dependency manifests, and policy documents — and define path-level ownership for them when platform support exists. <sup>`AIC-sensitive-path-ownership`</sup>
+- Public or externally consumed repositories `MUST` provide a vulnerability disclosure path such as `SECURITY.md`. <sup>`AIC-vuln-disclosure-path`</sup>
 
 ##### `SHOULD`
 
@@ -482,16 +482,16 @@ For solo-maintainer repositories, the sole human maintainer may satisfy the huma
 
 ##### `MUST`
 
-- The repository `MUST` provide one authoritative, versioned instruction source for AI agents. <sup>`AIC-ai-instruction-authoritative`</sup>
-- That instruction source `MUST` describe how to build, test, lint, run, review, contribute, and determine when a change is ready to merge. <sup>`AIC-ai-instruction-coverage`</sup>
-- It `MUST` define architectural boundaries, coding conventions, non-negotiable invariants, and approval requirements. <sup>`AIC-ai-instruction-boundaries`</sup>
 - It `MUST` identify actions the AI is not allowed to perform automatically. <sup>`AIC-ai-forbidden-actions`</sup>
+- It `MUST` define architectural boundaries, coding conventions, non-negotiable invariants, and approval requirements. <sup>`AIC-ai-instruction-boundaries`</sup>
+- That instruction source `MUST` describe how to build, test, lint, run, review, contribute, and determine when a change is ready to merge. <sup>`AIC-ai-instruction-coverage`</sup>
+- The repository `MUST` provide one authoritative, versioned instruction source for AI agents. <sup>`AIC-ai-instruction-authoritative`</sup>
 - The path of the authoritative source `MUST` be documented in `CONTRIBUTING.md` or `README.md` so contributors and AI tools can resolve it without guessing. Any tool-specific instruction files that exist alongside it `MUST` contain only a pointer to the authoritative source — they `MUST NOT` re-declare or contradict its content. <sup>`AIC-tool-specific-pointer-only`</sup>
 
 ##### `SHOULD`
 
-- The repository `SHOULD` standardize common AI workflows such as implementation, review, PR preparation, release preparation, and incident fix handling. <sup>`AIC-ai-workflow-standardization`</sup>
 - It `SHOULD` keep AI-facing instructions concise, current, and linked from contributor documentation. As a working ceiling, the authoritative instruction source `SHOULD` stay under roughly 300 lines: longer files stop being read end-to-end by either humans or model context windows, and the seven coverage areas in `AIC-ai-instruction-coverage` collapse into prose rather than scannable rules. Push detail into linked policy docs rather than growing the instruction file. <sup>`AIC-ai-instructions-discoverable`</sup>
+- The repository `SHOULD` standardize common AI workflows such as implementation, review, PR preparation, release preparation, and incident fix handling. <sup>`AIC-ai-workflow-standardization`</sup>
 
 ##### `MAY`
 
@@ -521,8 +521,8 @@ A **shared skill** is a reusable AI workflow module versioned in the repository 
 ##### `MUST when applicable`
 
 - Repositories that use shared skills, slash commands, or reusable AI workflow modules `MUST` version them in the repository. <sup>`AIC-shared-skills-versioned`</sup>
-- Shared skills `MUST` define their purpose, expected inputs, expected outputs, and meaningful side effects. <sup>`AIC-skill-contract-defined`</sup>
 - Shared skills `MUST` be reviewed like code when they can change files, invoke tools, affect releases, or alter external systems. <sup>`AIC-skill-code-review`</sup>
+- Shared skills `MUST` define their purpose, expected inputs, expected outputs, and meaningful side effects. <sup>`AIC-skill-contract-defined`</sup>
 - Shared skills `MUST NOT` contain secrets, tokens, or environment-specific credentials. <sup>`AIC-skill-no-secrets`</sup>
 
 ##### `SHOULD`
@@ -549,24 +549,24 @@ Skills are subject to the human-approval baseline defined in §23 (`AIC-no-silen
 
 - Repositories that use MCP servers `MUST` explicitly approve which servers are allowed for team workflows. <sup>`AIC-mcp-allowlist`</sup>
 - Every approved MCP server `MUST` have a defined owner and purpose. <sup>`AIC-mcp-owner-purpose`</sup>
+- OAuth- or token-based MCP integrations `MUST` use secure token handling and redirect validation appropriate to the platform. <sup>`AIC-mcp-auth-security`</sup>
 - MCP tools and servers `MUST` use least privilege. <sup>`AIC-mcp-least-privilege`</sup>
 - Write-capable MCP servers `MUST` be distinguishable from read-only ones. <sup>`AIC-mcp-write-vs-read-distinguishable`</sup>
 - Filesystem roots and other exposed resources `MUST` be scoped deliberately to approved workspaces or data sources. <sup>`AIC-mcp-root-scoping`</sup>
-- OAuth- or token-based MCP integrations `MUST` use secure token handling and redirect validation appropriate to the platform. <sup>`AIC-mcp-auth-security`</sup>
 
 ##### `SHOULD`
 
-- Teams `SHOULD` prefer read-only MCP access by default. <sup>`AIC-mcp-read-only-default`</sup>
-- MCP servers `SHOULD` be pinned to known versions or controlled deployment channels where possible. <sup>`AIC-mcp-pinned-versions`</sup>
-- Dev, staging, and production MCP connectors `SHOULD` be separated when they touch operational systems. <sup>`AIC-mcp-env-separation`</sup>
-- Users `SHOULD` be prompted before exposing roots or other sensitive resources to MCP servers. <sup>`AIC-mcp-root-prompt`</sup>
 - Teams `SHOULD` be able to identify which external systems an AI agent can read or mutate through MCP. <sup>`AIC-mcp-auditability`</sup>
+- Dev, staging, and production MCP connectors `SHOULD` be separated when they touch operational systems. <sup>`AIC-mcp-env-separation`</sup>
+- MCP servers `SHOULD` be pinned to known versions or controlled deployment channels where possible. <sup>`AIC-mcp-pinned-versions`</sup>
 - MCP prompts exposed as slash commands `SHOULD` be reviewed before being relied on operationally. <sup>`AIC-mcp-prompt-review`</sup>
+- Teams `SHOULD` prefer read-only MCP access by default. <sup>`AIC-mcp-read-only-default`</sup>
+- Users `SHOULD` be prompted before exposing roots or other sensitive resources to MCP servers. <sup>`AIC-mcp-root-prompt`</sup>
 
 ##### `MAY`
 
-- Teams `MAY` use the official MCP Registry for discovery, but they remain responsible for server vetting. <sup>`AIC-mcp-registry-discovery`</sup>
 - Teams `MAY` apply additional sandboxing, network isolation, or execution controls to third-party MCP servers. <sup>`AIC-mcp-extra-sandboxing`</sup>
+- Teams `MAY` use the official MCP Registry for discovery, but they remain responsible for server vetting. <sup>`AIC-mcp-registry-discovery`</sup>
 
 ---
 
@@ -578,22 +578,22 @@ An **autonomous agent** is an agent that can plan and execute actions without pe
 
 ##### `MUST when applicable`
 
-- Repositories that use autonomous or delegated agents `MUST` define agent roles, scope boundaries, ownership, and success conditions. <sup>`AIC-agent-scope-defined`</sup>
-- Agents `MUST` have explicit tool, write, and approval limits. <sup>`AIC-agent-permission-limits`</sup>
 - Parallel agents `MUST NOT` edit overlapping files unless the workflow explicitly defines coordination for that case. <sup>`AIC-agent-parallel-isolation`</sup>
-- Every material agent action `MUST` produce a record with, at minimum: agent identity, model identifier and model-version ID, prompt or skill version, ISO 8601 timestamp with seconds, and action category (read / write / merge / deploy / settings-change / external-call). The record location `MUST` be the same one documented for `AIC-prompt-audit-trail`. The record `MUST` be queryable: an auditor `MUST` be able to list material actions by agent, action category, or time range with one command or API query. Prose-only attribution ("our agents log to Linear") does not satisfy this rule. <sup>`AIC-agent-action-traceability`</sup>
+- Agents `MUST` have explicit tool, write, and approval limits. <sup>`AIC-agent-permission-limits`</sup>
 - Agent-produced changes `MUST` pass the same quality gates as any other code contribution. <sup>`AIC-agent-quality-gates`</sup>
+- Repositories that use autonomous or delegated agents `MUST` define agent roles, scope boundaries, ownership, and success conditions. <sup>`AIC-agent-scope-defined`</sup>
+- Every material agent action `MUST` produce a record with, at minimum: agent identity, model identifier and model-version ID, prompt or skill version, ISO 8601 timestamp with seconds, and action category (read / write / merge / deploy / settings-change / external-call). The record location `MUST` be the same one documented for `AIC-prompt-audit-trail`. The record `MUST` be queryable: an auditor `MUST` be able to list material actions by agent, action category, or time range with one command or API query. Prose-only attribution ("our agents log to Linear") does not satisfy this rule. <sup>`AIC-agent-action-traceability`</sup>
+- Repositories that operate an autonomous runner `MUST` define and enforce escalation triggers before the runner performs destructive, security-sensitive, release-affecting, high-volume, or repeatedly failing actions. The triggers `MUST` include per-window action limits, a named escalation owner, and a response expectation or SLA for paused work. <sup>`AIC-agent-escalation-trigger-enforcement`</sup>
 - Repositories that operate an autonomous runner (any agent that can merge, deploy, release, rotate settings, or otherwise act without per-change human approval) `MUST` provide a kill switch: a single documented action that immediately halts the runner, by both disabling its execution path (workflow, scheduled job, agent harness) and revoking or expiring the runner's credentials so a residual process cannot continue acting. The kill switch `MUST` be exercisable without a code change to the repository. This complements `AIC-agent-cost-ceiling`, which addresses cost runaway; this clause addresses content runaway. <sup>`AIC-agent-kill-switch`</sup>
 - Repositories that operate an autonomous runner `MUST` document a rollback procedure for content the runner has already merged, deployed, or released. The procedure `MUST` rely on the authorship-traceability mechanism from `AIC-ai-authorship-traceability` so that runner-authored commits, releases, or settings changes are mechanically identifiable for revert without manual archaeology. Incident response (§29) may invoke this procedure. <sup>`AIC-agent-rollback-procedure`</sup>
-- Repositories that operate an autonomous runner `MUST` define and enforce escalation triggers before the runner performs destructive, security-sensitive, release-affecting, high-volume, or repeatedly failing actions. The triggers `MUST` include per-window action limits, a named escalation owner, and a response expectation or SLA for paused work. <sup>`AIC-agent-escalation-trigger-enforcement`</sup>
 
 ##### `SHOULD`
 
-- Teams `SHOULD` define standard agent roles such as implementer, reviewer, researcher, or release helper. <sup>`AIC-agent-standard-roles`</sup>
 - Delegation `SHOULD` be limited to bounded, well-scoped tasks. <sup>`AIC-agent-bounded-delegation`</sup>
+- Teams `SHOULD` define escalation paths for uncertainty around security, production systems, data handling, or architecture changes. <sup>`AIC-agent-escalation-paths`</sup>
+- Teams `SHOULD` define standard agent roles such as implementer, reviewer, researcher, or release helper. <sup>`AIC-agent-standard-roles`</sup>
 - Agent outputs `SHOULD` be structured enough for safe handoff between agents and humans. <sup>`AIC-agent-structured-outputs`</sup>
 - Agents `SHOULD` rely on repository-versioned instructions rather than hidden session state. <sup>`AIC-agent-versioned-instructions`</sup>
-- Teams `SHOULD` define escalation paths for uncertainty around security, production systems, data handling, or architecture changes. <sup>`AIC-agent-escalation-paths`</sup>
 
 ##### `MAY`
 
@@ -621,26 +621,26 @@ Three terms used in this section:
 
 ##### `MUST when applicable`
 
-- Repositories that author system prompts, agent instructions, or shared skills `MUST` version them in the repository and review them like code when they materially affect agent behavior. <sup>`AIC-prompt-versioning-review`</sup>
-- Repositories that route work to external AI providers or models `MUST` maintain an explicit allowlist. Each entry `MUST` record its approval scope — permitted data classifications (consistent with §22) and action categories (read-only research, code authoring, release-affecting automation). Agent workflows `MUST NOT` route outside the allowlist. <sup>`AIC-ai-provider-allowlist`</sup>
-- Repositories whose AI workflows can introduce dependencies `MUST` define how those dependency additions are verified before use, including whether the package exists in the canonical registry and who owns it. <sup>`AIC-ai-dependency-verification`</sup>
-- Repositories whose AI workflows consume external content (issues, pull request comments, fetched URLs, retrieved documents, tool outputs) `MUST` treat it as untrusted input. Such content `MUST NOT` silently elevate agent privileges, trigger destructive or release-affecting actions, or exfiltrate repository contents. <sup>`AIC-untrusted-agent-input`</sup>
-- Repositories that expose agents to external content `MUST` identify which content channels are trusted inputs to agents and which require sandboxing or human review. <sup>`AIC-trusted-channel-classification`</sup>
 - Repositories that retain AI conversation context, tool outputs, or training-adjacent data `MUST` state retention limits and sanitization rules. <sup>`AIC-ai-context-retention`</sup>
-- Repositories that pay per-token or per-call for agent work `MUST` have a documented cost ceiling or kill switch for runaway loops. <sup>`AIC-agent-cost-ceiling`</sup>
+- Repositories whose AI workflows can introduce dependencies `MUST` define how those dependency additions are verified before use, including whether the package exists in the canonical registry and who owns it. <sup>`AIC-ai-dependency-verification`</sup>
+- Repositories that route work to external AI providers or models `MUST` maintain an explicit allowlist. Each entry `MUST` record its approval scope — permitted data classifications (consistent with §22) and action categories (read-only research, code authoring, release-affecting automation). Agent workflows `MUST NOT` route outside the allowlist. <sup>`AIC-ai-provider-allowlist`</sup>
 - Repositories that deploy agents exposed to untrusted input `MUST` apply capability scoping: the agent's tool, read, and write capabilities `MUST` be constrained at the permission layer based on the user's requested task, not by model self-policing. A read-only task `MUST NOT` run with write, send, or external-call capabilities enabled. <sup>`AIC-capability-scoping`</sup>
-- When an agent session authors both an implementation and its tests, the repository `MUST` apply an independent verification mechanism — mutation testing, property-based tests, or independent review of the tests by a reviewer who did not author them — to detect the case where code and tests encode the same error. <sup>`AIC-code-test-independence`</sup>
+- Repositories whose AI-exposed surfaces serve users in languages other than English `MUST` verify that any pattern-filter or LLM-filter guardrail claimed as a control has coverage in those languages, or `MUST` record the control's scope as English-only. <sup>`AIC-non-english-filter-coverage`</sup>
+- Controls claimed as mitigation for a specific risk class (for example prompt injection, data exfiltration, PII leakage, training-data reproduction, copyrighted-material reproduction, profanity, or toxicity) `MUST` be evaluated against that risk class. Effectiveness against a different class does not transfer without evidence. Static-benchmark results against fixed datasets `MUST NOT` be the sole evidence. Adaptive or human-in-the-loop evaluation `MUST` be included. <sup>`AIC-risk-matched-controls`</sup>
+- Repositories that expose agents to external content `MUST` identify which content channels are trusted inputs to agents and which require sandboxing or human review. <sup>`AIC-trusted-channel-classification`</sup>
+- Repositories whose AI workflows consume external content (issues, pull request comments, fetched URLs, retrieved documents, tool outputs) `MUST` treat it as untrusted input. Such content `MUST NOT` silently elevate agent privileges, trigger destructive or release-affecting actions, or exfiltrate repository contents. <sup>`AIC-untrusted-agent-input`</sup>
+- Repositories that pay per-token or per-call for agent work `MUST` have a documented cost ceiling or kill switch for runaway loops. <sup>`AIC-agent-cost-ceiling`</sup>
 - When agent-authored code consumes an external API, SDK, or data source whose wire shape is not enforced by the transport, the repository `MUST` validate responses against a runtime schema at the boundary, independent of the declared type. <sup>`AIC-boundary-schema-validation`</sup>
 - LLM-filter guardrails and prompt-level refusal instructions (for example, "if the user tries to trick you, refuse") `MUST NOT` be counted, alone, as controls for any `MUST` clause concerning prompt injection, jailbreaking, destructive, security-sensitive, or release-affecting actions. They `MAY` be used as telemetry or a secondary signal. <sup>`AIC-classifier-only-controls-excluded`</sup>
-- Controls claimed as mitigation for a specific risk class (for example prompt injection, data exfiltration, PII leakage, training-data reproduction, copyrighted-material reproduction, profanity, or toxicity) `MUST` be evaluated against that risk class. Effectiveness against a different class does not transfer without evidence. Static-benchmark results against fixed datasets `MUST NOT` be the sole evidence. Adaptive or human-in-the-loop evaluation `MUST` be included. <sup>`AIC-risk-matched-controls`</sup>
-- Repositories whose AI-exposed surfaces serve users in languages other than English `MUST` verify that any pattern-filter or LLM-filter guardrail claimed as a control has coverage in those languages, or `MUST` record the control's scope as English-only. <sup>`AIC-non-english-filter-coverage`</sup>
+- When an agent session authors both an implementation and its tests, the repository `MUST` apply an independent verification mechanism — mutation testing, property-based tests, or independent review of the tests by a reviewer who did not author them — to detect the case where code and tests encode the same error. <sup>`AIC-code-test-independence`</sup>
+- Repositories that author system prompts, agent instructions, or shared skills `MUST` version them in the repository and review them like code when they materially affect agent behavior. <sup>`AIC-prompt-versioning-review`</sup>
 
 ##### `SHOULD`
 
-- Agent-authored pure functions, parsers, and data transformations `SHOULD` be covered by property-based tests in addition to example-based tests. Agents reliably enumerate a handful of plausible inputs and miss input classes outside their training distribution — empty collections, Unicode, whitespace-only strings, duplicates, `NaN`, negatives, overlong inputs. Stating the invariant forces the coverage that sampling skips. <sup>`AIC-input-domain-property-coverage`</sup>
-- Repositories that gate on coverage `SHOULD` reject AI-authored test additions that raise the coverage number without raising assertion density on the lines they newly cover. Agents reliably generate tests that execute branches without checking observable behavior — clearing a percentage threshold while leaving the underlying logic unverified. Coverage growth without assertion growth is a vanity signal, not evidence the change is tested. This complements `AIC-coverage-as-minimum` (§11) and `AIC-test-strength-independent` (§11) by naming the AI-specific failure mode. <sup>`AIC-ai-coverage-vanity-guard`</sup>
-- The set of tools exposed to agents `SHOULD` be pinned and changes `SHOULD` be reviewed. <sup>`AIC-agent-tool-pinning`</sup>
 - Repositories `SHOULD` surface unusual agent behavior such as broad file rewrites, sudden permission changes, or repeated retries on the same failing step. <sup>`AIC-agent-behavior-monitoring`</sup>
+- The set of tools exposed to agents `SHOULD` be pinned and changes `SHOULD` be reviewed. <sup>`AIC-agent-tool-pinning`</sup>
+- Repositories that gate on coverage `SHOULD` reject AI-authored test additions that raise the coverage number without raising assertion density on the lines they newly cover. Agents reliably generate tests that execute branches without checking observable behavior — clearing a percentage threshold while leaving the underlying logic unverified. Coverage growth without assertion growth is a vanity signal, not evidence the change is tested. This complements `AIC-coverage-as-minimum` (§11) and `AIC-test-strength-independent` (§11) by naming the AI-specific failure mode. <sup>`AIC-ai-coverage-vanity-guard`</sup>
+- Agent-authored pure functions, parsers, and data transformations `SHOULD` be covered by property-based tests in addition to example-based tests. Agents reliably enumerate a handful of plausible inputs and miss input classes outside their training distribution — empty collections, Unicode, whitespace-only strings, duplicates, `NaN`, negatives, overlong inputs. Stating the invariant forces the coverage that sampling skips. <sup>`AIC-input-domain-property-coverage`</sup>
 - Agent workflows `SHOULD` derive the minimum required capability set from the user's requested task before the agent runs. Tasks that would combine read-from-untrusted-source and write-to-sensitive-sink capabilities in a single agent context `SHOULD` be rejected without an explicit approval step. <sup>`AIC-minimum-capability-set`</sup>
 
 ##### `MAY`
@@ -662,8 +662,8 @@ Three terms used in this section:
 ##### `MUST when applicable`
 
 - Repositories whose AI workflows can expose regulated or secret data to provider context windows `MUST` prevent that data from entering any provider that is not explicitly approved for that data class. <sup>`AIC-regulated-data-provider-gate`</sup>
-- Repositories handling regulated data (health, finance, government, minors, and similar) `MUST` document the legal basis and controls for sending any such data to AI providers or external tools. <sup>`AIC-regulated-data-controls`</sup>
 - Repositories with data-residency requirements `MUST` verify that AI providers, MCP servers, and external tools respect those requirements. <sup>`AIC-data-residency-verified`</sup>
+- Repositories handling regulated data (health, finance, government, minors, and similar) `MUST` document the legal basis and controls for sending any such data to AI providers or external tools. <sup>`AIC-regulated-data-controls`</sup>
 
 ##### `SHOULD`
 
@@ -700,9 +700,9 @@ The same person cannot push an AI change and approve it. That rule is in §16 (`
 
 ##### `SHOULD`
 
-- Human approval `SHOULD` be required before commit or push in workflows where AI can generate large or cross-cutting changes. <sup>`AIC-human-approval-large-changes`</sup>
-- The repository `SHOULD` escalate approval requirements for migrations, deployment changes, auth changes, or repository-wide rewrites. <sup>`AIC-escalated-approval-categories`</sup>
 - The disclosure policy for materially AI-authored pull requests `SHOULD` specify the verification evidence expected — reproducible test output, screenshots of behavior, API traces, or equivalent — so reviewers can verify the change rather than re-generate it. <sup>`AIC-disclosure-evidence`</sup>
+- The repository `SHOULD` escalate approval requirements for migrations, deployment changes, auth changes, or repository-wide rewrites. <sup>`AIC-escalated-approval-categories`</sup>
+- Human approval `SHOULD` be required before commit or push in workflows where AI can generate large or cross-cutting changes. <sup>`AIC-human-approval-large-changes`</sup>
 
 ##### `MAY`
 
@@ -717,10 +717,10 @@ The same person cannot push an AI change and approve it. That rule is in §16 (`
 ##### `MUST`
 
 - The repository `MUST` document guardrails in one authoritative place. <sup>`AIC-authoritative-guardrail-doc`</sup>
-- That document `MUST` clearly state what is enforced automatically and what depends on review or process. <sup>`AIC-machine-vs-manual-guardrails`</sup>
-- It `MUST` identify where each guardrail is defined and how failure is surfaced. <sup>`AIC-guardrail-failure-surface`</sup>
-- A threshold, budget, or limit declared in configuration `MUST NOT` be counted as an automatic guardrail unless an automated check evaluates it on every change path that claims it. <sup>`AIC-threshold-enforcement`</sup>
 - An automated check `MUST NOT` be counted as enforcing a requirement from this document unless its failure blocks merge on the change path it evaluates. Jobs configured to continue on evaluation failure, or to otherwise mask non-zero results from the protected-branch status, `MUST` be labelled as advisory in the guardrail documentation. <sup>`AIC-gate-enforcement`</sup>
+- It `MUST` identify where each guardrail is defined and how failure is surfaced. <sup>`AIC-guardrail-failure-surface`</sup>
+- That document `MUST` clearly state what is enforced automatically and what depends on review or process. <sup>`AIC-machine-vs-manual-guardrails`</sup>
+- A threshold, budget, or limit declared in configuration `MUST NOT` be counted as an automatic guardrail unless an automated check evaluates it on every change path that claims it. <sup>`AIC-threshold-enforcement`</sup>
 
 ##### `SHOULD`
 
@@ -736,9 +736,9 @@ The same person cannot push an AI change and approve it. That rule is in §16 (`
 
 ##### `MUST`
 
-- The adopted specification itself `MUST` have a named owner and a documented review cadence. <sup>`AIC-policy-owner-cadence`</sup>
 - Changes to the adopted specification `MUST` go through the same review process as code, including required reviewers. <sup>`AIC-policy-change-review`</sup>
 - When a new AI-era risk becomes credible, the repository `MUST` decide whether to add or revise guardrails rather than treating the specification as frozen. <sup>`AIC-policy-living-document`</sup>
+- The adopted specification itself `MUST` have a named owner and a documented review cadence. <sup>`AIC-policy-owner-cadence`</sup>
 
 ##### `SHOULD`
 
@@ -759,8 +759,8 @@ This clause covers the legal and attribution status of AI-produced content commi
 
 ##### `MUST`
 
-- The repository `MUST` declare its position on license and ownership for AI-generated content in a durable document (for example `CONTRIBUTING.md`, `LICENSING.md`, or the authoritative AI instruction file from §17). The declaration `MUST` say whether AI-generated code, documentation, and tests are accepted, and under what license they are contributed. <sup>`AIC-ai-output-licensing-declaration`</sup>
 - Where the hosting platform or CI allows it, the repository `MUST` provide a way to identify materially AI-authored commits or pull requests after the fact — for example a commit trailer, PR label, or metadata field. The mechanism `MUST` be documented in the same place as the licensing declaration. <sup>`AIC-ai-authorship-traceability`</sup>
+- The repository `MUST` declare its position on license and ownership for AI-generated content in a durable document (for example `CONTRIBUTING.md`, `LICENSING.md`, or the authoritative AI instruction file from §17). The declaration `MUST` say whether AI-generated code, documentation, and tests are accepted, and under what license they are contributed. <sup>`AIC-ai-output-licensing-declaration`</sup>
 
 ##### `MUST when applicable`
 
@@ -787,14 +787,14 @@ This clause extends §5 (Secrets and credentials) and §23 (Human approval) for 
 
 ##### `MUST when applicable`
 
-- Repositories whose agents can create, rotate, or revoke credentials `MUST` enumerate which credential classes the agent is allowed to operate on. Agent operations on classes outside that enumeration `MUST NOT` be permitted. <sup>`AIC-agent-credential-class-scope`</sup>
-- Agent-initiated credential creation, rotation, and revocation `MUST` produce a durable audit record naming the agent, the human approver (per §23), the credential class, and the scope of the change. <sup>`AIC-agent-credential-audit`</sup>
 - An agent `MUST NOT` be the sole approver of a credential rotation or revocation that affects production systems or any sensitive sink. Approval `MUST` come from a human reviewer per §23. <sup>`AIC-agent-credential-not-sole-approver`</sup>
+- Agent-initiated credential creation, rotation, and revocation `MUST` produce a durable audit record naming the agent, the human approver (per §23), the credential class, and the scope of the change. <sup>`AIC-agent-credential-audit`</sup>
+- Repositories whose agents can create, rotate, or revoke credentials `MUST` enumerate which credential classes the agent is allowed to operate on. Agent operations on classes outside that enumeration `MUST NOT` be permitted. <sup>`AIC-agent-credential-class-scope`</sup>
 
 ##### `SHOULD`
 
-- Credentials issued or rotated by an agent `SHOULD` be short-lived where the platform supports it, consistent with §8's deployment-credential rule. <sup>`AIC-agent-credential-short-lived`</sup>
 - Repositories `SHOULD` rotate any credential the agent demonstrably read from a transcript, tool output, or context window before continuing operations. The §22 redaction rules limit exposure; this rule treats observed exposure as a rotation trigger. <sup>`AIC-agent-observed-credential-rotation`</sup>
+- Credentials issued or rotated by an agent `SHOULD` be short-lived where the platform supports it, consistent with §8's deployment-credential rule. <sup>`AIC-agent-credential-short-lived`</sup>
 
 ##### `MAY`
 
@@ -810,9 +810,9 @@ This clause covers continuity when an entry in the §21 (AI-specific risks) prov
 
 ##### `MUST when applicable`
 
-- The repository `MUST` define a procedure for evaluating an allowlist entry when the vendor announces deprecation, sunset, ownership change, or material terms-of-service change. The procedure `MUST` state who decides, on what evidence, and within what window. <sup>`AIC-provider-deprecation-procedure`</sup>
-- Agent workflows `MUST NOT` continue routing to a deprecated or sunset entry past its end-of-life date without explicit re-approval recorded against the §21 allowlist. <sup>`AIC-no-routing-past-eol`</sup>
 - When a vendor changes the data classifications or action categories an entry was approved for under §21 and §22, the entry's approval scope `MUST` be re-evaluated before agent workflows continue using it. <sup>`AIC-allowlist-rescope-on-terms-change`</sup>
+- Agent workflows `MUST NOT` continue routing to a deprecated or sunset entry past its end-of-life date without explicit re-approval recorded against the §21 allowlist. <sup>`AIC-no-routing-past-eol`</sup>
+- The repository `MUST` define a procedure for evaluating an allowlist entry when the vendor announces deprecation, sunset, ownership change, or material terms-of-service change. The procedure `MUST` state who decides, on what evidence, and within what window. <sup>`AIC-provider-deprecation-procedure`</sup>
 
 ##### `SHOULD`
 
