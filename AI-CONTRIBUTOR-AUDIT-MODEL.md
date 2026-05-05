@@ -165,10 +165,12 @@ Generate when checked-in authoring content is fully derivable from canonical
 source files. `AI-CONTRIBUTOR-SPECIFICATION.md` is generated from the
 specification template plus `AI-CONTRIBUTOR-RULE-CATALOG.json`. The checklist
 rule tables are generated from the same catalog inside an otherwise
-hand-authored checklist frame. In those tables, the row grouping, scope,
-requirement summary, pillar, and `AIC-*` IDs belong to the catalog; the audit
-run-specific `A`, `Status`, and `Comment` cells remain blank until the stamper
-or auditor fills them for a repository audit.
+hand-authored checklist frame. `AI-CONTRIBUTOR-COVERAGE.md` is generated from
+its coverage template plus catalog rule, pillar, and level metadata. In the
+checklist rule tables, the row grouping, scope, requirement summary, pillar,
+and `AIC-*` IDs belong to the catalog; the audit run-specific `A`, `Status`,
+and `Comment` cells remain blank until the stamper or auditor fills them for a
+repository audit.
 
 Stamp when an audit run can mechanically derive content from the current
 evidence JSON, current checklist state, and stamp flags. This includes

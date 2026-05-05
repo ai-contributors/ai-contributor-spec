@@ -16,7 +16,11 @@ import {
   renderSpecification,
   specificationAssetProblems,
 } from '../spec-authoring/generate-specification.ts';
-import { coverageRowsFromCatalog } from '../spec-authoring/generate-coverage.ts';
+import {
+  coverageBlocksFromCatalog,
+  coverageRowsFromCatalog,
+  renderCoverageMap,
+} from '../spec-authoring/generate-coverage.ts';
 import { rowScopeProblemsFromCatalog } from '../spec-authoring/check-row-scope-vs-spec.ts';
 import { collectorRowCoverageProblemsFromCatalog } from '../spec-authoring/check-collector-row-coverage.ts';
 import { ruleCatalogProjectionProblems } from '../spec-authoring/check-rule-catalog-projections.ts';
@@ -226,6 +230,64 @@ assert('deduplicates multi-ID checklist rows for coverage', groupedCoverageRows.
 assert(
   'normalizes MUST when applicable scope for coverage',
   groupedCoverageRows.find((row) => row.rule === 'Public Release Controls')?.scope === 'MwA',
+);
+const catalogMetadataCoverageBlocks = coverageBlocksFromCatalog({
+  ...catalog,
+  pillars: [
+    { ...catalog.pillars[0]!, icon: '⚙️', title: 'Catalog Foundation' },
+    { ...catalog.pillars[1]!, icon: '👁️', title: 'Catalog Oversight' },
+  ],
+  levels: catalog.levels.map((level) =>
+    level.id === 'L0'
+      ? { ...level, label: 'Catalog Baseline' }
+      : level.id === 'L1'
+        ? { ...level, label: 'Catalog Hardened' }
+        : level,
+  ),
+});
+assert(
+  'renders coverage pillar and level labels from catalog metadata',
+  catalogMetadataCoverageBlocks.byPillar.includes('| 1 · ⚙️ Catalog Foundation |') &&
+    catalogMetadataCoverageBlocks.byPillar.includes('| 2 · 👁️ Catalog Oversight |') &&
+    catalogMetadataCoverageBlocks.byLevel.includes('| L0 — Catalog Baseline |') &&
+    catalogMetadataCoverageBlocks.byLevel.includes('| L1 — Catalog Hardened |'),
+);
+const coverageTemplateContent = [
+  '# Coverage',
+  '',
+  'Prose stays template-owned.',
+  '',
+  '{{generated:coverage-at-a-glance}}',
+  '',
+  '{{generated:coverage-by-scope}}',
+  '',
+  '{{generated:coverage-by-pillar}}',
+  '',
+  '{{generated:coverage-by-level}}',
+  '',
+  '{{generated:coverage-cumulative}}',
+].join('\n');
+const renderedCoverageMap = renderCoverageMap(catalog, coverageTemplateContent);
+assert(
+  'renders coverage map from catalog-backed template directives',
+  renderedCoverageMap.includes('Prose stays template-owned.') &&
+    renderedCoverageMap.includes('- **2** total rows') &&
+    renderedCoverageMap.includes('| `MUST` | 2 |') &&
+    renderedCoverageMap.includes('| 1 · 🏗️ Foundation | 1 | 1 | 0 | 0 | 0 |') &&
+    renderedCoverageMap.includes('| L0 — Baseline | 2 | 2 | 0 | 0 |') &&
+    renderedCoverageMap.includes('| L0 | 2 | — |') &&
+    !renderedCoverageMap.includes('{{generated:'),
+);
+assert(
+  'reports unknown coverage template directives',
+  (() => {
+    try {
+      renderCoverageMap(catalog, `${coverageTemplateContent}\n{{generated:coverage-unknown}}`);
+      return false;
+    } catch (err) {
+      return err instanceof Error && err.message.includes('unknown coverage template directive');
+    }
+  })(),
 );
 
 const collectorAicIds = collectorAicIdsFromCatalog(catalog);

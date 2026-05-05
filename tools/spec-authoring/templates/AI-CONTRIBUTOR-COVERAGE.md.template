@@ -12,52 +12,22 @@ For a conformance claim, use [`AI-CONTRIBUTOR-CHECKLIST.md`](.ai-contributor-aud
 
 ## At a glance
 
-- **207** total rows
-- **34** unconditional `MUST` + **57** `MUST when applicable` + **76** `SHOULD` + **40** `MAY`
-- **6** rows at Level 0; **40** rows at Level 1; **28** rows at Level 2; **14** rows at Level 3
-- Level 4 adds **3** autonomous-runner `MUST when applicable` rows plus **76** `SHOULD` rows
+{{generated:coverage-at-a-glance}}
 
 ## By scope
 
-| Scope | Rows |
-|---|---:|
-| `MUST` | 34 |
-| `MUST when applicable` | 57 |
-| `SHOULD` | 76 |
-| `MAY` | 40 |
-| **Total** | **207** |
+{{generated:coverage-by-scope}}
 
 ## By pillar
 
-| Pillar | Total | `MUST` | `MwA` | `SHOULD` | `MAY` |
-|---|---:|---:|---:|---:|---:|
-| 1 · 🏗️ Engineering Foundation | 26 | 11 | 1 | 10 | 4 |
-| 2 · 🛡️ Security | 34 | 5 | 9 | 12 | 8 |
-| 3 · 🎯 Quality & Reliability | 29 | 3 | 6 | 14 | 6 |
-| 4 · 🚀 Release | 13 | 2 | 3 | 5 | 3 |
-| 5 · 🤖 AI Agents | 39 | 3 | 13 | 14 | 9 |
-| 6 · ⚠️ AI Risk | 26 | 2 | 14 | 7 | 3 |
-| 7 · 🧭 Oversight | 40 | 8 | 11 | 14 | 7 |
+{{generated:coverage-by-pillar}}
 
 ## By minimum conformance level
 
-| Level | Rows | `MUST` | `MwA` | `SHOULD` |
-|---|---:|---:|---:|---:|
-| L0 — Baseline Hygiene | 6 | 5 | 1 | 0 |
-| L1 — Hardened | 40 | 22 | 18 | 0 |
-| L2 — AI Assisted | 28 | 7 | 21 | 0 |
-| L3 — AI Authored | 14 | 0 | 14 | 0 |
-| L4 — AI Autonomous | 79 | 0 | 3 | 76 |
-| — (`MAY` — never required) | 40 | — | — | — |
+{{generated:coverage-by-level}}
 
 ## Cumulative closure bar
 
 This table shows how many `MUST` and `MUST when applicable` rows a repository must close, or mark `Not relevant` with evidence, to claim each level. The "worst case" column assumes every `MUST when applicable` trigger applies. Many repositories will trigger fewer rows.
 
-| Claiming level | Cumulative `MUST` + `MwA` (worst case) | New rows over previous level |
-|---|---:|---:|
-| L0 | 6 | — |
-| L1 | 46 | +40 |
-| L2 | 74 | +28 |
-| L3 | 88 | +14 |
-| L4 | 91 (plus 76 `SHOULD` rows resolved) | +3 `MUST`/`MwA`, +76 `SHOULD` |
+{{generated:coverage-cumulative}}

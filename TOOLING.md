@@ -36,7 +36,8 @@ The scripts enforce invariants that are easy to miss in prose review:
   including the complete `## Specification clauses` body, generated scope
   lists, generated clause counts, and conformance workflow table, are current,
 - visible checklist row IDs match the catalog and specification,
-- generated coverage tables are current,
+- the generated coverage-map projection from the coverage template and catalog
+  is current,
 - Markdown links, anchors, clause references, and pillar tables stay valid,
 - audit templates remain structurally valid,
 - the audit collector produces stable derived statuses on a known synthetic
@@ -92,7 +93,7 @@ Common focused commands:
 | `npm --prefix tools run check:evergreen` | Check docs for transient or historical wording. |
 | `npm --prefix tools run check:stamped-blocks` | Validate stamped-block checksum sentinels. |
 | `npm --prefix tools run check:doc-version` | Verify version strings agree across spec, README, GUIDE, and CHANGELOG. |
-| `npm --prefix tools run check:coverage` | Verify generated coverage blocks are current. |
+| `npm --prefix tools run check:coverage` | Verify `AI-CONTRIBUTOR-COVERAGE.md` is current with the coverage template and rule catalog. |
 | `npm --prefix tools run check:rule-catalog` | Validate and canonicalize the checked-in AI Contributor rule catalog. |
 | `npm --prefix tools run check:checklist-assets` | Verify generated checklist rule tables are current with the rule catalog. |
 | `npm --prefix tools run check:specification` | Verify `AI-CONTRIBUTOR-SPECIFICATION.md` is current with the specification template and rule catalog. |
@@ -107,7 +108,7 @@ Common focused commands:
 | `npm --prefix tools run check:tooling-command-coverage` | Verify every `check:*`, `audit:*`, and aggregate `audit` script in `tools/package.json` is documented in this command table. |
 | `npm --prefix tools run check:audit-frontmatter-docs` | Verify shipped audit frontmatter fields stay aligned across templates and canonical ownership docs. |
 | `npm --prefix tools run check:golden-audit` | Run the collector against the synthetic golden-audit repo. |
-| `npm --prefix tools run generate:coverage` | Rewrite generated coverage blocks. |
+| `npm --prefix tools run generate:coverage` | Rewrite `AI-CONTRIBUTOR-COVERAGE.md` from the coverage template and rule catalog. |
 | `npm --prefix tools run generate:rule-catalog` | Rewrite the AI Contributor rule catalog in canonical JSON order. |
 | `npm --prefix tools run generate:checklist-assets` | Rewrite generated checklist rule tables from the rule catalog. |
 | `npm --prefix tools run generate:specification` | Rewrite `AI-CONTRIBUTOR-SPECIFICATION.md` from the specification template and rule catalog. |
@@ -170,8 +171,8 @@ hints consistency, pillar structure, and stamped-block checks.
 
 Checks and generators that understand the specification/checklist model:
 normative IDs, checklist pillar ownership, row scope consistency, audit evidence
-cross-checking, conformance-level consistency, specification template
-generation, checklist asset generation, and coverage generation.
+cross-checking, conformance-level consistency, specification and coverage
+template generation, and checklist asset generation.
 
 ### `tools/tests/`
 
