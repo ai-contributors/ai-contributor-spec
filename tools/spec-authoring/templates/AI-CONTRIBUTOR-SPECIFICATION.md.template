@@ -1,0 +1,146 @@
+# AI Contributor Specification
+
+> **Version:** {{specVersion}} · **Owner:** _Set per adopting repository_ · **License:** [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) · **Change history:** [`CHANGELOG.md`](CHANGELOG.md)
+>
+> Change history is maintained in the repository's version-control log. Adopters `MUST` satisfy the change-control requirements in §25 for their copy of this document.
+
+This document defines a vendor-neutral specification for repositories where AI contributes to code you ship. Whether this makes a codebase "production-ready" is a judgment for the adopting team.
+
+It also covers the engineering work around AI-assisted delivery: repository setup, policy, CI, verification, and approval controls.
+
+It is written as a practical policy, not general advice.
+
+## How to read this document
+
+If you are new to the specification, read it in this order:
+
+1. [Conformance levels](#conformance-levels), to choose the AI workflow you want to allow.
+2. [Normative language](#normative-language), to understand {{generated:spec-scope-list}}.
+3. [Definitions](#definitions), when a term such as "agent", "material action", or "untrusted source" appears.
+4. The clauses for your target level, using [`AI-CONTRIBUTOR-CHECKLIST.md`](.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md) as the practical scoring view.
+
+The checklist is easier to fill than this document is to read end to end. Use this document when a checklist row is unclear, when you need the exact rule ID, or when you are changing the policy.
+
+## Scope and audience
+
+This document is for engineering teams adopting AI-assisted development on working codebases. It is written for engineering leads, platform teams, harness engineers, security reviewers, and developers who work with AI agents. Running the spec against a repository gives contributors a quick picture of its current state.
+
+**In scope:** how AI agents contribute to application and infrastructure source code that gets merged and shipped, and how the shared skills, MCP servers, and other tooling they invoke are governed.
+
+**Adoption scale:** the unit of adoption is one repository. Solo, team, and multi-team repositories can all use the same specification and checklist. The differences are ownership, approval, and evidence: solo repositories name one human owner, team repositories name people or team aliases, and multi-team repositories SHOULD use path-level ownership and shared guardrail documentation.
+
+Monorepos are included. Apply the root policy once. Then use path-scoped ownership, package-level instructions, and deterministic workspace build/test order inside the repository.
+
+**Solo maintainers:** solo repositories can use the same checklist, but approval independence still has to be honest. A solo owner may satisfy human-review requirements for an agent-authored change only when the platform records a distinct human approval and the bot or agent account neither approves nor merges the pull request. If the same human account both authors or pushes the material change and supplies the only approval, that approval is not independent review.
+
+**Out of scope:** foundation-model training and evaluation, reinforcement-learning pipelines, consumer-facing agent safety, and regulatory compliance frameworks beyond the references in §§9 and 18. This document does not replace industry-specific regulations. Combine it with organization-specific compliance programs where required.
+
+Adopt the document as-is or as a starting point for an organization-specific policy. Adopters are responsible for maintaining their own copy under the change-control requirements in §25.
+
+## Normative language
+
+- `MUST` means required for the baseline engineering hardening this specification defines.
+- `MUST NOT` means prohibited without exception.
+- `SHOULD` means strongly recommended unless there is a documented reason not to implement it.
+- `MAY` means optional or context-dependent.
+- `MUST when applicable` means required only if the trigger applies. Examples include a UI, public releases, cloud deployments, or security-sensitive data. Each row states its own trigger. Example: §12 (Accessibility) applies only if the repository ships a UI; a backend-only API repository does not have to satisfy it.
+
+A bullet labelled `MUST` in this document `MAY` map to a `MUST when applicable` row in [`AI-CONTRIBUTOR-CHECKLIST.md`](.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md) when the bullet's sentence carries an embedded applicability clause. Examples: "Multi-package repositories `MUST`…" (§1 `AIC-deterministic-build-order`) and "Data integrity constraints `MUST` exist where the persistence layer supports them" (§7 `AIC-data-integrity-constraints`). The trigger is the bullet's own clause, the obligation is unchanged, and the row is treated as `MUST when applicable` by the validator's strict closure (`Not relevant` requires the trigger to be absent, with evidence). Bullets with no embedded trigger are mapped as `MUST`.
+
+A repository should not claim reliable AI-assisted delivery against this specification unless all unconditional `MUST` items and all relevant `MUST when applicable` items are satisfied.
+
+## Spec IDs
+
+Every requirement bullet in this document carries a stable identifier of the form `AIC-<slug>` — for example `AIC-secret-vcs-exclude`. **`AIC`** means **AI Contributor**. The `<slug>` is `[a-z0-9][a-z0-9-]*` and is chosen to describe the rule.
+
+The IDs connect this specification, [`AI-CONTRIBUTOR-CHECKLIST.md`](.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md), and [`AI-CONTRIBUTOR-AUDIT-LOG.md`](.ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-LOG.md). They survive section renumbering and bullet reordering. When citing a rule, prefer the ID over the section number.
+
+---
+
+## Pillars
+
+The {{generated:clause-count}} clauses are grouped into seven pillars. The grouping is only a reader's map; it does not add requirements. Conformance is always checked clause by clause.
+
+{{generated:pillars-table}}
+
+---
+
+## Definitions
+
+Terms used throughout this document. Where this document references these terms, the definitions here govern.
+
+- **Agent** — an automated process that performs multi-step actions on behalf of a human, including LLM-driven coding assistants, orchestration loops, PR bots, and scheduled autonomous runners. A CLI tool that executes one fixed command without planning is not an agent.
+- **Autonomous agent** — an agent that can plan and execute actions without per-step human confirmation.
+- **Delegated agent** — an agent invoked for a bounded task with a defined result and scope.
+- **Harness** — the code that wraps an LLM. The harness decides what context, tools, memory, retrieval, and orchestration the model operates with at each step, and how its outputs flow back into the surrounding system. This specification constrains how a harness is built, reviewed, operated, and audited. It does not prescribe a specific harness architecture.
+- **Shared skill** — a reusable AI workflow module versioned in the repository and available to any contributor.
+- **Personal helper** — an AI workflow module that exists only in a contributor's local configuration and is not versioned in the repository.
+- **Pattern-filter guardrail** — a rule-based input or output filter using exact match, regex, blocklists, or similar deterministic matching. Pattern filters are fast and deterministic, but brittle against paraphrase, obfuscation, translation, and non-English content.
+- **LLM-filter guardrail** — a model-based classifier placed before or after an LLM that tries to flag or block malicious prompts or outputs. LLM filters are non-deterministic and unreliable against attackers who adapt to the filter.
+- **Capability scoping** — restricting an agent's tools, read scopes, and write scopes at the permission layer before the agent runs. The scope is derived from the user's requested task, not from the model's self-policing.
+- **Destructive action** — any action that cannot be reversed by reviewing a diff or reverting a commit. Examples include deleting branches or tags, force-pushing to shared branches, mutating production data, rotating or revoking credentials, dropping database objects, removing published releases, closing or deleting issues or pull requests, and sending outbound messages to external parties.
+- **Security-sensitive action** — any change to authentication, authorization, trust boundaries, cryptographic material, CI credentials, workflow files, or dependency manifests.
+- **Release-affecting action** — any action that can cause an artifact to be published, deployed, or distributed to consumers.
+- **Material action** — an action whose effect is durable or externally visible. Examples: changes that land on a protected branch, modify deployed artifacts or infrastructure, alter credentials, permissions, or trust boundaries, publish or distribute artifacts, or send outbound communication to external parties. Transient actions that leave no durable or external trace — such as read-only exploration or scratch work in disposable sandboxes — are not material. Reading secrets, credentials, or regulated data is material if the contents leave the sandbox in an un-redacted form (for example by being written to a transcript sent to a third-party provider, pasted into a shared document, or emitted to logs that persist outside the sandbox); a read that is redacted per §13 and §22 before leaving the sandbox is not material.
+- **Engineering guardrail** — a policy, CI check, permission boundary, review requirement, or automated verification step defined by this specification. Unless otherwise qualified, "guardrail" in this document means an engineering guardrail.
+- **Untrusted source** — any content not authored by the repository's maintainers and not gated by repository review. Examples: external pull requests and their bodies, issue comments, fetched URLs, external API responses, search results, content pasted into prompts, tool outputs from third-party services, and any data labelled adversarial in §21.
+- **Sensitive sink** — any destination where a write produces a destructive, security-sensitive, or release-affecting effect (per the definitions above). Examples: protected branches, deployment pipelines, credential stores, mutation endpoints on production data, and external messaging or publishing endpoints.
+- **Equivalent** — where this document allows "or equivalent" alternatives, the alternative `MUST` meet three conditions. It `MUST` be documented in the repository. It `MUST` be enforceable by automation or review. It `MUST` preserve the outcome the named option is designed to achieve — for example, equivalent compile-time correctness, equivalent trust-boundary enforcement, equivalent auditability, or equivalent supply-chain integrity. Reviewers `MUST` reject an alternative that produces a weaker outcome — for example, a replacement type checker that catches a strict subset of the original's errors, a secret-scanning pattern set that matches fewer organization-specific formats, a review process that can be bypassed without trace, or a supply-chain control that drops integrity-hash verification.
+
+---
+
+## Quick conformance checklist
+
+For a per-clause audit checklist covering every {{generated:spec-scope-list}} item in this document, see [`AI-CONTRIBUTOR-CHECKLIST.md`](.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md). Conformance level definitions are in the [Conformance levels](#conformance-levels) section at the end of this document.
+
+---
+
+## Specification clauses
+
+{{generated:specification-clauses}}
+
+## Conformance levels
+
+Repositories can adopt this specification in stages. Each level includes the levels below it. Each level describes a clear decision about AI's role in the repository.
+
+A repository that does not satisfy Level 0 has no conformance level; audit templates represent that state as `conformance_level: none`.
+
+The headline level comes from the highest-risk AI capability the repository permits. Feature-specific controls still apply on their own. For example, a Level 2 workflow may use tool-calling assistants, GitHub issues, pull request comments, fetched URLs, dependency metadata, command output, filters, classifiers, or other external content as long as every change still passes through human acceptance. Those features still trigger the relevant provider allowlist, data-classification, untrusted-input, dependency-verification, retention, capability-scoping, risk-control, and non-English-filter-coverage rows.
+
+{{generated:conformance-levels}}
+
+Teams adopting the spec for the first time should reach Level 0 first, then close the remaining Level 1 controls.
+
+### Why Level 0 has these baseline requirements
+
+Three intersecting selection rules pick the Level 0 set, and the same rules explain what is deliberately *not* at L0:
+
+1. **Universal hygiene.** Every MUST listed at L0 protects any repository regardless of AI use — secret leakage in git history, unreproducible builds, and unreviewable formatting drift hurt human-only teams just as much. A repository that fails any L0 row is broken on its own merits.
+2. **AI-readability prerequisite.** L0 is also the floor below which AI tools, *just reading* the repository, immediately cause harm: an AI assistant scaffolding without a committed lockfile produces a different dependency graph each run; one that reads `.env` files committed to git exfiltrates secrets to the provider context window. L0 closes those failure modes before any AI tool is declared in scope.
+3. **Subset of Level 1 with no AI-specific or stack-dependent obligations.** L0 is exactly the L1 rules from §1 (Reproducible environment), §2 (Static correctness — only the formatting MUST), and §5 (Secrets and credentials). Everything else is at L1 or higher.
+
+Deliberately *not* at L0:
+
+- **Strict typing, lint correctness, architecture boundaries, debug-statement lint** (§2, §3) — stack-dependent. A shell-script repository can pass L0 without a TypeScript-style strict mode.
+- **Pre-commit hooks, CI guardrails, fast-iteration paths** (§4) — depend on a hook framework and a CI host being wired up. Useful at L0+ but not the universal floor.
+- **Branch protection, CODEOWNERS, human review baseline** (§16) — require hosted-platform admin scope, which solo or self-hosted repositories may not have at the Level 0 stage.
+- **Test layers, runtime validation, auth boundary, observability** (§7, §10, §11, §13) — assume a test framework or a runnable service. L0 covers repositories without one.
+- **Everything AI-specific** (§17 AI operating model, §22 redaction, §26 AI-output licensing, all of Pillars 5–6) — by definition out of scope at the tier whose premise is "AI not yet declared in the contribution path."
+
+This is why L0 → L1 is the substrate-to-AI-readable transition: L1 closes the stack-, host-, and test-framework-dependent MUSTs that make a repository safe for AI tools to *read*; L2 is where AI is first declared in scope.
+
+## Which level do you need?
+
+Choose the level based on the highest-risk AI workflow the repository permits:
+
+{{generated:level-workflow-table}}
+
+The level a repository should target is determined by the highest AI workflow it intends to support, not by the average. A team running a single auto-merge bot needs Level 4 even if most of its AI use is read-only assistance.
+
+---
+
+## Final principle
+
+AI should not be trusted because it is capable.
+
+AI should be trusted only when the repository makes correctness, safety, and reviewability the default outcome — and the conformance levels above are how that claim is tested.

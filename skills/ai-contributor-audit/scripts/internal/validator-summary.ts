@@ -22,8 +22,7 @@ export function checkSummary(
   fail: ProblemReporter,
 ): void {
   if (context.templateMode) return;
-  const hasL0Rows = rules.some((r) => r.minLevel === 'L0');
-  const expectedLevels = hasL0Rows ? ['0', '1', '2', '3', '4'] : ['1', '2', '3', '4'];
+  const expectedLevels = ['0', '1', '2', '3', '4'];
   for (const lvl of expectedLevels) {
     if (!summary.some((s) => s.level === lvl)) {
       fail(

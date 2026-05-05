@@ -35,7 +35,7 @@ No badge is displayed for `conformance_level: none` or `conformance_level: 0`.
 
 1. Complete every checklist row first.
 2. Run the stamper so each summary **Status** is derived from the checklist tables.
-3. The stamper sets `conformance_level` to the **highest** level whose **Status** is `✅ Yes`. The value is `0` for Level 0, and `1`, `2`, `3`, or `4` for Levels 1–4.
+3. The stamper sets `conformance_level` to the numeric value of the **highest** level whose **Status** is `✅ Yes`.
 4. If no level row is `✅ Yes`, the stamper sets `none`.
 5. Never claim a level whose row is not `✅ Yes`, even if most requirements are met.
 

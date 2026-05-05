@@ -54,7 +54,6 @@ import {
   parseChecklistRules,
 } from './internal/audit-markdown.ts';
 import {
-  normalizeAuditLogMarkerProse,
   stampAuditTimestamps,
   stampCrossFileEquality,
   stampFrontmatterVersions,
@@ -346,8 +345,6 @@ function runStampPasses(ctx: StamperContext): string | null {
   err = stripPopulatedFrontmatterComments(ctx.checklistPath);
   if (err !== null) return err;
   err = stripPopulatedFrontmatterComments(ctx.auditPath);
-  if (err !== null) return err;
-  err = normalizeAuditLogMarkerProse(ctx.auditPath);
   if (err !== null) return err;
 
   // 12. Root summary report (copies the just-stamped checklist summary and

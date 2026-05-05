@@ -260,17 +260,6 @@ export function stripPopulatedFrontmatterComments(filePath: string): string | nu
   return null;
 }
 
-export function normalizeAuditLogMarkerProse(auditPath: string): string | null {
-  const original = fs.readFileSync(auditPath, 'utf8');
-  const normalized = original.replace(
-    /Rows between `<!-- BEGIN:STAMPED-COLLECTOR-ROWS -->\s*<!-- END:STAMPED-COLLECTOR-ROWS -->` are written by/g,
-    'Rows between the `BEGIN:STAMPED-COLLECTOR-ROWS` and `END:STAMPED-COLLECTOR-ROWS` markers are written by',
-  );
-  if (normalized === original) return null;
-  fs.writeFileSync(auditPath, normalized);
-  return null;
-}
-
 function readEvidenceForFrontmatter(evidencePath: string): EvidenceFrontmatterSource | null {
   try {
     return JSON.parse(fs.readFileSync(evidencePath, 'utf8')) as EvidenceFrontmatterSource;

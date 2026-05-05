@@ -1,6 +1,6 @@
 # AI Contributor Adoption Guide
 
-> **Version:** 0.1 · **Reference specification:** [`AI-CONTRIBUTOR-SPECIFICATION.md`](AI-CONTRIBUTOR-SPECIFICATION.md) v0.1 · **Change history:** [`CHANGELOG.md`](CHANGELOG.md)
+> **Version:** 0.1.1 · **Reference specification:** [`AI-CONTRIBUTOR-SPECIFICATION.md`](AI-CONTRIBUTOR-SPECIFICATION.md) v0.1.1 · **Change history:** [`CHANGELOG.md`](CHANGELOG.md)
 
 A step-by-step adoption path for small teams and solo developers building TypeScript web applications on GitHub. Follow it from top to bottom. Each phase moves the repository to the next level: Phase 0 → Level 0, Phase 1 → Level 1 and simple Level 2 workflows, Phase 2 → Level 3, Phase 3 → Level 4.
 
@@ -150,7 +150,7 @@ _Earns Level 1 (Hardened). With AI instructions, AI-output licensing, authorship
 - On GitHub: **Settings → Branches → Add branch protection rule →** Branch name pattern `main` → check "Require a pull request before merging" and "Require status checks to pass before merging".
 - Also check "Do not allow bypassing the above settings" so admins are held to the same rule.
 - Require that required-review approvals come from human reviewers. Enable "Require approval from someone other than the last pusher" so an agent that pushes a commit cannot approve it. Keep bot and GitHub App accounts out of any team that is listed as a Code Owner or counted toward the required-review count — on GitHub there's no native toggle for "bots may not approve," so this control is enforced through team membership.
-- **Solo-maintainer mode:** use an agent, bot, or GitHub App identity to open the PR, then have the human repository owner review and merge after checks pass. If the human owner pushes the material change under their own account and then supplies the only approval, the approval is not independent review under the specification; keep the row at `Warning` or bring in a second human reviewer.
+- **Solo-maintainer mode:** pick one pattern and write it down in the AI policy. **Checks only:** set required reviewers to 0, keep strong CI, signed commits, and linear history, then treat the owner's manual merge as the approval checkpoint; score `Human Review Required` as `Warning` and explain why. **Bot identity:** use an agent, bot, or GitHub App identity to open the PR, then have the human repository owner review and merge after checks pass; this pattern fits best when AI runs in CI or when a second human is involved. If the human owner pushes the material change under their own account and then supplies the only approval, the approval is not independent review under the specification.
 
 **Verify (contributor):** A direct push to `main` from a local branch is rejected with "protected branch." A PR opened and approved only by a bot account cannot be merged.
 

@@ -159,12 +159,10 @@ function makeFixture(): {
   const f = makeFixture();
   try {
     // Mutate the `Mock Mode` Warning row's Comment cell from one with a
-    // backticked file:line citation to plain prose with no citation. The
-    // valid fixture's legacy row shape is:
-    //   | `Mock Mode` | 2 | L4 | requirement | ⚠️ Warning | <comment> |
+    // backticked file:line citation to plain prose with no citation.
     const text = fs.readFileSync(f.checklist, 'utf8');
     const next = text.replace(
-      /(\| `Mock Mode` \| 2 \| L4 \| [^|]+ \| ⚠️ Warning \| )[^|]+( \|)/,
+      /(\| `SHOULD` \| `Mock Mode` \| [^|]+ \| ⚠️ Warning \| )[^|]+( \| The project offers a safe local mode)/,
       '$1this row has no backticked citation in its Comment$2',
     );
     if (next === text) {

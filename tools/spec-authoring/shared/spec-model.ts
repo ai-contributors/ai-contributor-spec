@@ -4,15 +4,16 @@
 
 export type SpecScope = 'MUST' | 'MUST when applicable' | 'SHOULD' | 'MAY';
 
-const SPEC_SCOPES: ReadonlySet<SpecScope> = new Set([
-  'MUST',
-  'MUST when applicable',
-  'SHOULD',
-  'MAY',
-]);
-
-export function isSpecScope(value: string): value is SpecScope {
-  return (SPEC_SCOPES as ReadonlySet<string>).has(value);
+function isSpecScope(value: string): value is SpecScope {
+  switch (value) {
+    case 'MUST':
+    case 'MUST when applicable':
+    case 'SHOULD':
+    case 'MAY':
+      return true;
+    default:
+      return false;
+  }
 }
 
 export interface SpecId {
@@ -22,20 +23,47 @@ export interface SpecId {
   line: number;
 }
 
-export interface UntaggedNormativeBullet {
+interface UntaggedNormativeBullet {
   clause: number;
   scope: SpecScope;
   line: number;
   preview: string;
 }
 
-export interface NormativeIdParseResult {
+interface NormativeIdParseResult {
   ids: SpecId[];
   bullets: number;
   untagged: UntaggedNormativeBullet[];
 }
 
+export interface PillarDetail {
+  number: number;
+  icon: string;
+  title: string;
+  description: string;
+}
+
+export interface ClauseDetail {
+  number: number;
+  pillar: number;
+  title: string;
+}
+
+export interface LevelDetail {
+  id: string;
+  order: number;
+  label: string;
+  description: string;
+  workflowSummary?: string;
+}
+
 const ID_PATTERN = /<sup>`(AIC-[a-z0-9][a-z0-9-]*)`<\/sup>/g;
+const SPECIFICATION_CLAUSES_HEADING = /^## Specification clauses\s*$/;
+const TOP_LEVEL_HEADING = /^##\s+/;
+const CLAUSE_HEADING = /^#{2,4}\s+(\d+)\.\s+/;
+const SCOPE_HEADING = /^#{3,6}\s+`(MUST|MUST when applicable|SHOULD|MAY)`\s*$/;
+const ANY_HEADING = /^#{1,6}\s+/;
+const PILLAR_HEADING = /^###\s+Pillar\s+(\d+)\b/;
 
 export function parseNormativeIds(specContent: string): NormativeIdParseResult {
   const ids: SpecId[] = [];
@@ -48,33 +76,33 @@ export function parseNormativeIds(specContent: string): NormativeIdParseResult {
   const lines = specContent.split(/\r?\n/);
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-    if (/^## Specification clauses\s*$/.test(line)) {
+    if (SPECIFICATION_CLAUSES_HEADING.test(line)) {
       inClauses = true;
       continue;
     }
     if (!inClauses) continue;
 
-    const cm = line.match(/^##\s+(\d+)\.\s+/);
+    const cm = line.match(CLAUSE_HEADING);
     if (cm) {
       clause = Number(cm[1]);
       scope = null;
       continue;
     }
 
-    if (/^##\s+/.test(line)) {
+    if (TOP_LEVEL_HEADING.test(line)) {
       inClauses = false;
       clause = 0;
       scope = null;
       continue;
     }
 
-    const sm = line.match(/^###\s+`(MUST|MUST when applicable|SHOULD|MAY)`\s*$/);
+    const sm = line.match(SCOPE_HEADING);
     if (sm && isSpecScope(sm[1])) {
       scope = sm[1];
       continue;
     }
 
-    if (/^###\s+/.test(line)) {
+    if (ANY_HEADING.test(line)) {
       scope = null;
       continue;
     }
@@ -101,63 +129,32 @@ export function specIdMap(specContent: string): Map<string, SpecId> {
   return out;
 }
 
-export function specScopeById(specContent: string): Map<string, SpecScope> {
-  const out = new Map<string, SpecScope>();
-  for (const specId of parseNormativeIds(specContent).ids) {
-    const prior = out.get(specId.id);
-    if (prior && prior !== specId.scope) {
-      throw new Error(
-        `spec ID ${specId.id} appears under both "${prior}" and "${specId.scope}" subheadings`,
-      );
-    }
-    out.set(specId.id, specId.scope);
-  }
-  return out;
-}
-
 export function clauseToPillar(specContent: string): Map<number, number> {
   const out = new Map<number, number>();
   let pillar: number | null = null;
   for (const line of specContent.split(/\r?\n/)) {
-    const pm = line.match(/^###\s+Pillar\s+(\d+)\b/);
+    const pm = line.match(PILLAR_HEADING);
     if (pm) {
       pillar = Number(pm[1]);
       continue;
     }
-    const cm = line.match(/^##\s+(\d+)\.\s+/);
+    const cm = line.match(CLAUSE_HEADING);
     if (cm && pillar !== null) out.set(Number(cm[1]), pillar);
   }
   return out;
 }
 
-export function pillarNames(specContent: string): Record<number, string> {
-  const out: Record<number, string> = {};
+export function validMinLevels(specContent: string): Set<string> {
+  const out = new Set<string>(['—']);
   for (const line of specContent.split(/\r?\n/)) {
-    const m = line.match(/^\|\s*(\d+)\s*\|\s*([^|]+?)\s*\|\s*§/);
-    if (m) out[Number(m[1])] = m[2];
+    const m = line.match(/^-\s+\*\*Level\s+(\d+)\s+—\s+/);
+    if (!m) continue;
+    out.add(`L${m[1]}`);
   }
-  if (Object.keys(out).length === 0) {
-    throw new Error(
-      'No pillar rows parsed from specification — pillar table format may have changed.',
-    );
-  }
-  return out;
-}
-
-export function levelLabels(specContent: string): Record<string, string> {
-  const out: Record<string, string> = {};
-  for (const line of specContent.split(/\r?\n/)) {
-    const m = line.match(/^-\s+\*\*Level\s+(\d)\s+—\s+([^.*]+?)\.\*\*/);
-    if (m) out[`L${m[1]}`] = `L${m[1]} — ${m[2].trim()}`;
-  }
-  if (Object.keys(out).length === 0) {
+  if (out.size === 1) {
     throw new Error(
       'No conformance-level bullets parsed from specification — Conformance levels format may have changed.',
     );
   }
   return out;
-}
-
-export function validMinLevels(specContent: string): Set<string> {
-  return new Set(['—', ...Object.keys(levelLabels(specContent))]);
 }

@@ -3,8 +3,8 @@
 //
 // Verifies normative-ID hygiene across the spec and the checklist.
 //
-// Each normative bullet (under a `### `MUST``, `### `MUST when applicable``,
-// `### `SHOULD``, or `### `MAY`` heading inside the `## Specification clauses`
+// Each normative bullet (under a scope heading such as `##### `MUST`` inside
+// the `## Specification clauses`
 // section of AI-CONTRIBUTOR-SPECIFICATION.md) MUST carry a visible normative
 // ID of the form `<sup>`AIC-<slug>`</sup>` at the end of the bullet, where
 // <slug> is `[a-z0-9][a-z0-9-]*`. The aggregate `check` script runs this
@@ -16,6 +16,11 @@
 //   - malformed IDs (wrong prefix, illegal chars)
 //   - checklist `IDs` entries that don't exist in the spec (dangling refs)
 //   - spec IDs that do not appear in any checklist row
+//
+// The catalog is the canonical rule source, and the generated-asset checks
+// already verify projection freshness. This script intentionally remains a
+// rendered-artifact smoke check: it parses the shipped Markdown exactly where
+// adopters and auditors see visible IDs.
 //
 import fs from 'node:fs';
 import { parseChecklistRows } from './shared/checklist-parser.ts';

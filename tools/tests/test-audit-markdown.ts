@@ -30,27 +30,20 @@ const checklistLines = [
   '',
   '## Optional',
   '',
-  '| Scope | Rule | Status | Comment | Requirement | Pillar | IDs |',
-  '|---|---|---|---|---|---:|---|',
-  '| `MAY` | `Nice Extra` |  | optional | add extras | 2 | `AIC-nice-extra` |',
-  '',
-  '## `SHOULD`',
-  '',
-  '| Rule | Pillar | Min Level | Requirement | Status | Comment |',
-  '|---|---:|---|---|---|---|',
-  '| `Legacy Row` | 3 | L4 | old shape | ✅ Fulfilled | `docs/audit.md` |',
+  '| Scope | Rule | A | Status | Comment | Requirement | Pillar | IDs |',
+  '|---|---|---|---|---|---|---:|---|',
+  '| `MAY` | `Nice Extra` | - |  | optional | add extras | 2 | `AIC-nice-extra` |',
 ];
 
 const rules = parseChecklistRules(checklistLines);
-assert('parses modern and legacy checklist rows', rules.length === 3);
+assert('parses current checklist rows', rules.length === 2);
 assert('keeps modern MUST when applicable spelling', rules[0]?.scope === 'MUST when applicable');
 assert('parses escaped pipes inside code spans', rules[0]?.comment.includes('A|B') === true);
 assert('parses modern IDs', rules[0]?.ids[0] === 'AIC-env-example-placeholders');
 assert('parses Optional rows as dash level', rules[1]?.minLevel === '—');
-assert('parses legacy rows without IDs', rules[2]?.ids.length === 0);
 
-const compat = parseChecklistRows(checklistLines.join('\n'));
-assert('compat parser maps MUST when applicable to MwA', compat[0]?.scope === 'MwA');
+const authoringRows = parseChecklistRows(checklistLines.join('\n'));
+assert('authoring parser maps MUST when applicable to MwA', authoringRows[0]?.scope === 'MwA');
 
 const summary = parseSummary([
   '## Conformance level summary',

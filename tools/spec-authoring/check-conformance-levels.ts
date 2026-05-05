@@ -8,6 +8,7 @@
 // of drift Copilot flagged after the Level 0 rollout.
 
 import fs from 'node:fs';
+import { loadValidatedCatalog } from './shared/catalog-loader.ts';
 
 interface Source {
   path: string;
@@ -33,7 +34,17 @@ const SOURCES: Source[] = [
   },
 ];
 
-const CANONICAL = ['none', '0', '1', '2', '3', '4'];
+function canonicalLevels(): string[] {
+  const catalog = loadValidatedCatalog(
+    'AI-CONTRIBUTOR-RULE-CATALOG.json',
+    'AI-CONTRIBUTOR-RULE-CATALOG.json',
+  );
+  const numericLevels = catalog.levels
+    .filter((level) => /^L\d+$/.test(level.id))
+    .sort((a, b) => a.order - b.order || a.id.localeCompare(b.id))
+    .map((level) => level.id.slice(1));
+  return ['none', ...numericLevels];
+}
 
 function tokenize(s: string): string[] {
   return s
@@ -44,6 +55,7 @@ function tokenize(s: string): string[] {
 }
 
 const problems: string[] = [];
+const expectedValues = canonicalLevels();
 
 for (const src of SOURCES) {
   if (!fs.existsSync(src.path)) {
@@ -57,7 +69,7 @@ for (const src of SOURCES) {
     continue;
   }
   const tokens = new Set(tokenize(m[1]));
-  for (const expected of CANONICAL) {
+  for (const expected of expectedValues) {
     if (!tokens.has(expected)) {
       problems.push(
         `${src.path}: ${src.describe} is missing accepted value "${expected}" (parsed: ${[...tokens].join(', ')})`,
@@ -68,7 +80,7 @@ for (const src of SOURCES) {
 
 if (problems.length === 0) {
   console.log(
-    `OK — accepted conformance_level set [${CANONICAL.join(', ')}] is consistent across ${SOURCES.length} sources`,
+    `OK — accepted conformance_level set [${expectedValues.join(', ')}] is consistent across ${SOURCES.length} sources`,
   );
   process.exit(0);
 }

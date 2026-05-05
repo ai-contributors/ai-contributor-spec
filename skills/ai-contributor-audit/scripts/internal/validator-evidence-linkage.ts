@@ -14,9 +14,7 @@ import {
 import {
   commentHasDirectEvidence,
   hasApplicabilityReason,
-  isSeparatorRow,
   looksLikeCommand,
-  splitRow,
   stripBackticks,
   type ChecklistRow,
 } from './audit-markdown.ts';
@@ -319,26 +317,6 @@ export function checkProfileEvidence(
         context.checklistPath,
         row.line,
         `row "${row.rule}" has an Owner profile Comment but current AI-CONTRIBUTOR-EVIDENCE.json does not support a profile-driven Not relevant stamp`,
-      );
-    }
-  }
-}
-
-export function checkAutomationMarkerHeader(
-  context: ValidatorContext,
-  fail: ProblemReporter,
-): void {
-  for (let i = 0; i < context.checklistLines.length; i++) {
-    if (!context.checklistLines[i].startsWith('|')) continue;
-    if (isSeparatorRow(context.checklistLines[i])) continue;
-    const cells = splitRow(context.checklistLines[i]);
-    if (cells[0] !== 'Scope') continue;
-    if (cells[2] === 'M') {
-      fail(
-        'AUDIT062',
-        context.checklistPath,
-        i + 1,
-        'modern checklist tables must use the `A` automated-marker column, not `M`',
       );
     }
   }

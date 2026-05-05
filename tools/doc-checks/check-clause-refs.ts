@@ -11,10 +11,10 @@ import { execSync } from 'node:child_process';
 const SPEC = 'AI-CONTRIBUTOR-SPECIFICATION.md';
 const specContent = fs.readFileSync(SPEC, 'utf8');
 
-// Collect existing clause numbers from headings like "## 7. Authorization ..."
+// Collect existing clause numbers from headings like "#### 7. Authorization ..."
 const valid = new Set<number>();
 for (const line of specContent.split(/\r?\n/)) {
-  const m = line.match(/^##\s+(\d+)\.\s+/);
+  const m = line.match(/^#{2,4}\s+(\d+)\.\s+/);
   if (m) valid.add(Number(m[1]));
 }
 if (valid.size === 0) {
@@ -43,7 +43,7 @@ for (let i = 0; i < sorted.length; i++) {
 // Detect duplicate `## N.` headings (two clauses sharing a number).
 const counts = new Map<number, number>();
 for (const line of specContent.split(/\r?\n/)) {
-  const m = line.match(/^##\s+(\d+)\.\s+/);
+  const m = line.match(/^#{2,4}\s+(\d+)\.\s+/);
   if (m) counts.set(Number(m[1]), (counts.get(Number(m[1])) || 0) + 1);
 }
 for (const [n, c] of counts) {

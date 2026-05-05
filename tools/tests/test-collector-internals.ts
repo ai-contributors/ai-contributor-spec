@@ -16,6 +16,10 @@ import {
   stampConformanceLevel,
   stampSummary,
 } from '../../skills/ai-contributor-audit/scripts/internal/stamper-audit-summary.ts';
+import {
+  ensureDerivedEvidenceArtifactCitations,
+  stampDerivedRuleStatuses,
+} from '../../skills/ai-contributor-audit/scripts/internal/stamper-checklist-status.ts';
 
 let failed = 0;
 function ok(label: string): void {
@@ -24,6 +28,19 @@ function ok(label: string): void {
 function bad(label: string, detail = ''): void {
   console.error(`FAIL ${label}${detail ? ': ' + detail : ''}`);
   failed++;
+}
+
+function statusChecklist(rows: string[]): string {
+  return [
+    '# Checklist',
+    '',
+    '## Level 1 — Hardened',
+    '',
+    '| Scope | Rule | A | Status | Comment | Requirement | Pillar | IDs |',
+    '| ----- | ---- | - | ------ | ------- | ----------- | ------ | --- |',
+    ...rows,
+    '',
+  ].join('\n');
 }
 
 // ----- collector-worktree ------------------------------------------------
@@ -186,6 +203,133 @@ function bad(label: string, detail = ''): void {
     ok('buildHostedSettings: 404 handled without throwing');
   } else {
     bad('buildHostedSettings 404', JSON.stringify(r));
+  }
+}
+
+// ----- stamper-checklist-status edge paths -----------------------------
+
+// Missing evidence JSON -> actionable error.
+{
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'scs-missing-evidence-'));
+  try {
+    const cl = path.join(tmp, 'CL.md');
+    fs.writeFileSync(cl, statusChecklist([]));
+    const err = stampDerivedRuleStatuses({
+      checklistPath: cl,
+      evidencePath: path.join(tmp, 'missing.json'),
+    });
+    if (typeof err === 'string' && /evidence JSON/.test(err)) {
+      ok('stampDerivedRuleStatuses: missing evidence -> error');
+    } else {
+      bad('stampDerivedRuleStatuses missing evidence', err ?? '(null)');
+    }
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+}
+
+// Malformed evidence JSON -> parse error.
+{
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'scs-bad-evidence-'));
+  try {
+    const cl = path.join(tmp, 'CL.md');
+    const evidence = path.join(tmp, 'EVIDENCE.json');
+    fs.writeFileSync(cl, statusChecklist([]));
+    fs.writeFileSync(evidence, '{ nope');
+    const err = stampDerivedRuleStatuses({ checklistPath: cl, evidencePath: evidence });
+    if (typeof err === 'string' && /not valid JSON/.test(err)) {
+      ok('stampDerivedRuleStatuses: malformed evidence -> error');
+    } else {
+      bad('stampDerivedRuleStatuses malformed evidence', err ?? '(null)');
+    }
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+}
+
+// Evidence with no rules object is a no-op.
+{
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'scs-no-rules-'));
+  try {
+    const cl = path.join(tmp, 'CL.md');
+    const evidence = path.join(tmp, 'EVIDENCE.json');
+    fs.writeFileSync(cl, statusChecklist([]));
+    fs.writeFileSync(evidence, JSON.stringify({}));
+    const err = stampDerivedRuleStatuses({ checklistPath: cl, evidencePath: evidence });
+    if (err === null) ok('stampDerivedRuleStatuses: no rules object -> no-op');
+    else bad('stampDerivedRuleStatuses no rules object', err);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+}
+
+// Collector-derived status rewrites A/Status/Comment and preserves escaped pipes.
+{
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'scs-stamp-row-'));
+  try {
+    const cl = path.join(tmp, 'CL.md');
+    const evidence = path.join(tmp, 'EVIDENCE.json');
+    fs.writeFileSync(
+      cl,
+      statusChecklist([
+        '| `MUST` | `Strict Types` | - |  |  | Strict typing with A\\|B example. | 1 | `AIC-strict-typing-enabled` |',
+      ]),
+    );
+    fs.writeFileSync(
+      evidence,
+      JSON.stringify({
+        rules: {
+          'strict-types': {
+            judgment_required: false,
+            derived_status: 'Fulfilled',
+            derivation_reason: 'strict enabled',
+            aic_ids: ['AIC-strict-typing-enabled'],
+          },
+        },
+      }),
+    );
+    const err = stampDerivedRuleStatuses({ checklistPath: cl, evidencePath: evidence });
+    const after = fs.readFileSync(cl, 'utf8');
+    if (
+      err === null &&
+      after.includes('| `MUST` | `Strict Types` | x | ✅ Fulfilled |') &&
+      after.includes('A\\|B example')
+    ) {
+      ok('stampDerivedRuleStatuses: stamps current A-column row');
+    } else {
+      bad('stampDerivedRuleStatuses row stamp', `err=${err ?? '(null)'} after=\n${after}`);
+    }
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+}
+
+// Fulfilled derived rows without an evidence-artifact citation get one.
+{
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'scs-artifact-citation-'));
+  try {
+    const cl = path.join(tmp, 'CL.md');
+    fs.writeFileSync(
+      cl,
+      statusChecklist([
+        '| `MUST` | `Branch Protection` | - | ✅ Fulfilled |  | Protected branches. | 4 | `AIC-default-branch-protected` |',
+      ]),
+    );
+    const err = ensureDerivedEvidenceArtifactCitations({ checklistPath: cl });
+    const after = fs.readFileSync(cl, 'utf8');
+    if (
+      err === null &&
+      after.includes('(see `.ai-contributor-audit/AI-CONTRIBUTOR-EVIDENCE.json`)')
+    ) {
+      ok('ensureDerivedEvidenceArtifactCitations: appends missing citation');
+    } else {
+      bad(
+        'ensureDerivedEvidenceArtifactCitations append',
+        `err=${err ?? '(null)'} after=\n${after}`,
+      );
+    }
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
   }
 }
 

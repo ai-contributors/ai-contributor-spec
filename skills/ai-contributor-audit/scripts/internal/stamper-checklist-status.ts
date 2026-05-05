@@ -85,9 +85,6 @@ export function stampDerivedRuleStatuses(paths: {
     if (isSeparatorRow(line)) continue;
 
     const cells = splitRow(line);
-    if (cells[0] === 'Scope' && cells[2] === 'M') {
-      return 'Cannot stamp checklist: modern checklist tables must use the `A` automated-marker column, not `M`.';
-    }
     const layout = modernChecklistLayout(cells);
     if (!layout) continue;
     if (cells[0] === 'Scope') continue;
@@ -101,21 +98,11 @@ export function stampDerivedRuleStatuses(paths: {
       if (!profileMatch) continue;
       if (scope === 'MUST') continue;
       const comment = ownerProfileComment(profileMatch);
-      lines[i] = rewriteRowMechanicalStatusComment(
-        line,
-        layout.hasMechanicalColumn,
-        STATUS_EMOJI['Not relevant'],
-        comment,
-      );
+      lines[i] = rewriteRowMechanicalStatusComment(line, STATUS_EMOJI['Not relevant'], comment);
       continue;
     }
 
-    lines[i] = rewriteRowMechanicalStatusComment(
-      line,
-      layout.hasMechanicalColumn,
-      expected.status,
-      expected.comment,
-    );
+    lines[i] = rewriteRowMechanicalStatusComment(line, expected.status, expected.comment);
   }
 
   const out = lines.join(eol);
@@ -213,12 +200,7 @@ function rewriteRowCommentOnly(line: string, commentIndex: number, newComment: s
 // rule row while preserving every other character (including spacing)
 // verbatim. Cell boundaries use the same code-span / escape rules as
 // `splitRow`.
-function rewriteRowMechanicalStatusComment(
-  line: string,
-  hasMechanicalColumn: boolean,
-  status: string,
-  comment: string,
-): string {
+function rewriteRowMechanicalStatusComment(line: string, status: string, comment: string): string {
   const pipes: number[] = [];
   let inCode = false;
   for (let i = 0; i < line.length; i++) {
@@ -237,11 +219,7 @@ function rewriteRowMechanicalStatusComment(
   }
   if (pipes.length < 8) return line;
   const before = line.slice(0, pipes[2] + 1);
-  if (hasMechanicalColumn) {
-    if (pipes.length < 9) return line;
-    const after = line.slice(pipes[5]);
-    return `${before} x | ${status} | ${comment} ${after}`;
-  }
-  const after = line.slice(pipes[4]);
-  return `${before} ${status} | ${comment} ${after}`;
+  if (pipes.length < 9) return line;
+  const after = line.slice(pipes[5]);
+  return `${before} x | ${status} | ${comment} ${after}`;
 }

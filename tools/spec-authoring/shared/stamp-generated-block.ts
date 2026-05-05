@@ -3,8 +3,7 @@
 // Replace the body inside a `<!-- BEGIN:GENERATED <id> -->` /
 // `<!-- END:GENERATED <id> -->` marker pair with `body`.
 //
-// Used by repository stampers (e.g. generate-coverage,
-// generate-audit-profile-template). The marker convention is documented in
+// Used by generate-audit-profile-template. The marker convention is documented in
 // AI-CONTRIBUTOR-AUDIT-MODEL.md "When to stamp, when to validate."
 //
 // Throws if the markers are not present so a regenerate run on a stripped

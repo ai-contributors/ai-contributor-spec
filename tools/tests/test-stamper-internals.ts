@@ -10,7 +10,6 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {
-  normalizeAuditLogMarkerProse,
   stampAuditTimestamps,
   stampCrossFileEquality,
   stripPopulatedFrontmatterComments,
@@ -70,32 +69,14 @@ function bad(label: string, detail = ''): void {
     const f = path.join(tmp, 'with-comment.md');
     fs.writeFileSync(
       f,
-      '---\nspec_version: "0.1"   # legacy comment to strip\nauditor: "Test"   # owner-edit hint\n---\n\nbody\n',
+      '---\nspec_version: "0.1"   # inline comment to strip\nauditor: "Test"   # owner-edit hint\n---\n\nbody\n',
     );
     const err = stripPopulatedFrontmatterComments(f);
     const after = fs.readFileSync(f, 'utf8');
-    if (err === null && !/# legacy comment/.test(after) && /spec_version: "0\.1"/.test(after)) {
+    if (err === null && !/# inline comment/.test(after) && /spec_version: "0\.1"/.test(after)) {
       ok('stripPopulatedFrontmatterComments: strips inline comment from populated key');
     } else {
       bad('strip clean', `after=\n${after}`);
-    }
-  } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
-  }
-}
-
-// normalizeAuditLogMarkerProse: file without markers -> no-op.
-{
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'stamper-marker-'));
-  try {
-    const f = path.join(tmp, 'audit-log.md');
-    fs.writeFileSync(f, '---\nspec_version: "0.1"\n---\n\n# Audit Log\n\nno markers here\n');
-    const before = fs.readFileSync(f, 'utf8');
-    const err = normalizeAuditLogMarkerProse(f);
-    if (err === null && fs.readFileSync(f, 'utf8') === before) {
-      ok('normalizeAuditLogMarkerProse: file without markers -> no-op');
-    } else {
-      bad('marker no-op');
     }
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });

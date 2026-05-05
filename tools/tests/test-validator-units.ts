@@ -13,7 +13,6 @@ import {
 } from '../../skills/ai-contributor-audit/scripts/internal/validator-backlog.ts';
 import { checkSummary } from '../../skills/ai-contributor-audit/scripts/internal/validator-summary.ts';
 import {
-  checkAutomationMarkerHeader,
   checkCollectorDerivedRowsMatchEvidence,
   checkDerivedEvidenceArtifactCitations,
   checkProfileEvidence,
@@ -720,22 +719,7 @@ function makeRules(withL0 = true): ChecklistRow[] {
   }
 }
 
-// 36. AUDIT062: legacy `M` automation column rejected by checkAutomationMarkerHeader.
-{
-  const ctx = makeContext([
-    '## Level 0 — Baseline Hygiene',
-    '',
-    '| Scope | Rule | M | Pillar | Min Level | Requirement | Status | Comment | IDs |',
-    '| ----- | ---- | - | ------ | --------- | ----------- | ------ | ------- | --- |',
-    '| MUST | ExampleRule | x | 1 | L0 | requirement | ✅ Fulfilled | `evidence` | `AIC-x` |',
-  ]);
-  const { fail, problems } = collect();
-  checkAutomationMarkerHeader(ctx, fail);
-  if (problems.some((p) => p.code === 'AUDIT062')) ok('AUDIT062: legacy M column rejected');
-  else bad('AUDIT062', JSON.stringify(problems));
-}
-
-// 37. AUDIT038: token disclosure audit-log row must precede `gh api` rows.
+// 36. AUDIT038: token disclosure audit-log row must precede `gh api` rows.
 {
   const ctx = makeContext([]);
   const audit: AuditLogRow[] = [
