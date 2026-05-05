@@ -10,6 +10,7 @@ export interface ParsedChecklistRow {
   pillar: number;
   level: string;
   scope: ChecklistScope;
+  requirement: string;
   status: string;
 }
 
@@ -20,6 +21,7 @@ export function parseChecklistRows(content: string): ParsedChecklistRow[] {
     pillar: row.pillar,
     level: row.minLevel,
     scope: row.scope === 'MUST when applicable' ? 'MwA' : row.scope,
+    requirement: row.requirement,
     status: row.status,
   }));
 }

@@ -35,6 +35,14 @@ export interface NormativeIdParseResult {
   untagged: UntaggedNormativeBullet[];
 }
 
+export interface NormativeRule {
+  id: string;
+  clause: number;
+  scope: SpecScope;
+  line: number;
+  text: string;
+}
+
 const ID_PATTERN = /<sup>`(AIC-[a-z0-9][a-z0-9-]*)`<\/sup>/g;
 
 export function parseNormativeIds(specContent: string): NormativeIdParseResult {
@@ -99,6 +107,70 @@ export function specIdMap(specContent: string): Map<string, SpecId> {
   const out = new Map<string, SpecId>();
   for (const id of parseNormativeIds(specContent).ids) out.set(id.id, id);
   return out;
+}
+
+export function parseNormativeRules(specContent: string): NormativeRule[] {
+  const out: NormativeRule[] = [];
+  let inClauses = false;
+  let clause = 0;
+  let scope: SpecScope | null = null;
+
+  const lines = specContent.split(/\r?\n/);
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (/^## Specification clauses\s*$/.test(line)) {
+      inClauses = true;
+      continue;
+    }
+    if (!inClauses) continue;
+
+    const cm = line.match(/^##\s+(\d+)\.\s+/);
+    if (cm) {
+      clause = Number(cm[1]);
+      scope = null;
+      continue;
+    }
+
+    if (/^##\s+/.test(line)) {
+      inClauses = false;
+      clause = 0;
+      scope = null;
+      continue;
+    }
+
+    const sm = line.match(/^###\s+`(MUST|MUST when applicable|SHOULD|MAY)`\s*$/);
+    if (sm && isSpecScope(sm[1])) {
+      scope = sm[1];
+      continue;
+    }
+
+    if (/^###\s+/.test(line)) {
+      scope = null;
+      continue;
+    }
+
+    if (scope && /^- /.test(line)) {
+      const found: string[] = [];
+      let m: RegExpExecArray | null;
+      ID_PATTERN.lastIndex = 0;
+      while ((m = ID_PATTERN.exec(line))) found.push(m[1]);
+      if (found.length === 0) continue;
+      const text = normativeBulletText(line);
+      for (const id of found) out.push({ id, clause, scope, line: i + 1, text });
+    }
+  }
+  return out;
+}
+
+export function normativeRuleMap(specContent: string): Map<string, NormativeRule> {
+  const out = new Map<string, NormativeRule>();
+  for (const rule of parseNormativeRules(specContent)) out.set(rule.id, rule);
+  return out;
+}
+
+function normativeBulletText(line: string): string {
+  ID_PATTERN.lastIndex = 0;
+  return line.replace(/^- /, '').replace(ID_PATTERN, '').replace(/\s+/g, ' ').trim();
 }
 
 export function specScopeById(specContent: string): Map<string, SpecScope> {

@@ -89,6 +89,7 @@ Common focused commands:
 | `npm --prefix tools run check:stamped-blocks` | Validate stamped-block checksum sentinels. |
 | `npm --prefix tools run check:doc-version` | Verify version strings agree across spec, README, GUIDE, and CHANGELOG. |
 | `npm --prefix tools run check:coverage` | Verify generated coverage blocks are current. |
+| `npm --prefix tools run check:rule-catalog` | Verify the generated rule catalog is current with the specification, checklist, and collector registry. |
 | `npm --prefix tools run check:audit-profile-template` | Verify the audit-profile template applicability table is in sync with `PROFILE_QUESTIONS`. |
 | `npm --prefix tools run check:conformance-levels` | Check accepted `conformance_level` values across docs and code. |
 | `npm --prefix tools run check:audit-validate` | Validate the repository's blank audit templates in template mode. |
@@ -99,6 +100,7 @@ Common focused commands:
 | `npm --prefix tools run check:audit-frontmatter-docs` | Verify shipped audit frontmatter fields stay aligned across templates and canonical ownership docs. |
 | `npm --prefix tools run check:golden-audit` | Run the collector against the synthetic golden-audit repo. |
 | `npm --prefix tools run generate:coverage` | Rewrite generated coverage blocks. |
+| `npm --prefix tools run generate:rule-catalog` | Rewrite the generated AI Contributor rule catalog. |
 | `npm --prefix tools run generate:audit-profile-template` | Rewrite the audit-profile template applicability table from `PROFILE_QUESTIONS`. |
 | `npm --prefix tools run audit` | Self-audit this repository through the skill runtime. |
 | `npm --prefix tools run audit:collect` | Collect self-audit evidence into `.ai-contributor-audit/AI-CONTRIBUTOR-EVIDENCE.json`. |

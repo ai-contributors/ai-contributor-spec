@@ -6,14 +6,31 @@
 // AIC-* ID in that row has decisive collector evidence.
 
 import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
   decisiveRulesByAic,
   expectedCollectorStamp,
 } from '../../skills/ai-contributor-audit/scripts/internal/audit-evidence.ts';
-import { parseChecklistRows } from './shared/checklist-parser.ts';
+import {
+  collectorAicIdsFromCatalog,
+  validateRuleCatalog,
+  type RuleCatalog,
+} from './generate-rule-catalog.ts';
 
-const CHECKLIST = '.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md';
-const COLLECTOR = 'skills/ai-contributor-audit/scripts/internal/collector-registry.ts';
+const CATALOG = 'AI-CONTRIBUTOR-RULE-CATALOG.json';
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = path.resolve(HERE, '..', '..');
+const CATALOG_PATH = path.join(REPO_ROOT, CATALOG);
+
+interface CollectorCoverageOptions {
+  allowedPartialRows?: ReadonlyMap<string, readonly string[]>;
+}
+
+interface CollectorChecklistRow {
+  rule: string;
+  ids: string[];
+}
 
 // Rows below intentionally remain auditor-owned until the collector can prove
 // every visible ID in the row. If one stops being partial, remove it here.
@@ -36,12 +53,38 @@ const ALLOWED_PARTIAL_ROWS = new Map<string, string[]>([
 ]);
 
 function main(): void {
-  const rows = parseChecklistRows(fs.readFileSync(CHECKLIST, 'utf8'));
-  const ruleMap = parseCollectorRuleMap(fs.readFileSync(COLLECTOR, 'utf8'));
+  const catalog = JSON.parse(fs.readFileSync(CATALOG_PATH, 'utf8')) as RuleCatalog;
+  const catalogProblems = validateRuleCatalog(catalog);
+  if (catalogProblems.length > 0) {
+    console.error(`${CATALOG} is invalid:`);
+    for (const problem of catalogProblems) console.error(`- ${problem}`);
+    process.exit(1);
+  }
+  const problems = collectorRowCoverageProblemsFromCatalog(catalog);
+
+  if (problems.length) {
+    console.error('Problems:');
+    for (const problem of problems) console.error(`- ${problem}`);
+    process.exit(1);
+  }
+
+  console.log(
+    `OK — collector mappings cannot stamp partial checklist rows ` +
+      `(${ALLOWED_PARTIAL_ROWS.size} explicit auditor-owned partial row(s))`,
+  );
+}
+
+export function collectorRowCoverageProblemsFromCatalog(
+  catalog: RuleCatalog,
+  options: CollectorCoverageOptions = {},
+): string[] {
+  const rows = collectorRowsFromCatalog(catalog);
+  const ruleMap = collectorAicIdsFromCatalog(catalog);
   const mappedIds = new Set(Object.values(ruleMap).flat());
   const decisive = decisiveRulesByAic(fakeRules(ruleMap));
   const problems: string[] = [];
   const seenPartial = new Set<string>();
+  const allowedPartialRows = options.allowedPartialRows ?? ALLOWED_PARTIAL_ROWS;
 
   for (const row of rows) {
     const covered = row.ids.filter((id) => mappedIds.has(id));
@@ -56,7 +99,7 @@ function main(): void {
       continue;
     }
 
-    const allowedMissing = ALLOWED_PARTIAL_ROWS.get(row.rule);
+    const allowedMissing = allowedPartialRows.get(row.rule);
     seenPartial.add(row.rule);
     if (!allowedMissing) {
       problems.push(
@@ -78,42 +121,24 @@ function main(): void {
     }
   }
 
-  for (const rule of ALLOWED_PARTIAL_ROWS.keys()) {
+  for (const rule of allowedPartialRows.keys()) {
     if (!seenPartial.has(rule)) {
       problems.push(`stale partial-coverage exception for row "${rule}"`);
     }
   }
 
-  if (problems.length) {
-    console.error('Problems:');
-    for (const problem of problems) console.error(`- ${problem}`);
-    process.exit(1);
-  }
-
-  console.log(
-    `OK — collector mappings cannot stamp partial checklist rows ` +
-      `(${ALLOWED_PARTIAL_ROWS.size} explicit auditor-owned partial row(s))`,
-  );
+  return problems;
 }
 
-function parseCollectorRuleMap(source: string): Record<string, string[]> {
-  const block = source.match(
-    /(?:export )?const RULE_AIC_IDS.*?= \{([\s\S]+?)\n\}(?: satisfies [\s\S]+?)?;/,
-  );
-  if (!block || !block[1]) {
-    throw new Error(`Could not find RULE_AIC_IDS in ${COLLECTOR}`);
+function collectorRowsFromCatalog(catalog: RuleCatalog): CollectorChecklistRow[] {
+  const rows = new Map<string, CollectorChecklistRow>();
+  for (const entry of catalog.rules) {
+    const key = `${entry.level}\0${entry.checklist.rule}`;
+    const row = rows.get(key) ?? { rule: entry.checklist.rule, ids: [] };
+    row.ids.push(entry.id);
+    rows.set(key, row);
   }
-
-  const out: Record<string, string[]> = {};
-  for (const match of block[1]!.matchAll(/'([^']+)': \[([^\]]*)\]/g)) {
-    const rule = match[1]!;
-    const ids = [...match[2]!.matchAll(/'([^']+)'/g)].map((m) => m[1]!);
-    out[rule] = ids;
-  }
-  if (Object.keys(out).length === 0) {
-    throw new Error(`RULE_AIC_IDS in ${COLLECTOR} parsed as empty`);
-  }
-  return out;
+  return [...rows.values()];
 }
 
 function fakeRules(ruleMap: Record<string, string[]>): Record<string, unknown> {
@@ -129,4 +154,6 @@ function fakeRules(ruleMap: Record<string, string[]>): Record<string, unknown> {
   return out;
 }
 
-main();
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
+  main();
+}

@@ -4,7 +4,9 @@
 import {
   clauseToPillar,
   levelLabels,
+  normativeRuleMap,
   parseNormativeIds,
+  parseNormativeRules,
   pillarNames,
   specIdMap,
   specScopeById,
@@ -68,6 +70,18 @@ assert('counts normative bullets', parsed.bullets === 4);
 assert(
   'records untagged normative bullets',
   parsed.untagged[0]?.preview.includes('document setup') === true,
+);
+
+const rules = parseNormativeRules(spec);
+assert('parses normative rule entries', rules.length === 3);
+assert(
+  'extracts normative sentence text',
+  rules.find((rule) => rule.id === 'AIC-clean-setup')?.text === 'Repositories MUST be clean.',
+);
+assert(
+  'maps normative rules by ID',
+  normativeRuleMap(spec).get('AIC-branch-protection')?.text ===
+    'Hosted repositories MUST protect branches.',
 );
 
 const ids = specIdMap(spec);

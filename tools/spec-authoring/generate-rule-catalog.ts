@@ -1,0 +1,301 @@
+#!/usr/bin/env node
+// SPDX-License-Identifier: Apache-2.0
+//
+// Generates AI-CONTRIBUTOR-RULE-CATALOG.json from the current specification,
+// checklist template, and collector registry mappings.
+
+import fs from 'node:fs';
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+import type { SpecScope } from './shared/spec-model.ts';
+import { clauseToPillar, normativeRuleMap } from './shared/spec-model.ts';
+import { parseChecklistRows } from './shared/checklist-parser.ts';
+import { RULE_AIC_IDS } from '../../skills/ai-contributor-audit/scripts/internal/collector-registry.ts';
+import type { ChecklistScope } from './shared/checklist-parser.ts';
+
+const CATALOG = 'AI-CONTRIBUTOR-RULE-CATALOG.json';
+const CATALOG_SCHEMA = './AI-CONTRIBUTOR-RULE-CATALOG.schema.json';
+const SPEC = 'AI-CONTRIBUTOR-SPECIFICATION.md';
+const CHECKLIST = '.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md';
+const COLLECTOR_REGISTRY = 'skills/ai-contributor-audit/scripts/internal/collector-registry.ts';
+const VALID_SCOPES = new Set(['MUST', 'MUST when applicable', 'SHOULD', 'MAY']);
+const VALID_DETECTOR_CONFIDENCE = new Set(['indicative', 'manual']);
+
+export interface RuleCatalog {
+  $schema: string;
+  schemaVersion: '0.1';
+  specVersion: string;
+  generatedFrom: {
+    specification: string;
+    checklist: string;
+    collectorRegistry: string;
+  };
+  rules: RuleCatalogEntry[];
+}
+
+export interface RuleCatalogEntry {
+  id: string;
+  clause: number;
+  pillar: number;
+  scope: SpecScope;
+  level: string;
+  text: string;
+  checklist: {
+    rule: string;
+    scope: SpecScope;
+    requirement: string;
+  };
+  detectors: RuleCatalogDetector[];
+  detectorConfidence: 'indicative' | 'manual';
+}
+
+export type RuleCatalogDetector =
+  | {
+      id: string;
+      kind: 'collector-rule';
+      path: string;
+    }
+  | {
+      id: string;
+      kind: 'manual';
+      manualEvidence: string;
+    };
+
+export function buildRuleCatalog(input: {
+  specContent: string;
+  checklistContent: string;
+  collectorAicIds: Record<string, readonly string[]>;
+}): RuleCatalog {
+  const specRules = normativeRuleMap(input.specContent);
+  const clausePillars = clauseToPillar(input.specContent);
+  const checklistById = checklistRowsByAicId(input.checklistContent);
+  const detectorsById = collectorRulesByAicId(input.collectorAicIds);
+  const rules: RuleCatalogEntry[] = [];
+
+  for (const [id, specRule] of specRules) {
+    const checklistRow = checklistById.get(id);
+    if (!checklistRow) {
+      throw new Error(`No checklist row found for ${id}`);
+    }
+    const pillar = clausePillars.get(specRule.clause) ?? checklistRow.pillar;
+    if (pillar !== checklistRow.pillar) {
+      throw new Error(
+        `${id} pillar mismatch: specification maps clause ${specRule.clause} to pillar ${pillar}, ` +
+          `but checklist row "${checklistRow.rule}" uses pillar ${checklistRow.pillar}`,
+      );
+    }
+    const detectorIds = detectorsById.get(id) ?? [];
+    const detectors: RuleCatalogDetector[] =
+      detectorIds.length === 0
+        ? [
+            {
+              id: 'manual-review',
+              kind: 'manual',
+              manualEvidence: `Review checklist row "${checklistRow.rule}" and record current-run evidence.`,
+            },
+          ]
+        : detectorIds.map((detectorId) => ({
+            id: detectorId,
+            kind: 'collector-rule',
+            path: 'skills/ai-contributor-audit/scripts/internal/collector-registry.ts',
+          }));
+
+    rules.push({
+      id,
+      clause: specRule.clause,
+      pillar,
+      scope: specRule.scope,
+      level: checklistRow.level,
+      text: specRule.text,
+      checklist: {
+        rule: checklistRow.rule,
+        scope: catalogScopeFromChecklistScope(checklistRow.scope),
+        requirement: checklistRow.requirement,
+      },
+      detectors,
+      detectorConfidence: detectorIds.length === 0 ? 'manual' : 'indicative',
+    });
+  }
+
+  rules.sort(compareCatalogEntries);
+
+  return {
+    $schema: CATALOG_SCHEMA,
+    schemaVersion: '0.1',
+    specVersion: specVersionFromChecklist(input.checklistContent),
+    generatedFrom: {
+      specification: 'AI-CONTRIBUTOR-SPECIFICATION.md',
+      checklist: '.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md',
+      collectorRegistry: COLLECTOR_REGISTRY,
+    },
+    rules,
+  };
+}
+
+export function renderRuleCatalog(catalog: RuleCatalog): string {
+  return `${JSON.stringify(catalog, null, 2)}\n`;
+}
+
+export function collectorAicIdsFromCatalog(catalog: RuleCatalog): Record<string, string[]> {
+  const out: Record<string, string[]> = {};
+  for (const entry of catalog.rules) {
+    for (const detector of entry.detectors) {
+      if (detector.kind !== 'collector-rule') continue;
+      out[detector.id] ??= [];
+      out[detector.id]!.push(entry.id);
+    }
+  }
+  for (const ids of Object.values(out)) ids.sort();
+  return Object.fromEntries(Object.entries(out).sort(([a], [b]) => a.localeCompare(b)));
+}
+
+export function validateRuleCatalog(catalog: RuleCatalog): string[] {
+  const problems: string[] = [];
+  if (catalog.$schema !== CATALOG_SCHEMA) problems.push('$schema must point to the local schema');
+  if (catalog.schemaVersion !== '0.1') problems.push('schemaVersion must be "0.1"');
+  if (catalog.specVersion.trim() === '') problems.push('specVersion must not be blank');
+  if (catalog.generatedFrom.specification.trim() === '') {
+    problems.push('generatedFrom.specification must not be blank');
+  }
+  if (catalog.generatedFrom.checklist.trim() === '') {
+    problems.push('generatedFrom.checklist must not be blank');
+  }
+  if (catalog.generatedFrom.collectorRegistry.trim() === '') {
+    problems.push('generatedFrom.collectorRegistry must not be blank');
+  }
+  if (catalog.rules.length === 0) problems.push('rules must contain at least one entry');
+
+  const seen = new Set<string>();
+  for (const [i, rule] of catalog.rules.entries()) {
+    const prefix = `rules[${i}]`;
+    if (!/^AIC-[a-z0-9][a-z0-9-]*$/.test(rule.id)) problems.push(`${prefix}.id is invalid`);
+    if (seen.has(rule.id)) problems.push(`${prefix}.id duplicates ${rule.id}`);
+    seen.add(rule.id);
+    if (!Number.isInteger(rule.clause) || rule.clause < 1) {
+      problems.push(`${prefix}.clause must be a positive integer`);
+    }
+    if (!Number.isInteger(rule.pillar) || rule.pillar < 1) {
+      problems.push(`${prefix}.pillar must be a positive integer`);
+    }
+    if (!VALID_SCOPES.has(rule.scope)) problems.push(`${prefix}.scope is invalid`);
+    if (!/^L\d+$/.test(rule.level) && rule.level !== '—')
+      problems.push(`${prefix}.level is invalid`);
+    if (rule.text.trim() === '') problems.push(`${prefix}.text must not be blank`);
+    if (rule.checklist.rule.trim() === '')
+      problems.push(`${prefix}.checklist.rule must not be blank`);
+    if (!VALID_SCOPES.has(rule.checklist.scope))
+      problems.push(`${prefix}.checklist.scope is invalid`);
+    if (rule.checklist.requirement.trim() === '') {
+      problems.push(`${prefix}.checklist.requirement must not be blank`);
+    }
+    if (rule.detectors.length === 0) problems.push(`${prefix}.detectors must not be empty`);
+    if (!VALID_DETECTOR_CONFIDENCE.has(rule.detectorConfidence)) {
+      problems.push(`${prefix}.detectorConfidence is invalid`);
+    }
+    for (const [j, detector] of rule.detectors.entries()) {
+      const detectorPrefix = `${prefix}.detectors[${j}]`;
+      if (detector.id.trim() === '') problems.push(`${detectorPrefix}.id must not be blank`);
+      if (detector.kind === 'collector-rule') {
+        if (detector.path.trim() === '') problems.push(`${detectorPrefix}.path must not be blank`);
+      } else if (detector.kind === 'manual') {
+        if (detector.manualEvidence.trim() === '') {
+          problems.push(`${detectorPrefix}.manualEvidence must not be blank`);
+        }
+      } else {
+        problems.push(`${detectorPrefix}.kind is invalid`);
+      }
+    }
+  }
+
+  return problems;
+}
+
+function checklistRowsByAicId(
+  content: string,
+): Map<string, ReturnType<typeof parseChecklistRows>[number]> {
+  const out = new Map<string, ReturnType<typeof parseChecklistRows>[number]>();
+  for (const row of parseChecklistRows(content)) {
+    for (const id of row.ids) {
+      if (out.has(id)) {
+        throw new Error(`${id} appears in multiple checklist rows`);
+      }
+      out.set(id, row);
+    }
+  }
+  return out;
+}
+
+function collectorRulesByAicId(
+  collectorAicIds: Record<string, readonly string[]>,
+): Map<string, string[]> {
+  const out = new Map<string, string[]>();
+  for (const [collectorRuleId, aicIds] of Object.entries(collectorAicIds)) {
+    for (const aicId of aicIds) {
+      const existing = out.get(aicId) ?? [];
+      existing.push(collectorRuleId);
+      out.set(aicId, existing);
+    }
+  }
+  for (const collectorIds of out.values()) collectorIds.sort();
+  return out;
+}
+
+function compareCatalogEntries(a: RuleCatalogEntry, b: RuleCatalogEntry): number {
+  return (
+    a.clause - b.clause ||
+    levelSortValue(a.level) - levelSortValue(b.level) ||
+    a.checklist.rule.localeCompare(b.checklist.rule) ||
+    a.id.localeCompare(b.id)
+  );
+}
+
+function catalogScopeFromChecklistScope(scope: ChecklistScope): SpecScope {
+  return scope === 'MwA' ? 'MUST when applicable' : scope;
+}
+
+function levelSortValue(level: string): number {
+  if (level === '—') return Number.MAX_SAFE_INTEGER;
+  const m = level.match(/^L(\d+)$/);
+  return m ? Number(m[1]) : Number.MAX_SAFE_INTEGER - 1;
+}
+
+function specVersionFromChecklist(content: string): string {
+  const m = content.match(/^spec_version:\s*["']?([^"'\s#]+)["']?/m);
+  return m?.[1] ?? 'unknown';
+}
+
+function catalogFromDisk(): RuleCatalog {
+  return buildRuleCatalog({
+    specContent: fs.readFileSync(SPEC, 'utf8'),
+    checklistContent: fs.readFileSync(CHECKLIST, 'utf8'),
+    collectorAicIds: RULE_AIC_IDS,
+  });
+}
+
+function main(): void {
+  const catalog = catalogFromDisk();
+  const problems = validateRuleCatalog(catalog);
+  if (problems.length > 0) {
+    console.error('Rule catalog validation failed:');
+    for (const problem of problems) console.error(`- ${problem}`);
+    process.exit(1);
+  }
+
+  const rendered = renderRuleCatalog(catalog);
+  if (process.argv.includes('--check')) {
+    const current = fs.existsSync(CATALOG) ? fs.readFileSync(CATALOG, 'utf8') : '';
+    if (rendered !== current) {
+      console.error(`${CATALOG} is stale. Run 'npm --prefix tools run generate:rule-catalog'.`);
+      process.exit(1);
+    }
+    console.log(`OK — ${CATALOG} is current with ${catalog.rules.length} rule entries`);
+    return;
+  }
+
+  fs.writeFileSync(CATALOG, rendered);
+  console.log(`OK — regenerated ${CATALOG} with ${catalog.rules.length} rule entries`);
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
+  main();
+}

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // SPDX-License-Identifier: Apache-2.0
 // Regenerates the numeric blocks of AI-CONTRIBUTOR-COVERAGE.md from the
-// `Pillar`, level section, and `Scope` columns of .ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md.
+// generated AI-CONTRIBUTOR-RULE-CATALOG.json.
 //
 // Each managed block in COVERAGE.md is delimited by:
 //   <!-- BEGIN:GENERATED <id> -->
@@ -9,33 +9,86 @@
 //   <!-- END:GENERATED <id> -->
 //
 // Run locally to refresh. Pass `--check` to fail when the current coverage file
-// content drifts from what the checklist generates.
+// content drifts from what the rule catalog generates.
 
 import fs from 'node:fs';
-import { parseChecklistRows, type ChecklistScope } from './shared/checklist-parser.ts';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { pathToFileURL } from 'node:url';
+import { validateRuleCatalog, type RuleCatalog } from './generate-rule-catalog.ts';
 import { levelLabels, pillarNames } from './shared/spec-model.ts';
 import { stampGeneratedBlock } from './shared/stamp-generated-block.ts';
 
-const CHECKLIST = '.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md';
+const CATALOG = 'AI-CONTRIBUTOR-RULE-CATALOG.json';
 const COVERAGE = 'AI-CONTRIBUTOR-COVERAGE.md';
 const SPEC = 'AI-CONTRIBUTOR-SPECIFICATION.md';
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = path.resolve(HERE, '..', '..');
+const CATALOG_PATH = path.join(REPO_ROOT, CATALOG);
+const COVERAGE_PATH = path.join(REPO_ROOT, COVERAGE);
+const SPEC_PATH = path.join(REPO_ROOT, SPEC);
 
-type Scope = ChecklistScope;
-type ChecklistRow = ReturnType<typeof parseChecklistRows>[number];
+export type CoverageScope = 'MUST' | 'MwA' | 'SHOULD' | 'MAY';
 
-const specText = fs.readFileSync(SPEC, 'utf8');
+export interface CoverageRow {
+  rule: string;
+  pillar: number;
+  level: string;
+  scope: CoverageScope;
+}
+
+const specText = fs.readFileSync(SPEC_PATH, 'utf8');
 const PILLAR_NAMES = pillarNames(specText);
 const LEVEL_LABELS = levelLabels(specText);
 
-function tally(): ChecklistRow[] {
-  return parseChecklistRows(fs.readFileSync(CHECKLIST, 'utf8'));
+function tally(): CoverageRow[] {
+  const catalog = JSON.parse(fs.readFileSync(CATALOG_PATH, 'utf8')) as RuleCatalog;
+  const problems = validateRuleCatalog(catalog);
+  if (problems.length > 0) {
+    throw new Error(`Invalid ${CATALOG}:\n${problems.map((problem) => `- ${problem}`).join('\n')}`);
+  }
+  return coverageRowsFromCatalog(catalog);
 }
 
-function count(rows: ChecklistRow[], pred: (row: ChecklistRow) => boolean): number {
+export function coverageRowsFromCatalog(catalog: RuleCatalog): CoverageRow[] {
+  const out = new Map<string, CoverageRow>();
+  for (const entry of catalog.rules) {
+    const row = {
+      rule: entry.checklist.rule,
+      pillar: entry.pillar,
+      level: entry.level,
+      scope: coverageScopeFromCatalogScope(entry.checklist.scope),
+    };
+    const key = `${row.level}\0${row.rule}`;
+    const existing = out.get(key);
+    if (existing) {
+      if (
+        existing.pillar !== row.pillar ||
+        existing.scope !== row.scope ||
+        existing.level !== row.level
+      ) {
+        throw new Error(
+          `catalog entries for checklist row "${row.rule}" disagree on coverage data`,
+        );
+      }
+      continue;
+    }
+    out.set(key, row);
+  }
+  return [...out.values()];
+}
+
+function coverageScopeFromCatalogScope(
+  scope: RuleCatalog['rules'][number]['checklist']['scope'],
+): CoverageScope {
+  return scope === 'MUST when applicable' ? 'MwA' : scope;
+}
+
+function count(rows: CoverageRow[], pred: (row: CoverageRow) => boolean): number {
   return rows.filter(pred).length;
 }
 
-function blockAtAGlance(rows: ChecklistRow[]): string {
+function blockAtAGlance(rows: CoverageRow[]): string {
   const total = rows.length;
   const must = count(rows, (r) => r.scope === 'MUST');
   const mwa = count(rows, (r) => r.scope === 'MwA');
@@ -55,8 +108,8 @@ function blockAtAGlance(rows: ChecklistRow[]): string {
   ].join('\n');
 }
 
-function blockByScope(rows: ChecklistRow[]): string {
-  const r = (s: Scope) => count(rows, (x) => x.scope === s);
+function blockByScope(rows: CoverageRow[]): string {
+  const r = (s: CoverageScope) => count(rows, (x) => x.scope === s);
   return [
     '| Scope | Rows |',
     '|---|---:|',
@@ -79,7 +132,7 @@ const LEVEL_KEYS = Object.keys(LEVEL_LABELS).sort(
   (a, b) => Number(a.slice(1)) - Number(b.slice(1)),
 );
 
-function blockByPillar(rows: ChecklistRow[]): string {
+function blockByPillar(rows: CoverageRow[]): string {
   const out = [
     '| Pillar | Total | `MUST` | `MwA` | `SHOULD` | `MAY` |',
     '|---|---:|---:|---:|---:|---:|',
@@ -97,7 +150,7 @@ function blockByPillar(rows: ChecklistRow[]): string {
   return out.join('\n');
 }
 
-function blockByLevel(rows: ChecklistRow[]): string {
+function blockByLevel(rows: CoverageRow[]): string {
   const out = ['| Level | Rows | `MUST` | `MwA` | `SHOULD` |', '|---|---:|---:|---:|---:|'];
   for (const lvl of LEVEL_KEYS) {
     const inL = rows.filter((r) => r.level === lvl);
@@ -111,7 +164,7 @@ function blockByLevel(rows: ChecklistRow[]): string {
   return out.join('\n');
 }
 
-function blockCumulative(rows: ChecklistRow[]): string {
+function blockCumulative(rows: CoverageRow[]): string {
   // closure(N) = MUST/MwA rows whose level ≤ N (interpreted as integer).
   const closure = (n: number) =>
     count(
@@ -144,14 +197,14 @@ function blockCumulative(rows: ChecklistRow[]): string {
 
 function main(): void {
   const rows = tally();
-  let content = fs.readFileSync(COVERAGE, 'utf8');
+  let content = fs.readFileSync(COVERAGE_PATH, 'utf8');
   content = stampGeneratedBlock(content, 'at-a-glance', blockAtAGlance(rows));
   content = stampGeneratedBlock(content, 'by-scope', blockByScope(rows));
   content = stampGeneratedBlock(content, 'by-pillar', blockByPillar(rows));
   content = stampGeneratedBlock(content, 'by-level', blockByLevel(rows));
   content = stampGeneratedBlock(content, 'cumulative', blockCumulative(rows));
   if (process.argv.includes('--check')) {
-    const current = fs.readFileSync(COVERAGE, 'utf8');
+    const current = fs.readFileSync(COVERAGE_PATH, 'utf8');
     if (content !== current) {
       console.error(
         `${COVERAGE} is stale. Run 'npm --prefix tools run generate:coverage' locally and commit the result.`,
@@ -161,8 +214,10 @@ function main(): void {
     console.log(`OK — ${COVERAGE} generated blocks are current`);
     return;
   }
-  fs.writeFileSync(COVERAGE, content);
-  console.log(`OK — regenerated 5 blocks in ${COVERAGE} from ${rows.length} checklist rows`);
+  fs.writeFileSync(COVERAGE_PATH, content);
+  console.log(`OK — regenerated 5 blocks in ${COVERAGE} from ${rows.length} catalog rows`);
 }
 
-main();
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
+  main();
+}

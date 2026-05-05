@@ -1,0 +1,148 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ai-contributors/ai-contributor-spec/AI-CONTRIBUTOR-RULE-CATALOG.schema.json",
+  "title": "AI Contributor Rule Catalog",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "schemaVersion", "specVersion", "generatedFrom", "rules"],
+  "properties": {
+    "$schema": {
+      "const": "./AI-CONTRIBUTOR-RULE-CATALOG.schema.json"
+    },
+    "schemaVersion": {
+      "const": "0.1"
+    },
+    "specVersion": {
+      "type": "string",
+      "minLength": 1
+    },
+    "generatedFrom": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["specification", "checklist", "collectorRegistry"],
+      "properties": {
+        "specification": {
+          "type": "string",
+          "minLength": 1
+        },
+        "checklist": {
+          "type": "string",
+          "minLength": 1
+        },
+        "collectorRegistry": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "rules": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "clause",
+          "pillar",
+          "scope",
+          "level",
+          "text",
+          "checklist",
+          "detectors",
+          "detectorConfidence"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^AIC-[a-z0-9][a-z0-9-]*$"
+          },
+          "clause": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "pillar": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "scope": {
+            "enum": ["MUST", "MUST when applicable", "SHOULD", "MAY"]
+          },
+          "level": {
+            "type": "string",
+            "pattern": "^(L[0-9]+|—)$"
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1
+          },
+          "checklist": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["rule", "scope", "requirement"],
+            "properties": {
+              "rule": {
+                "type": "string",
+                "minLength": 1
+              },
+              "scope": {
+                "enum": ["MUST", "MUST when applicable", "SHOULD", "MAY"]
+              },
+              "requirement": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          "detectors": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["id", "kind", "path"],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "kind": {
+                      "const": "collector-rule"
+                    },
+                    "path": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["id", "kind", "manualEvidence"],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "kind": {
+                      "const": "manual"
+                    },
+                    "manualEvidence": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "detectorConfidence": {
+            "enum": ["indicative", "manual"]
+          }
+        }
+      }
+    }
+  }
+}
