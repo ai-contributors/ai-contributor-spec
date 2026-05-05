@@ -4,8 +4,10 @@ Authoritative AI instruction file for `ai-contributor-spec`. Both human
 contributors and AI agents (Claude Code, Copilot, Cursor, Codex, autonomous
 runners, etc.) MUST follow this document. Tool-specific instruction files
 (e.g. `CLAUDE.md`, `.cursorrules`, `.github/copilot-instructions.md`) MUST
-either be absent or contain only a pointer back here. Spec source of truth:
-[`AI-CONTRIBUTOR-SPECIFICATION.md`](AI-CONTRIBUTOR-SPECIFICATION.md).
+either be absent or contain only a pointer back here. Rule metadata source of
+truth: [`AI-CONTRIBUTOR-RULE-CATALOG.json`](AI-CONTRIBUTOR-RULE-CATALOG.json).
+The human-facing specification and audit checklist are projection/frame assets
+that MUST stay synchronized with that catalog.
 
 ## What this repo is
 
@@ -15,18 +17,23 @@ ships normative documents and reusable audit machinery to other repositories.
 There is no production runtime, no service, no UI, and no end-user
 deployment surface.
 
-Implication: the repo's primary risk surface is **drift between the
-specification and the templates that adopters fetch**, plus **supply-chain
-risk in the runbook scripts adopters execute via `bootstrap.ts`**.
+Implication: the repo's primary risk surface is **drift between the rule
+catalog, specification, and templates that adopters fetch**, plus
+**supply-chain risk in the runbook scripts adopters execute via `bootstrap.ts`**.
 
 ## Architecture
 
-- `AI-CONTRIBUTOR-SPECIFICATION.md` — normative clauses and `AIC-` IDs.
+- `AI-CONTRIBUTOR-RULE-CATALOG.json` — canonical rule metadata: `AIC-` IDs,
+  clause, pillar, normative scope, conformance level, rule text, checklist
+  metadata, and detector linkage.
+- `AI-CONTRIBUTOR-SPECIFICATION.md` — human-facing specification frame and
+  normative clause projection from the rule catalog.
 - `AI-CONTRIBUTOR-GUIDE.md`, `AI-CONTRIBUTOR-AUDIT-MODEL.md`, `AI-CONTRIBUTOR-COVERAGE.md` — companion docs.
 - `.ai-contributor-audit/` — checklist + audit-log **templates** shipped to adopters via `bootstrap.ts`. Treat as published artifacts.
 - `skills/ai-contributor-audit/` — runbook (`SKILL.md`, references, `scripts/`). The collector / stamper / validator / bootstrap.
 - `skills/ai-contributor-audit-fix/`, `skills/ai-contributor-audit-profile/` — companion skills.
-- `tools/` — verification tooling that keeps the spec, checklist, and runbook in sync.
+- `tools/` — verification tooling that keeps the catalog, spec, checklist,
+  and runbook in sync.
 - `examples/` — adopter-facing samples (golden-audit fixture, typescript-pnpm starter).
 - `.github/` — CI workflows, CODEOWNERS, dependabot, PR template.
 
@@ -52,7 +59,8 @@ The following are **never** permitted without explicit, in-band human approval
 from a CODEOWNER on the relevant path:
 
 - **No edits to `AI-CONTRIBUTOR-SPECIFICATION.md` outside an open PR with a normative version bump** (see `CONTRIBUTING.md` "When to bump").
-- **No edits to `.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md` or `.ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-LOG.md` that aren't synchronised with the corresponding spec change.** These are templates; mutating them in isolation breaks every adopter.
+- **No edits to `AI-CONTRIBUTOR-RULE-CATALOG.json` that are not synchronized with its markdown projections and generator/check updates.** It is the canonical rule metadata source; mutating it without projection checks creates silent spec/checklist drift.
+- **No edits to `.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md` or `.ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-LOG.md` that aren't synchronised with the corresponding catalog/spec change.** These are templates; mutating them in isolation breaks every adopter.
 - **No bypassing pre-commit, lint, type-check, or other CI gates** (`--no-verify`, `--ignore-scripts`, `continue-on-error`, masked exit codes, deleting failing checks instead of fixing the cause).
 - **No force-push to `main`**, no `git reset --hard` of published commits, no rewriting tagged releases.
 - **No `npm publish`** of any package from a contributor or agent workstation.
@@ -83,6 +91,10 @@ reproducible subset through `npm --prefix tools run check:ci-local`):
   script lists the aggregate repository guardrails and test shards;
   `check:ci-local` adds audit-runtime coverage and template-scaffold
   verification.
+- `check:rule-catalog` validates and canonicalizes
+  `AI-CONTRIBUTOR-RULE-CATALOG.json`; `check:rule-catalog-projections`
+  verifies the current specification and checklist projections match that
+  catalog.
 - `.github/workflows/` is the source of truth for GitHub-hosted gates such as
   CodeQL, dependency review, documentation checks, coverage, template
   verification, and release-tag dry runs.

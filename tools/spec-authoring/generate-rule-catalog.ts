@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // SPDX-License-Identifier: Apache-2.0
 //
-// Generates AI-CONTRIBUTOR-RULE-CATALOG.json from the current specification,
-// checklist template, and collector registry mappings.
+// Validates and canonicalizes AI-CONTRIBUTOR-RULE-CATALOG.json. The legacy
+// markdown extractor remains available behind --from-markdown for migration.
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -23,9 +23,10 @@ const VALID_DETECTOR_CONFIDENCE = new Set(['indicative', 'manual']);
 
 export interface RuleCatalog {
   $schema: string;
-  schemaVersion: '0.1';
+  schemaVersion: '0.2';
   specVersion: string;
-  generatedFrom: {
+  sourceOfTruth: string;
+  projections: {
     specification: string;
     checklist: string;
     collectorRegistry: string;
@@ -121,9 +122,10 @@ export function buildRuleCatalog(input: {
 
   return {
     $schema: CATALOG_SCHEMA,
-    schemaVersion: '0.1',
+    schemaVersion: '0.2',
     specVersion: specVersionFromChecklist(input.checklistContent),
-    generatedFrom: {
+    sourceOfTruth: CATALOG,
+    projections: {
       specification: 'AI-CONTRIBUTOR-SPECIFICATION.md',
       checklist: '.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md',
       collectorRegistry: COLLECTOR_REGISTRY,
@@ -134,6 +136,13 @@ export function buildRuleCatalog(input: {
 
 export function renderRuleCatalog(catalog: RuleCatalog): string {
   return `${JSON.stringify(catalog, null, 2)}\n`;
+}
+
+export function canonicalizeRuleCatalog(catalog: RuleCatalog): RuleCatalog {
+  return {
+    ...catalog,
+    rules: [...catalog.rules].sort(compareCatalogEntries),
+  };
 }
 
 export function collectorAicIdsFromCatalog(catalog: RuleCatalog): Record<string, string[]> {
@@ -152,16 +161,19 @@ export function collectorAicIdsFromCatalog(catalog: RuleCatalog): Record<string,
 export function validateRuleCatalog(catalog: RuleCatalog): string[] {
   const problems: string[] = [];
   if (catalog.$schema !== CATALOG_SCHEMA) problems.push('$schema must point to the local schema');
-  if (catalog.schemaVersion !== '0.1') problems.push('schemaVersion must be "0.1"');
+  if (catalog.schemaVersion !== '0.2') problems.push('schemaVersion must be "0.2"');
   if (catalog.specVersion.trim() === '') problems.push('specVersion must not be blank');
-  if (catalog.generatedFrom.specification.trim() === '') {
-    problems.push('generatedFrom.specification must not be blank');
+  if (catalog.sourceOfTruth !== CATALOG) {
+    problems.push(`sourceOfTruth must be "${CATALOG}"`);
   }
-  if (catalog.generatedFrom.checklist.trim() === '') {
-    problems.push('generatedFrom.checklist must not be blank');
+  if (catalog.projections.specification.trim() === '') {
+    problems.push('projections.specification must not be blank');
   }
-  if (catalog.generatedFrom.collectorRegistry.trim() === '') {
-    problems.push('generatedFrom.collectorRegistry must not be blank');
+  if (catalog.projections.checklist.trim() === '') {
+    problems.push('projections.checklist must not be blank');
+  }
+  if (catalog.projections.collectorRegistry.trim() === '') {
+    problems.push('projections.collectorRegistry must not be blank');
   }
   if (catalog.rules.length === 0) problems.push('rules must contain at least one entry');
 
@@ -264,7 +276,7 @@ function specVersionFromChecklist(content: string): string {
   return m?.[1] ?? 'unknown';
 }
 
-function catalogFromDisk(): RuleCatalog {
+function catalogFromMarkdown(): RuleCatalog {
   return buildRuleCatalog({
     specContent: fs.readFileSync(SPEC, 'utf8'),
     checklistContent: fs.readFileSync(CHECKLIST, 'utf8'),
@@ -272,8 +284,14 @@ function catalogFromDisk(): RuleCatalog {
   });
 }
 
+function catalogFromDisk(): RuleCatalog {
+  return JSON.parse(fs.readFileSync(CATALOG, 'utf8')) as RuleCatalog;
+}
+
 function main(): void {
-  const catalog = catalogFromDisk();
+  const catalog = canonicalizeRuleCatalog(
+    process.argv.includes('--from-markdown') ? catalogFromMarkdown() : catalogFromDisk(),
+  );
   const problems = validateRuleCatalog(catalog);
   if (problems.length > 0) {
     console.error('Rule catalog validation failed:');

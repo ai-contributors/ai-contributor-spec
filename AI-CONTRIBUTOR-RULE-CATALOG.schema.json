@@ -4,19 +4,22 @@
   "title": "AI Contributor Rule Catalog",
   "type": "object",
   "additionalProperties": false,
-  "required": ["$schema", "schemaVersion", "specVersion", "generatedFrom", "rules"],
+  "required": ["$schema", "schemaVersion", "specVersion", "sourceOfTruth", "projections", "rules"],
   "properties": {
     "$schema": {
       "const": "./AI-CONTRIBUTOR-RULE-CATALOG.schema.json"
     },
     "schemaVersion": {
-      "const": "0.1"
+      "const": "0.2"
     },
     "specVersion": {
       "type": "string",
       "minLength": 1
     },
-    "generatedFrom": {
+    "sourceOfTruth": {
+      "const": "AI-CONTRIBUTOR-RULE-CATALOG.json"
+    },
+    "projections": {
       "type": "object",
       "additionalProperties": false,
       "required": ["specification", "checklist", "collectorRegistry"],

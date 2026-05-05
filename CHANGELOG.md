@@ -16,6 +16,14 @@ For the specification and companion templates, patch-zero releases are written a
 
 Every released entry lists the release date (the day the version lands on `main`).
 
+## [0.2] — 2026-05-05
+
+### Changed
+
+- Rule metadata authoring now flows through
+  `AI-CONTRIBUTOR-RULE-CATALOG.json`, with specification and checklist
+  projections checked against the catalog. No rule semantics changed.
+
 ## [0.1] — 2026-05-03
 
 Initial public version of the AI Contributor Specification.

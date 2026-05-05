@@ -3,12 +3,14 @@
 
 import {
   buildRuleCatalog,
+  canonicalizeRuleCatalog,
   collectorAicIdsFromCatalog,
   validateRuleCatalog,
 } from '../spec-authoring/generate-rule-catalog.ts';
 import { coverageRowsFromCatalog } from '../spec-authoring/generate-coverage.ts';
 import { rowScopeProblemsFromCatalog } from '../spec-authoring/check-row-scope-vs-spec.ts';
 import { collectorRowCoverageProblemsFromCatalog } from '../spec-authoring/check-collector-row-coverage.ts';
+import { ruleCatalogProjectionProblems } from '../spec-authoring/check-rule-catalog-projections.ts';
 
 let failed = 0;
 
@@ -85,6 +87,17 @@ assert(
   'marks missing detector rows as manual',
   catalog.rules.find((rule) => rule.id === 'AIC-human-review-required')?.detectorConfidence ===
     'manual',
+);
+
+const unsortedCatalog = {
+  ...catalog,
+  rules: [catalog.rules[1]!, catalog.rules[0]!],
+};
+const canonicalCatalog = canonicalizeRuleCatalog(unsortedCatalog);
+assert(
+  'canonicalizes catalog rule order without markdown input',
+  canonicalCatalog.rules.map((rule) => rule.id).join(',') ===
+    'AIC-clean-clone-bootstrap,AIC-human-review-required',
 );
 
 const problems = validateRuleCatalog({
@@ -230,6 +243,19 @@ assert(
   'reports partial collector coverage from catalog row groups',
   partialCollectorRowProblems[0]?.includes('Combined Detector Row') === true &&
     partialCollectorRowProblems[0]?.includes('AIC-human-review-required') === true,
+);
+
+const projectionProblems = ruleCatalogProjectionProblems({
+  catalog,
+  specContent: specContent.replace(
+    'Repositories MUST bootstrap cleanly.',
+    'Repositories MUST drift.',
+  ),
+  checklistContent,
+});
+assert(
+  'detects spec projection drift from catalog',
+  projectionProblems.some((problem) => problem.includes('AIC-clean-clone-bootstrap text mismatch')),
 );
 
 if (failed > 0) {
