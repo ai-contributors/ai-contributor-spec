@@ -23,6 +23,11 @@ Every released entry lists the release date (the day the version lands on `main`
 - Rule metadata authoring now flows through
   `AI-CONTRIBUTOR-RULE-CATALOG.json`, with specification and checklist
   projections checked against the catalog. No rule semantics changed.
+- Checklist rule tables are now generated from
+  `AI-CONTRIBUTOR-RULE-CATALOG.json`. Visible checklist ID bindings are checked
+  against the catalog instead of an embedded checklist comment. Row ordering is
+  mechanical and may differ from earlier hand-authored ordering; rule semantics
+  did not change.
 
 ## [0.1] — 2026-05-03
 

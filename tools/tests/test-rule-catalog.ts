@@ -7,6 +7,11 @@ import {
   collectorAicIdsFromCatalog,
   validateRuleCatalog,
 } from '../spec-authoring/generate-rule-catalog.ts';
+import {
+  checklistAssetProblems,
+  renderChecklistAssets,
+  renderChecklistRuleTables,
+} from '../spec-authoring/generate-checklist-assets.ts';
 import { coverageRowsFromCatalog } from '../spec-authoring/generate-coverage.ts';
 import { rowScopeProblemsFromCatalog } from '../spec-authoring/check-row-scope-vs-spec.ts';
 import { collectorRowCoverageProblemsFromCatalog } from '../spec-authoring/check-collector-row-coverage.ts';
@@ -74,6 +79,12 @@ const catalog = buildRuleCatalog({
 
 assert('builds one entry per AIC ID', catalog.rules.length === 2);
 assert(
+  'does not store presentation order fields in catalog entries',
+  !('specOrder' in catalog.rules[0]!) &&
+    !('rowOrder' in catalog.rules[0]!.checklist) &&
+    !('idOrder' in catalog.rules[0]!.checklist),
+);
+assert(
   'joins checklist metadata',
   catalog.rules.find((rule) => rule.id === 'AIC-clean-clone-bootstrap')?.checklist.rule ===
     'Clean Setup',
@@ -116,6 +127,7 @@ const groupedCoverageRows = coverageRowsFromCatalog({
       ...catalog.rules[0]!,
       id: 'AIC-runtime-version-pinned',
       checklist: {
+        ...catalog.rules[0]!.checklist,
         rule: 'Pinned Toolchain',
         scope: 'MUST',
         requirement: 'Runtime version and package manager version are pinned.',
@@ -125,6 +137,7 @@ const groupedCoverageRows = coverageRowsFromCatalog({
       ...catalog.rules[0]!,
       id: 'AIC-package-manager-pinned',
       checklist: {
+        ...catalog.rules[0]!.checklist,
         rule: 'Pinned Toolchain',
         scope: 'MUST',
         requirement: 'Runtime version and package manager version are pinned.',
@@ -135,6 +148,7 @@ const groupedCoverageRows = coverageRowsFromCatalog({
       id: 'AIC-public-release-controls',
       level: 'L1',
       checklist: {
+        ...catalog.rules[1]!.checklist,
         rule: 'Public Release Controls',
         scope: 'MUST when applicable',
         requirement: 'Public releases have documented controls.',
@@ -256,6 +270,50 @@ const projectionProblems = ruleCatalogProjectionProblems({
 assert(
   'detects spec projection drift from catalog',
   projectionProblems.some((problem) => problem.includes('AIC-clean-clone-bootstrap text mismatch')),
+);
+
+assert(
+  'renders checklist rule tables from catalog',
+  renderChecklistRuleTables(catalog).includes(
+    '| `MUST` | `Clean Setup` | - |  |  | Repository bootstraps from a clean clone. | 1 | `AIC-clean-clone-bootstrap` |',
+  ),
+);
+
+const checklistFrameWithLegacyBindings = [
+  '# Checklist',
+  '',
+  '<!-- BEGIN:CHECKLIST-ID-BINDINGS',
+  '{}',
+  'END:CHECKLIST-ID-BINDINGS -->',
+  '',
+  '## Checklist row tables',
+  'stale',
+  '---',
+  '',
+  '## Verification gaps',
+].join('\n');
+const renderedChecklistAssets = renderChecklistAssets(catalog, checklistFrameWithLegacyBindings);
+assert(
+  'renders checklist assets without checklist ID bindings',
+  !renderedChecklistAssets.includes('CHECKLIST-ID-BINDINGS') &&
+    renderedChecklistAssets.includes(
+      '| `MUST` | `Clean Setup` | - |  |  | Repository bootstraps from a clean clone. | 1 | `AIC-clean-clone-bootstrap` |',
+    ),
+);
+
+const checklistAssetDriftProblems = checklistAssetProblems({
+  catalog,
+  checklistContent: checklistContent.replace('Clean Setup', 'Dirty Setup'),
+});
+assert(
+  'detects checklist asset drift from catalog',
+  checklistAssetDriftProblems.some((problem) =>
+    problem.includes('checklist rule tables are stale'),
+  ),
+);
+assert(
+  'does not require checklist ID bindings',
+  !checklistAssetDriftProblems.some((problem) => problem.includes('checklist ID bindings')),
 );
 
 if (failed > 0) {

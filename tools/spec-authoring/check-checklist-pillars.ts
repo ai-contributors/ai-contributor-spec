@@ -15,69 +15,43 @@
 import fs from 'node:fs';
 import { parseChecklistRows, type ChecklistScope } from './shared/checklist-parser.ts';
 import { clauseToPillar, specIdMap, validMinLevels } from './shared/spec-model.ts';
+import { validateRuleCatalog, type RuleCatalog } from './generate-rule-catalog.ts';
 
 const SPEC = 'AI-CONTRIBUTOR-SPECIFICATION.md';
+const CATALOG = 'AI-CONTRIBUTOR-RULE-CATALOG.json';
 const CHECKLIST = '.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md';
-const WRITE_BINDINGS = process.argv.includes('--write-bindings');
 
 type Scope = ChecklistScope;
 type ChecklistRow = ReturnType<typeof parseChecklistRows>[number];
 
-function bindingsObject(rows: ChecklistRow[]): Record<string, string[]> {
-  return Object.fromEntries(rows.map((row) => [row.rule, row.ids]));
-}
-
-function bindingsBlock(rows: ChecklistRow[]): string {
-  return `<!-- BEGIN:CHECKLIST-ID-BINDINGS\n${JSON.stringify(bindingsObject(rows), null, 2)}\nEND:CHECKLIST-ID-BINDINGS -->`;
-}
-
-function writeBindings(content: string, rows: ChecklistRow[], problems: string[]): void {
-  const re = /<!-- BEGIN:CHECKLIST-ID-BINDINGS\s*[\s\S]*?\s*END:CHECKLIST-ID-BINDINGS -->/;
-  if (!re.test(content)) {
-    problems.push(`No CHECKLIST-ID-BINDINGS block found in ${CHECKLIST}`);
-    return;
+function catalogIdBindings(catalog: RuleCatalog, problems: string[]): Map<string, string[]> {
+  const bindings = new Map<string, string[]>();
+  for (const problem of validateRuleCatalog(catalog)) {
+    problems.push(`${CATALOG}: ${problem}`);
   }
-  fs.writeFileSync(CHECKLIST, content.replace(re, bindingsBlock(rows)));
-}
 
-function checklistIdBindings(content: string, problems: string[]): Map<string, string[]> {
-  const match = content.match(
-    /<!-- BEGIN:CHECKLIST-ID-BINDINGS\s*([\s\S]*?)\s*END:CHECKLIST-ID-BINDINGS -->/,
-  );
-  if (!match) {
-    problems.push(
-      `No CHECKLIST-ID-BINDINGS block found in ${CHECKLIST}; run check-checklist-pillars.ts --write-bindings after reviewing checklist IDs`,
-    );
-    return new Map();
+  for (const entry of catalog.rules) {
+    const ids = bindings.get(entry.checklist.rule) ?? [];
+    if (ids.includes(entry.id)) {
+      problems.push(`${CATALOG}: ${entry.id} appears multiple times in "${entry.checklist.rule}"`);
+      continue;
+    }
+    ids.push(entry.id);
+    bindings.set(entry.checklist.rule, ids);
   }
-  try {
-    const raw = JSON.parse(match[1]) as Record<string, string[]>;
-    return new Map(Object.entries(raw));
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    problems.push(`CHECKLIST-ID-BINDINGS block is not valid JSON: ${message}`);
-    return new Map();
-  }
+
+  for (const ids of bindings.values()) ids.sort();
+  return bindings;
 }
 
 const specText = fs.readFileSync(SPEC, 'utf8');
 const c2p = clauseToPillar(specText);
 const idMap = specIdMap(specText);
+const catalog = JSON.parse(fs.readFileSync(CATALOG, 'utf8')) as RuleCatalog;
 const checklistText = fs.readFileSync(CHECKLIST, 'utf8');
 const rows: ChecklistRow[] = parseChecklistRows(checklistText);
 const problems: string[] = [];
-if (WRITE_BINDINGS) {
-  writeBindings(checklistText, rows, problems);
-  if (problems.length) {
-    console.error('Problems:');
-    for (const p of problems) console.error(' -', p);
-    process.exit(1);
-  }
-  // Exit immediately after writing; checklistText and rows still reflect the pre-write file.
-  console.log(`OK — regenerated CHECKLIST-ID-BINDINGS in ${CHECKLIST} from ${rows.length} rows`);
-  process.exit(0);
-}
-const bindings = checklistIdBindings(checklistText, problems);
+const bindings = catalogIdBindings(catalog, problems);
 
 for (const { rule, ids, pillar } of rows) {
   if (ids.length === 0) {
@@ -110,21 +84,21 @@ for (const { rule, ids, pillar } of rows) {
 for (const { rule, ids } of rows) {
   const expected = bindings.get(rule);
   if (!expected) {
-    problems.push(`checklist row "${rule}" has no entry in CHECKLIST-ID-BINDINGS`);
+    problems.push(`checklist row "${rule}" has no matching checklist rule in ${CATALOG}`);
     continue;
   }
   const actualKey = [...ids].sort().join(',');
   const expectedKey = [...expected].sort().join(',');
   if (actualKey !== expectedKey) {
     problems.push(
-      `"${rule}" IDs column is [${ids.join(', ')}], expected [${expected.join(', ')}] from CHECKLIST-ID-BINDINGS`,
+      `"${rule}" IDs column is [${ids.join(', ')}], expected [${expected.join(', ')}] from ${CATALOG}`,
     );
   }
 }
 
 for (const rule of bindings.keys()) {
   if (!rows.some((row) => row.rule === rule)) {
-    problems.push(`CHECKLIST-ID-BINDINGS has "${rule}" but no matching checklist row`);
+    problems.push(`${CATALOG} has checklist rule "${rule}" but no matching checklist row`);
   }
 }
 

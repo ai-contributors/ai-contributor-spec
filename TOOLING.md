@@ -32,6 +32,8 @@ The scripts enforce invariants that are easy to miss in prose review:
 
 - every normative requirement has a stable `AIC-*` ID,
 - checklist rows cite real specification IDs with matching scope,
+- generated checklist rule tables are current,
+- visible checklist row IDs match the catalog and specification,
 - generated coverage tables are current,
 - Markdown links, anchors, clause references, and pillar tables stay valid,
 - audit templates remain structurally valid,
@@ -90,6 +92,7 @@ Common focused commands:
 | `npm --prefix tools run check:doc-version` | Verify version strings agree across spec, README, GUIDE, and CHANGELOG. |
 | `npm --prefix tools run check:coverage` | Verify generated coverage blocks are current. |
 | `npm --prefix tools run check:rule-catalog` | Validate and canonicalize the checked-in AI Contributor rule catalog. |
+| `npm --prefix tools run check:checklist-assets` | Verify generated checklist rule tables are current with the rule catalog. |
 | `npm --prefix tools run check:rule-catalog-projections` | Verify specification and checklist markdown projections match the canonical rule catalog. |
 | `npm --prefix tools run check:audit-profile-template` | Verify the audit-profile template applicability table is in sync with `PROFILE_QUESTIONS`. |
 | `npm --prefix tools run check:conformance-levels` | Check accepted `conformance_level` values across docs and code. |
@@ -102,6 +105,7 @@ Common focused commands:
 | `npm --prefix tools run check:golden-audit` | Run the collector against the synthetic golden-audit repo. |
 | `npm --prefix tools run generate:coverage` | Rewrite generated coverage blocks. |
 | `npm --prefix tools run generate:rule-catalog` | Rewrite the AI Contributor rule catalog in canonical JSON order. |
+| `npm --prefix tools run generate:checklist-assets` | Rewrite generated checklist rule tables from the rule catalog. |
 | `npm --prefix tools run generate:audit-profile-template` | Rewrite the audit-profile template applicability table from `PROFILE_QUESTIONS`. |
 | `npm --prefix tools run audit` | Self-audit this repository through the skill runtime. |
 | `npm --prefix tools run audit:collect` | Collect self-audit evidence into `.ai-contributor-audit/AI-CONTRIBUTOR-EVIDENCE.json`. |
@@ -160,7 +164,8 @@ hints consistency, pillar structure, and stamped-block checks.
 
 Checks and generators that understand the specification/checklist model:
 normative IDs, checklist pillar ownership, row scope consistency, audit evidence
-cross-checking, conformance-level consistency, and coverage generation.
+cross-checking, conformance-level consistency, checklist asset generation, and
+coverage generation.
 
 ### `tools/tests/`
 
