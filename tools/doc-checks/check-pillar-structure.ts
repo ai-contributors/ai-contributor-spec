@@ -81,7 +81,7 @@ function clausesByPillarFromBody(): Map<number, Set<number>> {
       if (!out.has(pillar)) out.set(pillar, new Set());
       continue;
     }
-    const cm = line.match(/^##\s+(\d+)\.\s+/);
+    const cm = line.match(/^#{2,4}\s+(\d+)\.\s+/);
     if (cm && pillar !== null) {
       const clauses = out.get(pillar);
       if (clauses) clauses.add(Number(cm[1]));

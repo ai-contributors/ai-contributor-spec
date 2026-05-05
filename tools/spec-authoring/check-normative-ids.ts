@@ -3,8 +3,8 @@
 //
 // Verifies normative-ID hygiene across the spec and the checklist.
 //
-// Each normative bullet (under a `### `MUST``, `### `MUST when applicable``,
-// `### `SHOULD``, or `### `MAY`` heading inside the `## Specification clauses`
+// Each normative bullet (under a scope heading such as `##### `MUST`` inside
+// the `## Specification clauses`
 // section of AI-CONTRIBUTOR-SPECIFICATION.md) MUST carry a visible normative
 // ID of the form `<sup>`AIC-<slug>`</sup>` at the end of the bullet, where
 // <slug> is `[a-z0-9][a-z0-9-]*`. The aggregate `check` script runs this

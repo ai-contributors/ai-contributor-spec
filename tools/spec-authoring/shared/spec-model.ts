@@ -44,6 +44,12 @@ export interface NormativeRule {
 }
 
 const ID_PATTERN = /<sup>`(AIC-[a-z0-9][a-z0-9-]*)`<\/sup>/g;
+const SPECIFICATION_CLAUSES_HEADING = /^## Specification clauses\s*$/;
+const TOP_LEVEL_HEADING = /^##\s+/;
+const CLAUSE_HEADING = /^#{2,4}\s+(\d+)\.\s+/;
+const SCOPE_HEADING = /^#{3,6}\s+`(MUST|MUST when applicable|SHOULD|MAY)`\s*$/;
+const ANY_HEADING = /^#{1,6}\s+/;
+const PILLAR_HEADING = /^###\s+Pillar\s+(\d+)\b/;
 
 export function parseNormativeIds(specContent: string): NormativeIdParseResult {
   const ids: SpecId[] = [];
@@ -56,33 +62,33 @@ export function parseNormativeIds(specContent: string): NormativeIdParseResult {
   const lines = specContent.split(/\r?\n/);
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-    if (/^## Specification clauses\s*$/.test(line)) {
+    if (SPECIFICATION_CLAUSES_HEADING.test(line)) {
       inClauses = true;
       continue;
     }
     if (!inClauses) continue;
 
-    const cm = line.match(/^##\s+(\d+)\.\s+/);
+    const cm = line.match(CLAUSE_HEADING);
     if (cm) {
       clause = Number(cm[1]);
       scope = null;
       continue;
     }
 
-    if (/^##\s+/.test(line)) {
+    if (TOP_LEVEL_HEADING.test(line)) {
       inClauses = false;
       clause = 0;
       scope = null;
       continue;
     }
 
-    const sm = line.match(/^###\s+`(MUST|MUST when applicable|SHOULD|MAY)`\s*$/);
+    const sm = line.match(SCOPE_HEADING);
     if (sm && isSpecScope(sm[1])) {
       scope = sm[1];
       continue;
     }
 
-    if (/^###\s+/.test(line)) {
+    if (ANY_HEADING.test(line)) {
       scope = null;
       continue;
     }
@@ -118,33 +124,33 @@ export function parseNormativeRules(specContent: string): NormativeRule[] {
   const lines = specContent.split(/\r?\n/);
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-    if (/^## Specification clauses\s*$/.test(line)) {
+    if (SPECIFICATION_CLAUSES_HEADING.test(line)) {
       inClauses = true;
       continue;
     }
     if (!inClauses) continue;
 
-    const cm = line.match(/^##\s+(\d+)\.\s+/);
+    const cm = line.match(CLAUSE_HEADING);
     if (cm) {
       clause = Number(cm[1]);
       scope = null;
       continue;
     }
 
-    if (/^##\s+/.test(line)) {
+    if (TOP_LEVEL_HEADING.test(line)) {
       inClauses = false;
       clause = 0;
       scope = null;
       continue;
     }
 
-    const sm = line.match(/^###\s+`(MUST|MUST when applicable|SHOULD|MAY)`\s*$/);
+    const sm = line.match(SCOPE_HEADING);
     if (sm && isSpecScope(sm[1])) {
       scope = sm[1];
       continue;
     }
 
-    if (/^###\s+/.test(line)) {
+    if (ANY_HEADING.test(line)) {
       scope = null;
       continue;
     }
@@ -191,12 +197,12 @@ export function clauseToPillar(specContent: string): Map<number, number> {
   const out = new Map<number, number>();
   let pillar: number | null = null;
   for (const line of specContent.split(/\r?\n/)) {
-    const pm = line.match(/^###\s+Pillar\s+(\d+)\b/);
+    const pm = line.match(PILLAR_HEADING);
     if (pm) {
       pillar = Number(pm[1]);
       continue;
     }
-    const cm = line.match(/^##\s+(\d+)\.\s+/);
+    const cm = line.match(CLAUSE_HEADING);
     if (cm && pillar !== null) out.set(Number(cm[1]), pillar);
   }
   return out;

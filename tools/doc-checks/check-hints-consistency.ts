@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 // (A) Verifies that every `## N. Title` clause heading in any
-//     examples/*/hints-*.md file matches the corresponding `## N. Title`
+//     examples/*/hints-*.md file matches the corresponding clause
 //     heading in AI-CONTRIBUTOR-SPECIFICATION.md.
 // (B) Verifies that the `## Clause index` list in each hints file matches
 //     the actual `## N. Title` headings further down in the same file.
@@ -18,7 +18,7 @@ type ClauseIndexEntry = { n: number; title: string; anchor: string };
 function clauseHeadings(file: string): Map<number, string> {
   const out = new Map<number, string>();
   for (const line of fs.readFileSync(file, 'utf8').split(/\r?\n/)) {
-    const m = line.match(/^##\s+(\d+)\.\s+(.+?)\s*$/);
+    const m = line.match(/^#{2,4}\s+(\d+)\.\s+(.+?)\s*$/);
     if (m) out.set(Number(m[1]), m[2]);
   }
   return out;

@@ -28,6 +28,9 @@ Every released entry lists the release date (the day the version lands on `main`
   against the catalog instead of an embedded checklist comment. Row ordering is
   mechanical and may differ from earlier hand-authored ordering; rule semantics
   did not change.
+- The specification clause section now uses a proper nested heading hierarchy:
+  pillars under `###`, clauses under `####`, and scope groups under `#####`.
+  Rule IDs and normative text did not change.
 
 ## [0.1] — 2026-05-03
 
