@@ -86,6 +86,7 @@ export function renderCoverageMap(catalog: ValidatedRuleCatalog, templateContent
     templateContent,
     directives,
     requiredDirectives: REQUIRED_COVERAGE_DIRECTIVES,
+    repeatableDirectives: ['specVersion'],
     messages: {
       templatePath: TEMPLATE,
       directiveLabel: 'coverage template directive',

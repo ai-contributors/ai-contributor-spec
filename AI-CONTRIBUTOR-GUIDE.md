@@ -1,8 +1,22 @@
 # AI Contributor Adoption Guide
 
-> **Version:** 0.1.1 · **Reference specification:** [`AI-CONTRIBUTOR-SPECIFICATION.md`](AI-CONTRIBUTOR-SPECIFICATION.md) v0.1.1 · **Change history:** [`CHANGELOG.md`](CHANGELOG.md)
+> **Version:** 0.1.2 · **Reference specification:** [`AI-CONTRIBUTOR-SPECIFICATION.md`](AI-CONTRIBUTOR-SPECIFICATION.md) v0.1.2 · **Change history:** [`CHANGELOG.md`](CHANGELOG.md)
 
 A step-by-step adoption path for small teams and solo developers building TypeScript web applications on GitHub. Follow it from top to bottom. Each phase moves the repository to the next level: Phase 0 → Level 0, Phase 1 → Level 1 and simple Level 2 workflows, Phase 2 → Level 3, Phase 3 → Level 4.
+
+## Scaffold a new repo {#scaffold}
+
+For a brand-new TypeScript + pnpm repository, start from the bundled template:
+
+```sh
+npx degit ai-contributors/ai-contributor-spec/examples/typescript-pnpm/template my-repo
+cd my-repo
+pnpm install
+```
+
+The template ships a clean clone wired to Level 1 conventions out of the box: pinned Node + pnpm, lockfile committed, Husky + Prettier + ESLint configured, `AGENTS.md` pointer files, a GitHub Actions workflow with `permissions: contents: read`, and `.gitignore` covering `.env*` with a tracked `.env.example`. After `pnpm install` an audit run (see Phase 1) should pass at L1 with no further changes.
+
+If you are adopting the spec into an existing repository instead, skip this section and start at [Shortest Useful Path](#shortest-useful-path) below.
 
 ## Shortest Useful Path
 

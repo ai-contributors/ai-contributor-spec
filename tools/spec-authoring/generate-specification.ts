@@ -91,6 +91,7 @@ function renderSpecificationResult(
       'generated:conformance-levels',
       'generated:specification-clauses',
     ],
+    repeatableDirectives: ['specVersion'],
     messages: {
       templatePath: TEMPLATE,
     },
@@ -138,8 +139,8 @@ function renderSpecificationClauses(catalog: ValidatedRuleCatalog, context: Rend
     if (pillarClauses.length === 0) continue;
 
     lines.push(renderPillarHeading(pillar), '');
-    for (const clause of pillarClauses) {
-      lines.push(renderClauseHeading(clause), '');
+    for (const [index, clause] of pillarClauses.entries()) {
+      lines.push(renderClauseHeading(clause, index + 1), '');
       for (const scope of SCOPE_ORDER) {
         const entries = context.ruleGroups.get(ruleGroupKey(clause.number, scope));
         if (!entries) continue;
@@ -153,11 +154,29 @@ function renderSpecificationClauses(catalog: ValidatedRuleCatalog, context: Rend
 }
 
 function renderPillarHeading(pillar: RuleCatalogPillar): string {
-  return `### Pillar ${pillar.number} — ${pillarDisplayName(pillar)}`;
+  return `### Pillar ${pillar.number} — ${pillarDisplayName(pillar)} {#${pillarAnchor(pillar)}}`;
 }
 
-function renderClauseHeading(clause: RuleCatalogClause): string {
-  return `#### ${clause.number}. ${clause.title}`;
+function pillarAnchor(pillar: RuleCatalogPillar): string {
+  return `p${String(pillar.number).padStart(2, '0')}-${slugifyHeading(pillar.title)}`;
+}
+
+function slugifyHeading(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function renderClauseHeading(clause: RuleCatalogClause, pillarClauseIndex: number): string {
+  return `#### ${clause.number}. ${clause.title} {#${clauseAnchor(clause, pillarClauseIndex)}}`;
+}
+
+function clauseAnchor(clause: RuleCatalogClause, pillarClauseIndex: number): string {
+  return `p${String(clause.pillar).padStart(2, '0')}-c${pillarClauseIndex}-${slugifyHeading(
+    clause.title,
+  )}`;
 }
 
 function renderSpecificationRuleBullet(entry: RuleCatalogEntry): string {

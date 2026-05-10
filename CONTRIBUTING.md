@@ -13,6 +13,14 @@ Thanks for considering a contribution. This repository maintains:
 
 Contributions should improve clarity, tighten requirements, close real gaps, reflect new AI-era risks, or extend the guide to additional stacks.
 
+## Pick the right path
+
+The repository is several artifacts in one tree. Different changes go through different gates. Pick the path that matches what you are changing — the rest of this document expands each path.
+
+- **Spec change.** A new clause, a clarified `MUST`, a new conformance level, a renamed pillar. RFC-style discussion in an issue first. Touches `AI-CONTRIBUTOR-SPECIFICATION.md` and the rule catalog. Goes through a tagged spec release.
+- **Tooling change.** A new doc check, a fix in the collector, a new evidence row, an update to a skill. Lives in `tools/` and `skills/`. Does not bump the spec rev unless it changes normative behavior.
+- **Docs / guide change.** A typo, a clarification, a new walkthrough, a new stack guide. Lives in the root Markdown files and the audit-skill docs. Lightest review path, but still runs the doc-check suite.
+
 ## Low-barrier contribution path
 
 For a small editorial improvement to a hand-authored document:
@@ -50,7 +58,7 @@ Out of scope:
 1. **Open an issue first** for anything beyond a typo or minor wording fix. Describe the risk or ambiguity and the outcome you want. This avoids duplicate work and lets review start before drafting.
 2. **Submit a pull request** referencing the issue. Keep PRs focused — one change of substance per PR.
 3. **Update source files, then regenerate projections.** Structured rule facts
-   and document metadata belong in
+   belong in
    [`AI-CONTRIBUTOR-RULE-CATALOG.json`](AI-CONTRIBUTOR-RULE-CATALOG.json).
    Long-form prose and placement belong in the relevant Markdown template under
    `tools/spec-authoring/templates/`. Do not hand-edit generated specification,
@@ -77,6 +85,20 @@ Out of scope:
    is the catalog JSON shape version used by tooling. Patch releases may update
    `specVersion` without changing `schemaVersion` when the specification bundle
    changes but the catalog JSON shape remains compatible.
+
+## Publication metadata
+
+Specification Markdown is source content, not a website manifest. Do not add
+frontmatter blocks for titles, slugs, sidebar sections, ordering, or publication
+paths to spec documents. The spec revision is the git tag at `HEAD`; consumers
+that need to display a version should use `git describe` (or an equivalent
+pinned commit/tag lookup) instead of parsing Markdown fields.
+
+Consumer-specific publication metadata belongs in the consumer. For example,
+the public docs site owns its sidebar grouping, route paths, labels, and
+view-source mapping in its own `docs.config.json`. Adding a new spec document
+here only requires committing the Markdown body and any relevant source-template
+or catalog changes; each publisher decides whether and where to surface it.
 
 ## Local validation
 
@@ -232,12 +254,27 @@ The canonical artifact and field ownership table lives in [`AI-CONTRIBUTOR-AUDIT
 1. Review the PR against the rows above and the Drafting conventions below.
 2. Confirm the version bump is correct (use the decision table). If the PR author did not bump, ask them to; do not land it yourself unless the change is purely editorial.
 3. Confirm `CHANGELOG.md` has a matching entry with today's date.
-4. Squash-merge to `main` with a message of the form `spec vX.Y: <short description>` or `spec vX.Y.Z: <short description>` for an actual patch release. CHANGELOG entries cover only normative changes (see [`CHANGELOG.md`](CHANGELOG.md) "Scope"), so `git log` is broader than the CHANGELOG — but every CHANGELOG entry maps to a normative-change merge commit.
-5. **Tag the merge commit `vX.Y` or `vX.Y.Z` for an actual patch release, and push the tag.** Required for every release, including pre-`1.0` releases. The audit skill pins `spec_source` to this tag.
+4. Decide whether the reviewed PR is also the release-trigger PR. If it is,
+   squash-merge to `main` with a message of the form
+   `spec vX.Y: <short description>` or
+   `spec vX.Y.Z: <short description>` for an actual patch release. If the PR
+   is only the patch/content PR, merge it with a descriptive non-`spec v...`
+   subject and use the empty release-trigger PR flow below. CHANGELOG entries
+   cover only normative changes (see [`CHANGELOG.md`](CHANGELOG.md) "Scope"),
+   so `git log` is broader than the CHANGELOG, but every CHANGELOG entry maps
+   to a reviewed release or release-trigger merge commit.
+5. Let the `Tag Spec Release` workflow tag the reviewed release-trigger merge
+   commit `vX.Y` or `vX.Y.Z` for an actual patch release. Required for every
+   release, including pre-`1.0` releases. The audit skill pins `spec_source` to
+   this tag. Do not push release-trigger commits directly to `main`, even if
+   the actor can bypass rulesets.
 
 ### Release runbook
 
-Use this process for every specification release. Do not commit release work directly on `main`; prepare it on a branch, review it as a PR, then tag the merge commit on `main`.
+Use this process for every specification release. Do not commit release work or
+release-trigger commits directly on `main`; prepare them on branches and review
+them as PRs. A ruleset bypass push does not satisfy the release process, even
+when the pushed commit changes no files.
 
 1. Start from current `main`:
 
@@ -259,11 +296,47 @@ Use this process for every specification release. Do not commit release work dir
    npm --prefix tools run check:ci-local
    ```
 
-4. Push the branch and open a PR. The PR body must include the standard AI Authorship & Agent Trace block when applicable. Human CODEOWNER review is required for protected paths and normative changes.
+4. Push the branch and open a PR. The PR body must include the standard AI
+   Authorship & Agent Trace block when applicable. Human CODEOWNER review is
+   required for protected paths and normative changes.
 
-5. Squash-merge the reviewed PR into `main`. Use a squash message of the form `spec vX.Y: <short description>` or `spec vX.Y.Z: <short description>`.
+5. Squash-merge the reviewed PR into `main`. If this PR is both the release
+   content PR and the release trigger, use a squash message of the form
+   `spec vX.Y: <short description>` or `spec vX.Y.Z: <short description>`.
+   If the PR is only the patch/content PR, use a descriptive non-`spec v...`
+   subject so the tag workflow does not run yet.
 
-6. Fetch the updated `main` locally and identify the merge commit:
+6. If the release content already landed under a non-release subject, open a
+   separate empty release-trigger PR. This PR has no file changes; its purpose
+   is to make the human-approved release decision visible before the tag
+   workflow runs.
+
+   ```sh
+   git switch main
+   git pull --ff-only
+   git switch -c release/vX.Y-trigger
+   git commit --allow-empty \
+     -m "spec vX.Y: <short release summary>" \
+     -m "Release-trigger commit for vX.Y. Release content landed in #NN at <merge-sha>."
+   git push -u origin release/vX.Y-trigger
+   ```
+
+   For a patch release, use `vX.Y.Z` in the branch name, commit subject, and
+   commit body.
+
+   Use a PR title that exactly starts with the release subject, for example
+   `spec vX.Y.Z: <short release summary>`. The PR body should state:
+
+   - the version being released;
+   - the content PR number and merge commit SHA;
+   - that the PR intentionally has no file changes;
+   - that merging it will let `Tag Spec Release` create `vX.Y.Z`.
+
+   Human review is still required. When merging, preserve the
+   `spec vX.Y.Z: ...` squash subject because the workflow reads the pushed
+   `main` commit subject.
+
+7. Fetch the updated `main` locally and identify the merge commit:
 
    ```sh
    git switch main
@@ -271,7 +344,7 @@ Use this process for every specification release. Do not commit release work dir
    git log -1 --oneline
    ```
 
-7. Let the `Tag Spec Release` workflow create the release tag. The workflow runs on pushes to `main`, reads the squash-merge subject, and creates an annotated tag when the subject starts with `spec vX.Y:` or `spec vX.Y.Z:`. It also checks that `CHANGELOG.md` has a matching release heading and refuses to move an existing tag.
+8. Let the `Tag Spec Release` workflow create the release tag. The workflow runs on pushes to `main`, reads the squash-merge subject, and creates an annotated tag when the subject starts with `spec vX.Y:` or `spec vX.Y.Z:`. It also checks that `CHANGELOG.md` has a matching release heading and refuses to move an existing tag.
 
    If the workflow is unavailable, create and push the release tag manually on the merge commit. Prefer an annotated tag; use a signed tag when the maintainer has signing configured.
 
@@ -282,15 +355,19 @@ Use this process for every specification release. Do not commit release work dir
 
    For a patch release, use `vX.Y.Z`. Do not tag the release branch tip before merge, do not retag an existing release, and do not move a pushed tag. If a release tag is wrong, publish a new patch release instead.
 
-8. Verify the pushed tag resolves on the remote:
+9. Verify the pushed tag resolves on the remote:
 
    ```sh
    git ls-remote --tags origin vX.Y
    ```
 
-9. After the tag exists, use that tag in adopter-facing audit instructions and `spec_source` examples for released audits. Installed skills may be refreshed with `npx skills update ai-contributor-audit`, but actual audits still materialize the runbook from a pinned release tag or full commit SHA.
+10. After the tag exists, use that tag in adopter-facing audit instructions and `spec_source` examples for released audits. Installed skills may be refreshed with `npx skills update ai-contributor-audit`, but actual audits still materialize the runbook from a pinned release tag or full commit SHA.
 
-The release-tagging workflow preserves the same boundaries as the manual fallback: all release content lands through a reviewed PR, CI passes before merge, and the tag points at the protected `main` merge commit.
+The release-tagging workflow preserves the same boundaries as the manual
+fallback: all release content lands through a reviewed PR, the release-trigger
+commit also lands through a reviewed PR when it is separate from the content
+change, CI passes before merge, and the tag points at the protected `main`
+merge commit.
 
 ### When not to bump
 

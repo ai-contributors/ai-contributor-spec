@@ -55,6 +55,7 @@
     "pillars": {
       "type": "array",
       "minItems": 1,
+      "description": "Pillars are ordered by `number` ascending — i.e. spec-section order: engineering, security, quality, release, agents, risk, oversight. Consumers MAY rely on this ordering for cross-references.",
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -113,6 +114,7 @@
     "clauses": {
       "type": "array",
       "minItems": 1,
+      "description": "Clauses are ordered by `number` ascending — matching the §-numbering in the generated AI-CONTRIBUTOR-SPECIFICATION.md.",
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -136,6 +138,7 @@
     "rules": {
       "type": "array",
       "minItems": 1,
+      "description": "Catalog entries are ordered by clause number ascending, then by minimum conformance level ascending (L0 → L1 → … → L4 → '—'), then by checklist.rule name, then by rule id. Consumers MAY rely on this ordering and skip a manual sort.",
       "items": {
         "type": "object",
         "additionalProperties": false,

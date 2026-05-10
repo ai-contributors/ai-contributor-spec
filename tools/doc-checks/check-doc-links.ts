@@ -24,7 +24,12 @@ function anchorsFor(file: string): Set<string> {
   const content = fs.readFileSync(file, 'utf8');
   for (const line of content.split(/\r?\n/)) {
     const m = line.match(/^#{1,6}\s+(.+?)\s*#*\s*$/);
-    if (m) anchors.add(slug(m[1], counts));
+    if (!m) continue;
+    const headingText = m[1];
+    const explicit = headingText.match(/\s*\{#([a-z0-9][a-z0-9-]*)\}\s*$/);
+    const visibleText = explicit ? headingText.slice(0, explicit.index).trimEnd() : headingText;
+    anchors.add(slug(visibleText, counts));
+    if (explicit) anchors.add(explicit[1]);
   }
   anchorCache.set(file, anchors);
   return anchors;
