@@ -20,8 +20,10 @@ export function renderTemplateDirectives(input: {
   templateContent: string;
   directives: Record<string, TemplateDirectiveRenderer>;
   requiredDirectives: readonly string[];
+  repeatableDirectives?: readonly string[];
   messages: TemplateDirectiveMessages;
 }): TemplateRenderResult {
+  const repeatable = new Set(input.repeatableDirectives ?? []);
   const usageCounts = new Map<string, number>();
   const problems: string[] = [];
   const directivePattern = /{{\s*([^{}]+?)\s*}}/g;
@@ -45,7 +47,7 @@ export function renderTemplateDirectives(input: {
     const count = usageCounts.get(directiveName) ?? 0;
     if (count === 0) {
       problems.push(missingDirectiveMessage(input.messages, directiveName));
-    } else if (count > 1) {
+    } else if (count > 1 && !repeatable.has(directiveName)) {
       problems.push(duplicateDirectiveMessage(input.messages, directiveName, count));
     }
   }

@@ -12,7 +12,7 @@
     "check:ci-local": "npm run check && npm run coverage:check:audit && npm run check:template-scaffold",
     "check:quality": "npm run typecheck && npm run lint && npm run format:check",
     "check:docs": "npm run check:markdown && npm run check:docs-core && npm run check:docs-release && npm run check:docs-audit",
-    "check:docs-core": "npm run check:links && npm run check:clauses && npm run check:hints && npm run check:pillar-structure && npm run check:evergreen && npm run check:stamped-blocks",
+    "check:docs-core": "npm run check:links && npm run check:clauses && npm run check:hints && npm run check:pillar-structure && npm run check:evergreen && npm run check:stamped-blocks && npm run check:doc-frontmatter",
     "check:docs-release": "npm run check:doc-version && npm run check:runbook-paths && npm run check:audit-flow-diagram && npm run check:tooling-command-coverage",
     "check:docs-audit": "npm run check:audit-frontmatter-docs",
     "check:catalog-assets": "npm run check:checklist-pillars && npm run check:normative-ids && npm run check:row-scope-vs-spec && npm run check:collector-row-coverage && npm run check:audit-evidence && npm run check:coverage && npm run check:rule-catalog && npm run check:checklist-assets && npm run check:audit-templates && npm run check:specification && npm run check:audit-profile-template && npm run check:conformance-levels",
@@ -44,6 +44,7 @@
     "check:pillar-structure": "cd .. && tsx tools/doc-checks/check-pillar-structure.ts",
     "check:evergreen": "cd .. && tsx tools/doc-checks/check-evergreen-text.ts",
     "check:stamped-blocks": "cd .. && tsx tools/doc-checks/check-stamped-blocks.ts",
+    "check:doc-frontmatter": "cd .. && tsx tools/doc-checks/check-doc-frontmatter.ts",
     "check:doc-version": "cd .. && tsx tools/doc-checks/check-doc-version.ts",
     "check:coverage": "cd .. && tsx tools/spec-authoring/generate-coverage.ts --check",
     "check:rule-catalog": "cd .. && tsx tools/spec-authoring/generate-rule-catalog.ts --check",
@@ -98,18 +99,18 @@
     "coverage:audit:report": "cd .. && tools/node_modules/.bin/c8 --config tools/.c8rc.json report"
   },
   "devDependencies": {
-    "@types/node": "^25.6.0",
+    "@types/node": "^25.6.2",
     "ajv": "^8.20.0",
     "c8": "^11.0.0",
     "eslint": "^9.39.4",
     "eslint-plugin-import": "^2.32.0",
     "globals": "^17.6.0",
     "husky": "^9.1.7",
-    "lint-staged": "^16.4.0",
+    "lint-staged": "^17.0.4",
     "markdownlint-cli2": "^0.22.1",
     "prettier": "^3.8.3",
     "tsx": "^4.21.0",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.59.1"
+    "typescript-eslint": "^8.59.2"
   }
 }

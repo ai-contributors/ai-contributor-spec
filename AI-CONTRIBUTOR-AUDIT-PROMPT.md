@@ -11,6 +11,8 @@ uses the same audit model, but is easier to reuse and less error-prone.
 
 Run this from the repository root:
 
+:::prompt{title="The audit prompt" lines="14" download="ai-contributor-audit-prompt.txt"}
+
 ```text
 Audit this repository against the AI Contributor Specification.
 
@@ -27,6 +29,8 @@ Audit this repository against the AI Contributor Specification.
 
 3. Follow that SKILL.md exactly. Do not guess file paths or fetch sources from a different ref. Base every status on the current working directory, generated evidence, or recorded repository settings -- never on memory. Do not update the audit artifacts as standalone Markdown files; status, summary, and backlog changes must go through collect, stamp, evidence review for judgment-required rows, stamp, and validate. Treat the filled checklist and audit log as reviewable audit output, not human/accountable-owner acceptance.
 ```
+
+:::
 
 ## Review Before Trust
 

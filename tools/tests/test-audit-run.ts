@@ -72,7 +72,7 @@ function assert(name: string, condition: boolean, detail = ''): void {
 
     assert(
       'reset-template run reports template spec_version before target checklist exists',
-      result.status === 0 && result.stdout.includes('spec_version=0.1.1'),
+      result.status === 0 && result.stdout.includes('spec_version=0.1.2'),
       `status=${result.status}\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}`,
     );
     assert(

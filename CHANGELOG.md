@@ -20,6 +20,20 @@ releases may update `specVersion` without changing `schemaVersion`.
 
 Every released entry lists the release date (the day the version lands on `main`).
 
+## [0.1.2] — 2026-05-10
+
+### Changed
+
+- Added stable generated anchors to specification pillar and clause headings so
+  internal links remain readable and deterministic.
+- Expanded adopter-facing reference docs for the rule catalog, glossary, audit
+  profile, and threat model without changing conformance obligations.
+- Clarified audit artifact terminology and catalog/checklist relationships to
+  match the current generated audit templates.
+
+This patch release does not change rule semantics, checklist rows, audit
+frontmatter fields, or conformance obligations.
+
 ## [0.1.1] — 2026-05-05
 
 ### Changed

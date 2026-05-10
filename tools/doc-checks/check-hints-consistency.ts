@@ -19,7 +19,7 @@ function clauseHeadings(file: string): Map<number, string> {
   const out = new Map<number, string>();
   for (const line of fs.readFileSync(file, 'utf8').split(/\r?\n/)) {
     const m = line.match(/^#{2,4}\s+(\d+)\.\s+(.+?)\s*$/);
-    if (m) out.set(Number(m[1]), m[2]);
+    if (m) out.set(Number(m[1]), m[2].replace(/\s*\{#[a-z0-9][a-z0-9-]*\}\s*$/, ''));
   }
   return out;
 }

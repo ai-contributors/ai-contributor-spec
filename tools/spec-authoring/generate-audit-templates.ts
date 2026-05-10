@@ -139,6 +139,7 @@ function renderTemplate(input: {
     templateContent: input.templateContent,
     directives,
     requiredDirectives: Object.keys(input.directives),
+    repeatableDirectives: ['specVersion'],
     messages: {
       templatePath: input.templatePath,
       directiveLabel: 'audit template directive',

@@ -4,7 +4,7 @@
 >
 > This specification treats AI as a system actor and defines reviewable guardrails for agent, harness, and tool behavior.
 
-**Version:** 0.1.1 · **License:** docs/specs [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); starter template, repo tooling, and audit runtime scripts [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0) · **Change history:** [`CHANGELOG.md`](CHANGELOG.md)
+**Version:** 0.1.2 · **License:** docs/specs [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); starter template, repo tooling, and audit runtime scripts [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0) · **Change history:** [`CHANGELOG.md`](CHANGELOG.md)
 
 ## Why This Exists
 
@@ -63,6 +63,8 @@ accountable owner reviews and accepts these artifacts before a repository
 publishes a conformance claim. The optional fix-skill loop is for improving
 gaps found by the audit, then rerunning the audit. The detailed protocol covers
 the internal stamp, evidence-review, second stamp, and validation sequence.
+
+<!-- doc-site:extract:quickstart -->
 
 ## Process Options
 
@@ -189,6 +191,8 @@ automated formatting.
 
 The audit is not a generic security review. It checks whether repository
 guardrails are strong enough for the AI workflow level you want to claim.
+
+<!-- /doc-site:extract:quickstart -->
 
 ## Manual Path
 

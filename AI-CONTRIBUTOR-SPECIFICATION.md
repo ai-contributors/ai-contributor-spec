@@ -1,6 +1,6 @@
 # AI Contributor Specification
 
-> **Version:** 0.1.1 · **Owner:** _Set per adopting repository_ · **License:** [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) · **Change history:** [`CHANGELOG.md`](CHANGELOG.md)
+> **Version:** 0.1.2 · **Owner:** _Set per adopting repository_ · **License:** [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) · **Change history:** [`CHANGELOG.md`](CHANGELOG.md)
 >
 > Change history is maintained in the repository's version-control log. Adopters `MUST` satisfy the change-control requirements in §25 for their copy of this document.
 
@@ -105,9 +105,9 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ## Specification clauses
 
-### Pillar 1 — 🏗️ Engineering Foundation
+### Pillar 1 — 🏗️ Engineering Foundation {#p01-engineering-foundation}
 
-#### 1. Reproducible environment
+#### 1. Reproducible environment {#p01-c1-reproducible-environment}
 
 ##### `MUST`
 
@@ -130,7 +130,7 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ---
 
-#### 2. Static correctness
+#### 2. Static correctness {#p01-c2-static-correctness}
 
 ##### `MUST`
 
@@ -151,7 +151,7 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ---
 
-#### 3. Architecture boundaries
+#### 3. Architecture boundaries {#p01-c3-architecture-boundaries}
 
 ##### `MUST`
 
@@ -171,7 +171,7 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ---
 
-#### 4. Pre-commit and CI gates
+#### 4. Pre-commit and CI gates {#p01-c4-pre-commit-and-ci-gates}
 
 ##### `MUST`
 
@@ -192,9 +192,9 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ---
 
-### Pillar 2 — 🛡️ Security
+### Pillar 2 — 🛡️ Security {#p02-security}
 
-#### 5. Secrets and credentials
+#### 5. Secrets and credentials {#p02-c1-secrets-and-credentials}
 
 ##### `MUST`
 
@@ -219,7 +219,7 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ---
 
-#### 6. Security scanning and dependency security
+#### 6. Security scanning and dependency security {#p02-c2-security-scanning-and-dependency-security}
 
 ##### `MUST when applicable`
 
@@ -241,7 +241,7 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ---
 
-#### 7. Authorization and trusted boundaries
+#### 7. Authorization and trusted boundaries {#p02-c3-authorization-and-trusted-boundaries}
 
 ##### `MUST`
 
@@ -260,7 +260,7 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ---
 
-#### 8. CI/CD workflow hardening
+#### 8. CI/CD workflow hardening {#p02-c4-ci-cd-workflow-hardening}
 
 ##### `MUST when applicable`
 
@@ -282,7 +282,7 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ---
 
-#### 9. Threat modeling and security design review
+#### 9. Threat modeling and security design review {#p02-c5-threat-modeling-and-security-design-review}
 
 ##### `MUST when applicable`
 
@@ -300,9 +300,9 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ---
 
-### Pillar 3 — 🎯 Quality & Reliability
+### Pillar 3 — 🎯 Quality & Reliability {#p03-quality-and-reliability}
 
-#### 10. Runtime validation and invariants
+#### 10. Runtime validation and invariants {#p03-c1-runtime-validation-and-invariants}
 
 ##### `MUST`
 
@@ -321,7 +321,7 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ---
 
-#### 11. Testing strategy
+#### 11. Testing strategy {#p03-c2-testing-strategy}
 
 ##### `MUST`
 
@@ -347,7 +347,7 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ---
 
-#### 12. Accessibility
+#### 12. Accessibility {#p03-c3-accessibility}
 
 ##### `MUST when applicable`
 
@@ -365,7 +365,7 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ---
 
-#### 13. Failure handling and observability
+#### 13. Failure handling and observability {#p03-c4-failure-handling-and-observability}
 
 ##### `MUST when applicable`
 
@@ -385,7 +385,7 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ---
 
-#### 14. Performance and reliability
+#### 14. Performance and reliability {#p03-c5-performance-and-reliability}
 
 ##### `MUST when applicable`
 
@@ -403,9 +403,9 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ---
 
-### Pillar 4 — 🚀 Release
+### Pillar 4 — 🚀 Release {#p04-release}
 
-#### 15. Supply-chain transparency and artifact integrity
+#### 15. Supply-chain transparency and artifact integrity {#p04-c1-supply-chain-transparency-and-artifact-integrity}
 
 ##### `MUST when applicable`
 
@@ -425,7 +425,7 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ---
 
-#### 16. Branch protection, ownership, and release governance
+#### 16. Branch protection, ownership, and release governance {#p04-c2-branch-protection-ownership-and-release-governance}
 
 ##### `MUST`
 
@@ -451,9 +451,9 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ---
 
-### Pillar 5 — 🤖 AI Agents
+### Pillar 5 — 🤖 AI Agents {#p05-ai-agents}
 
-#### 17. AI operating model
+#### 17. AI operating model {#p05-c1-ai-operating-model}
 
 ##### `MUST`
 
@@ -475,7 +475,7 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ---
 
-#### 18. Skills and shared workflow modules
+#### 18. Skills and shared workflow modules {#p05-c2-skills-and-shared-workflow-modules}
 
 ##### `MUST when applicable`
 
@@ -496,7 +496,7 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ---
 
-#### 19. MCP servers and external tool governance
+#### 19. MCP servers and external tool governance {#p05-c3-mcp-servers-and-external-tool-governance}
 
 ##### `MUST when applicable`
 
@@ -523,7 +523,7 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ---
 
-#### 20. Agents and delegation governance
+#### 20. Agents and delegation governance {#p05-c4-agents-and-delegation-governance}
 
 ##### `MUST when applicable`
 
@@ -552,9 +552,9 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ---
 
-### Pillar 6 — ⚠️ AI Risk
+### Pillar 6 — ⚠️ AI Risk {#p06-ai-risk}
 
-#### 21. AI-specific risks
+#### 21. AI-specific risks {#p06-c1-ai-specific-risks}
 
 ##### `MUST when applicable`
 
@@ -587,7 +587,7 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ---
 
-#### 22. Data protection and privacy
+#### 22. Data protection and privacy {#p06-c2-data-protection-and-privacy}
 
 ##### `MUST`
 
@@ -611,9 +611,9 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ---
 
-### Pillar 7 — 🧭 Oversight
+### Pillar 7 — 🧭 Oversight {#p07-oversight}
 
-#### 23. Human approval and manual checkpoints
+#### 23. Human approval and manual checkpoints {#p07-c1-human-approval-and-manual-checkpoints}
 
 ##### `MUST`
 
@@ -636,7 +636,7 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ---
 
-#### 24. Guardrail documentation and evidence
+#### 24. Guardrail documentation and evidence {#p07-c2-guardrail-documentation-and-evidence}
 
 ##### `MUST`
 
@@ -656,7 +656,7 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ---
 
-#### 25. Policy governance
+#### 25. Policy governance {#p07-c3-policy-governance}
 
 ##### `MUST`
 
@@ -675,7 +675,7 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ---
 
-#### 26. AI-generated content: licensing and attribution
+#### 26. AI-generated content: licensing and attribution {#p07-c4-ai-generated-content-licensing-and-attribution}
 
 ##### `MUST`
 
@@ -697,7 +697,7 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ---
 
-#### 27. AI credential lifecycle
+#### 27. AI credential lifecycle {#p07-c5-ai-credential-lifecycle}
 
 ##### `MUST when applicable`
 
@@ -716,7 +716,7 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ---
 
-#### 28. AI model and provider deprecation
+#### 28. AI model and provider deprecation {#p07-c6-ai-model-and-provider-deprecation}
 
 ##### `MUST when applicable`
 
@@ -735,7 +735,7 @@ For a per-clause audit checklist covering every `MUST`, `MUST when applicable`, 
 
 ---
 
-#### 29. AI incident response and guardrail-update loop
+#### 29. AI incident response and guardrail-update loop {#p07-c7-ai-incident-response-and-guardrail-update-loop}
 
 ##### `MUST when applicable`
 
