@@ -6,7 +6,7 @@ assessment_completed_at: 2026-04-25T11:30:00+02:00
 assessment_duration: 01:30:00
 audited_commit: zzz9999
 auditor: Jane Smith
-validator_version: "0.1.0"
+validator_version: "0.1.1"
 collector_version: "0.1.0"
 runner_agent: claude-code
 runner_model: claude-opus-4-7

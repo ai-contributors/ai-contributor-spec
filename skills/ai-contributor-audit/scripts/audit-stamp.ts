@@ -80,7 +80,7 @@ import {
 // changes. Recorded in audit frontmatter as `validator_version` so two
 // audits of the same repo can be compared knowing which validator they
 // were run against.
-export const VALIDATOR_VERSION = '0.1.0';
+export const VALIDATOR_VERSION = '0.1.1';
 
 // Mirror of the `COLLECTOR_VERSION` constant exported by audit-collect.ts.
 // Kept in this file so audit-run.ts can read the version without executing

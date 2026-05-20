@@ -18,6 +18,7 @@ import {
   checkProfileEvidence,
   checkTokenDisclosure,
 } from '../../skills/ai-contributor-audit/scripts/internal/validator-evidence-linkage.ts';
+import { checkReauditStatusRationales } from '../../skills/ai-contributor-audit/scripts/internal/validator-reaudit.ts';
 import type { AuditLogRow } from '../../skills/ai-contributor-audit/scripts/internal/validator-types.ts';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -310,7 +311,88 @@ function makeBacklogRow(partial: Partial<BacklogRow>): BacklogRow {
   };
 }
 
-// 14. AUDIT040: duplicate rule in backlog.
+// ----- validator-reaudit: auditor-owned status drift rationales ----------
+
+// 14. AUDIT070: Fulfilled -> Warning needs a current-run rationale.
+{
+  const previous = [
+    makeChecklistRow('A11y Keyboard Focus', {
+      status: '✅ Fulfilled',
+      ids: ['AIC-keyboard-focus'],
+    }),
+  ];
+  const current = [
+    makeChecklistRow('A11y Keyboard Focus', {
+      status: '⚠️ Warning',
+      comment: 'docs/reviews/a-accessibility.md:12 records unresolved focus findings.',
+      ids: ['AIC-keyboard-focus'],
+    }),
+  ];
+  const ctx = makeContext([]);
+  const { fail, problems } = collect();
+  checkReauditStatusRationales(current, ctx, fail, previous);
+  if (problems.some((p) => p.code === 'AUDIT070' && /changed from/.test(p.message))) {
+    ok('AUDIT070: Fulfilled -> Warning needs status-change rationale');
+  } else {
+    bad('AUDIT070 missing for Fulfilled -> Warning', JSON.stringify(problems));
+  }
+}
+
+// 15. Warning -> Fulfilled passes when the comment explains the change.
+{
+  const previous = [
+    makeChecklistRow('Strict Types', {
+      status: '⚠️ Warning',
+      ids: ['AIC-strict-typing-enabled'],
+    }),
+  ];
+  const current = [
+    makeChecklistRow('Strict Types', {
+      status: '✅ Fulfilled',
+      comment:
+        'Changed from `⚠️ Warning` to `✅ Fulfilled` because tsconfig.json:4 now enables `"strict": true`.',
+      ids: ['AIC-strict-typing-enabled'],
+    }),
+  ];
+  const ctx = makeContext([]);
+  const { fail, problems } = collect();
+  checkReauditStatusRationales(current, ctx, fail, previous);
+  if (problems.length === 0) {
+    ok('checkReauditStatusRationales: Warning -> Fulfilled with rationale');
+  } else {
+    bad('AUDIT070 false positive for Warning -> Fulfilled', JSON.stringify(problems));
+  }
+}
+
+// 16. Mechanically stamped rows are exempt from auditor-owned rationale checks.
+{
+  const previous = [
+    makeChecklistRow('Branch Protection', {
+      automationMarker: 'x',
+      status: '✅ Fulfilled',
+      ids: ['AIC-default-branch-protected'],
+    }),
+  ];
+  const current = [
+    makeChecklistRow('Branch Protection', {
+      automationMarker: 'x',
+      status: '⚠️ Warning',
+      comment:
+        'Mechanical (collector-derived) from `.ai-contributor-audit/AI-CONTRIBUTOR-EVIDENCE.json`.',
+      ids: ['AIC-default-branch-protected'],
+    }),
+  ];
+  const ctx = makeContext([]);
+  const { fail, problems } = collect();
+  checkReauditStatusRationales(current, ctx, fail, previous);
+  if (problems.length === 0) {
+    ok('checkReauditStatusRationales: mechanical rows exempt');
+  } else {
+    bad('AUDIT070 false positive for mechanical rows', JSON.stringify(problems));
+  }
+}
+
+// 17. AUDIT040: duplicate rule in backlog.
 {
   const rules: ChecklistRow[] = [makeChecklistRow('Branch Protection', {})];
   const backlog: BacklogRow[] = [

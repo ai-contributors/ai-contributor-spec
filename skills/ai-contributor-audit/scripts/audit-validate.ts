@@ -41,6 +41,7 @@
 //   AUDIT040..049  backlog
 //   AUDIT050..059  placeholders / template leftovers
 //   AUDIT060..069  evidence-artifact / profile consistency
+//   AUDIT070..079  re-audit status drift rationale
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -65,6 +66,7 @@ import {
   checkTokenDisclosure,
 } from './internal/validator-evidence-linkage.ts';
 import { checkFrontmatter } from './internal/validator-frontmatter.ts';
+import { checkReauditStatusRationales } from './internal/validator-reaudit.ts';
 import {
   checkRootSectionCopies,
   checkSummary,
@@ -76,7 +78,7 @@ import type { AuditLogRow, Problem, ValidatorContext } from './internal/validato
 // changes. Recorded in audit frontmatter as `validator_version` so two
 // audits of the same repo can be compared knowing which validator they
 // were run against.
-export const VALIDATOR_VERSION = '0.1.0';
+export const VALIDATOR_VERSION = '0.1.1';
 
 // Mirror of the `COLLECTOR_VERSION` constant exported by audit-collect.ts.
 // Kept in this file so audit-run.ts can read the version without executing
@@ -354,6 +356,7 @@ export function runValidator(argv: string[]): ValidatorResult {
   checkCollectorDerivedRowsMatchEvidence(rules, context, fail);
   checkProfileEvidence(rules, context, fail);
   checkTokenDisclosure(auditReal, context, fail);
+  checkReauditStatusRationales(rules, context, fail);
 
   if (problems.length === 0) {
     stdoutBuf.push(
@@ -386,8 +389,16 @@ function finish(exitCode: 0 | 1 | 2): ValidatorResult {
 // CLI shim is below function declarations so direct imports can call
 // runValidator() without executing the command.
 
-const invokedAsScript =
-  typeof process.argv[1] === 'string' && import.meta.url === pathToFileURL(process.argv[1]).href;
+function isInvokedAsScript(scriptPath: string | undefined): boolean {
+  if (typeof scriptPath !== 'string') return false;
+  try {
+    return import.meta.url === pathToFileURL(fs.realpathSync(scriptPath)).href;
+  } catch {
+    return import.meta.url === pathToFileURL(scriptPath).href;
+  }
+}
+
+const invokedAsScript = isInvokedAsScript(process.argv[1]);
 
 if (invokedAsScript) {
   const result = runValidator(process.argv.slice(2));
