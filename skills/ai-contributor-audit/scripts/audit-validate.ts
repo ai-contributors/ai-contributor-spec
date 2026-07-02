@@ -21,7 +21,7 @@
 //
 // Usage:
 //   tsx audit-validate.ts <checklist.md> <audit-log.md>
-//                         [--template] [--lenient]
+//                         [--previous <path>] [--template] [--lenient]
 //
 // Closure check is on by default; --lenient opts out and is surfaced in
 // the OK message so downstream consumers can filter lenient audits.
@@ -41,6 +41,7 @@
 //   AUDIT040..049  backlog
 //   AUDIT050..059  placeholders / template leftovers
 //   AUDIT060..069  evidence-artifact / profile consistency
+//   AUDIT070..079  re-audit status-change rationale (--previous)
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -65,6 +66,7 @@ import {
   checkTokenDisclosure,
 } from './internal/validator-evidence-linkage.ts';
 import { checkFrontmatter } from './internal/validator-frontmatter.ts';
+import { checkReauditDiff } from './internal/validator-reaudit-diff.ts';
 import {
   checkRootSectionCopies,
   checkSummary,
@@ -280,6 +282,7 @@ export function runValidator(argv: string[]): ValidatorResult {
   const FLAGS = new Set<string>();
   const POSITIONAL: string[] = [];
   let summaryOverride: string | null = null;
+  let previousOverride: string | null = null;
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--summary') {
@@ -290,6 +293,14 @@ export function runValidator(argv: string[]): ValidatorResult {
       }
       summaryOverride = v;
       i++;
+    } else if (a === '--previous') {
+      const v = argv[i + 1];
+      if (v === undefined || v.startsWith('--')) {
+        stderrBuf.push('--previous requires a path argument');
+        return finish(2);
+      }
+      previousOverride = v;
+      i++;
     } else if (a.startsWith('--')) {
       FLAGS.add(a);
     } else {
@@ -299,7 +310,7 @@ export function runValidator(argv: string[]): ValidatorResult {
 
   if (POSITIONAL.length !== 2) {
     stderrBuf.push(
-      'Usage: audit-validate.ts <checklist.md> <audit-log.md> [--summary <path>] [--template] [--lenient]',
+      'Usage: audit-validate.ts <checklist.md> <audit-log.md> [--summary <path>] [--previous <path>] [--template] [--lenient]',
     );
     return finish(2);
   }
@@ -320,6 +331,21 @@ export function runValidator(argv: string[]): ValidatorResult {
   CHECKLIST_LINES = cl;
   AUDIT_LINES = al;
   SUMMARY_LINES = sl;
+
+  let previousLines: string[] | null = null;
+  if (previousOverride !== null) {
+    try {
+      previousLines = fs.readFileSync(previousOverride, 'utf8').split(/\r?\n/);
+    } catch (e) {
+      fail(
+        'AUDIT072',
+        previousOverride,
+        undefined,
+        `cannot read previous checklist: ${(e as Error).message}`,
+      );
+    }
+  }
+
   const context: ValidatorContext = {
     checklistPath: CHECKLIST_PATH,
     auditPath: AUDIT_PATH,
@@ -354,6 +380,9 @@ export function runValidator(argv: string[]): ValidatorResult {
   checkCollectorDerivedRowsMatchEvidence(rules, context, fail);
   checkProfileEvidence(rules, context, fail);
   checkTokenDisclosure(auditReal, context, fail);
+  if (!TEMPLATE_MODE && previousLines !== null) {
+    checkReauditDiff(rules, previousLines, previousOverride!, CHECKLIST_PATH, fail);
+  }
 
   if (problems.length === 0) {
     stdoutBuf.push(

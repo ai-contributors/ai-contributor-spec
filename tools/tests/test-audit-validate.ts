@@ -19,6 +19,7 @@ interface Case {
   expectExit: 0 | 1;
   expectCodes?: string[];
   flags?: string[];
+  previous?: string; // filename within the fixture dir passed via --previous
 }
 
 const CASES: Case[] = [
@@ -113,6 +114,31 @@ const CASES: Case[] = [
     expectExit: 1,
     expectCodes: ['AUDIT019'],
   },
+  { fixture: 'reaudit-valid', expectExit: 0, previous: 'PREVIOUS-CHECKLIST.md' },
+  {
+    fixture: 'reaudit-changed-without-rationale',
+    expectExit: 1,
+    expectCodes: ['AUDIT070'],
+    previous: 'PREVIOUS-CHECKLIST.md',
+  },
+  {
+    fixture: 'reaudit-rationale-without-citation',
+    expectExit: 1,
+    expectCodes: ['AUDIT071'],
+    previous: 'PREVIOUS-CHECKLIST.md',
+  },
+  {
+    fixture: 'valid',
+    expectExit: 1,
+    expectCodes: ['AUDIT072'],
+    previous: 'MISSING-PREVIOUS.md',
+  },
+  {
+    fixture: 'valid',
+    expectExit: 1,
+    expectCodes: ['AUDIT072'],
+    previous: 'AI-CONTRIBUTOR-AUDIT-LOG.md',
+  },
 ];
 
 let failed = 0;
@@ -128,6 +154,7 @@ for (const c of CASES) {
     path.join(dir, 'AI-CONTRIBUTOR-CHECKLIST.md'),
     ...(c.flags ?? []),
   ];
+  if (c.previous) args.push('--previous', path.join(dir, c.previous));
   const result = runValidator(args);
   const ok = result.exitCode === c.expectExit;
   const codesOk = (c.expectCodes ?? []).every((code) => result.stderr.includes(code));
