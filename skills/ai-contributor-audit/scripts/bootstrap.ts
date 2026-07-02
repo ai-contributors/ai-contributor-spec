@@ -126,6 +126,7 @@ const MANIFEST: readonly string[] = [
   'skills/ai-contributor-audit/scripts/internal/validator-backlog.ts',
   'skills/ai-contributor-audit/scripts/internal/validator-evidence-linkage.ts',
   'skills/ai-contributor-audit/scripts/internal/validator-frontmatter.ts',
+  'skills/ai-contributor-audit/scripts/internal/validator-reaudit-diff.ts',
   'skills/ai-contributor-audit/scripts/internal/validator-summary.ts',
   'skills/ai-contributor-audit/scripts/internal/validator-types.ts',
   'skills/ai-contributor-audit/scripts/internal/audit-evidence.ts',

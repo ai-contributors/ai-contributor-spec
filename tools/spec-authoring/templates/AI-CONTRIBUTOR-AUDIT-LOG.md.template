@@ -80,7 +80,7 @@ npm --prefix tools run audit -- \
   --runner-agent "<runner>" \
   --runner-model "<model>"
 npm --prefix tools run audit:stamp     # writes derivable cells
-npm --prefix tools run audit:validate  # read-only structural check
+npm --prefix tools run audit:validate  # read-only structural check (re-audit: append -- --previous /tmp/previous-checklist.md)
 
 # Or invoke directly:
 tsx skills/ai-contributor-audit/scripts/audit-stamp.ts \
@@ -93,7 +93,11 @@ tsx skills/ai-contributor-audit/scripts/audit-stamp.ts \
   .ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md \
   .ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-LOG.md \
   --diff
+git show HEAD:.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md > /tmp/previous-checklist.md
 tsx skills/ai-contributor-audit/scripts/audit-validate.ts \
   .ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md \
-  .ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-LOG.md
+  .ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-LOG.md \
+  --previous /tmp/previous-checklist.md
 ```
+
+On a re-audit, `--previous` enables the `AUDIT070`–`AUDIT072` status-change rationale check; omit the `git show` line and the flag on a first audit (no checklist committed at `HEAD` yet).

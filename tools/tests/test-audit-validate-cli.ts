@@ -39,6 +39,16 @@ function bad(label: string, detail = ''): void {
   }
 }
 
+// --previous requires a path argument.
+{
+  const r = runValidator(['--previous']);
+  if (r.exitCode === 2 && /previous requires a path/.test(r.stderr)) {
+    ok('runValidator: --previous with no value -> exit 2');
+  } else {
+    bad('runValidator --previous no value', `exit=${r.exitCode} stderr=${r.stderr}`);
+  }
+}
+
 // Wrong positional count.
 {
   const r = runValidator(['only-one-path']);

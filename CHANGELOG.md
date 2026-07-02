@@ -20,6 +20,19 @@ releases may update `specVersion` without changing `schemaVersion`.
 
 Every released entry lists the release date (the day the version lands on `main`).
 
+## [Unreleased]
+
+### Added
+
+- Re-audits now require a change rationale on auditor-owned checklist rows
+  whose status changed since the previous committed audit. `audit-run.ts`
+  extracts the `HEAD` version of the checklist and passes it to
+  `audit-validate.ts --previous`; validation fails with `AUDIT070` (missing
+  rationale), `AUDIT071` (rationale without a current-run citation), or
+  `AUDIT072` (unreadable previous checklist). Collector-derived and
+  owner-profile stamped rows are exempt. Non-normative tooling change;
+  `validator_version` is now `0.2.0`.
+
 ## [0.1.3] — 2026-07-02
 
 ### Changed

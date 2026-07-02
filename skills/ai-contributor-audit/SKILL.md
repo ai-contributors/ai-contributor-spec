@@ -118,10 +118,11 @@ Use the lower-level commands when you need to inspect or recover one phase. The 
 
    Prints audit metadata, status counts, the list of collector-decisive rules with their status, and the list of collector-judgment-required rules with their reason. Useful for understanding what the collector decided before filling auditor-owned rows. No mutation; safe to run any time after `audit:collect`.
 
-4. **Validate** the filled pair (read-only — never mutates):
+4. **Validate** the filled pair (read-only — never mutates). On a re-audit, extract the previous committed checklist first and pass it via `--previous` — without it the `AUDIT070`–`AUDIT072` status-change rationale check is silently skipped (`audit-run.ts` does this automatically; omit it on a first audit):
 
    ```sh
-   npm --prefix tools run audit:validate
+   git show HEAD:.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md > /tmp/previous-checklist.md
+   npm --prefix tools run audit:validate -- --previous /tmp/previous-checklist.md
    ```
 
 The convenience `npm --prefix tools run audit` is the preferred vendored entry point.
@@ -155,9 +156,13 @@ npx --yes tsx@4.21.0 "${RUNBOOK}/skills/ai-contributor-audit/scripts/audit-stamp
   --auditor "AGENT | MODEL | REASONING_EFFORT" \
   --runner-agent "<runner>" \
   --runner-model "<model>"
+git show HEAD:.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md > /tmp/previous-checklist.md
 npx --yes tsx@4.21.0 "${RUNBOOK}/skills/ai-contributor-audit/scripts/audit-validate.ts" \
-  .ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md .ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-LOG.md
+  .ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md .ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-LOG.md \
+  --previous /tmp/previous-checklist.md
 ```
+
+On a re-audit, `--previous` enables the `AUDIT070`–`AUDIT072` status-change rationale check; omit the `git show` line and the flag on a first audit (no checklist committed at `HEAD` yet).
 
 When using the copy-and-paste prompt instead of an installed skill, fetch `bootstrap.ts` from the same pinned `spec_source` and let it materialize the runbook:
 
@@ -211,7 +216,8 @@ Before reporting the audit complete, you MUST verify:
 
 1. **Template-only blocks removed.** Search the filled `.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md` for `TEMPLATE-ONLY` — there must be zero matches. The blank template wraps instructional sections (`Where these assets live`, `Re-audit protocol`, `How to use this checklist`, `Quick audit`, `Deterministic audit boundary`, `Validating this checklist`) in `<!-- BEGIN:TEMPLATE-ONLY -->` … `<!-- END:TEMPLATE-ONLY -->` markers. `audit-run.ts --reset-templates` strips these blocks automatically; pass `--keep-template-instructions` to keep them (and remove them by hand later). The validator (`AUDIT053`) fails if any marker remains.
 2. **Placeholder tokens replaced.** Search for `<FILL_` — there must be zero matches. The conformance summary table ships with `<FILL_STATUS>`, `<FILL_DATE>`, `<FILL_NOTES>` tokens; replace each with the audited value (`✅ Yes` / `❌ No` / `⚠️ Partial`, an ISO date or `—`, the blocker notes or `—`). The validator (`AUDIT054`) fails on any surviving token.
-3. **Conformance summary fully filled.** Every level row has Status and Notes populated, each `✅ Yes` level has Date reached populated, non-reached levels have no Date reached value, and the `conformance_level` frontmatter value matches the highest `✅ Yes` row (or `none`).
-4. **Validator exits 0.** Run `audit-stamp.ts` (stamps derivable cells), then `audit-validate.ts` (read-only check) over both files, and resolve every error and warning before declaring the audit complete.
+3. **Status changes from the previous audit carry rationales.** When the target repository has a previously committed checklist, `audit-run.ts` passes it to the validator via `--previous`; any auditor-owned row whose Status changed must say `Changed from <old status> to <new status> because <reason>` in its Comment with a backticked current-run citation. The validator (`AUDIT070`/`AUDIT071`) fails otherwise; collector-derived and owner-profile stamped rows are exempt.
+4. **Conformance summary fully filled.** Every level row has Status and Notes populated, each `✅ Yes` level has Date reached populated, non-reached levels have no Date reached value, and the `conformance_level` frontmatter value matches the highest `✅ Yes` row (or `none`).
+5. **Validator exits 0.** Run `audit-stamp.ts` (stamps derivable cells), then `audit-validate.ts` (read-only check) over both files, and resolve every error and warning before declaring the audit complete.
 
 A self-check pass that surfaces remaining issues is part of the audit, not an optional polish step.

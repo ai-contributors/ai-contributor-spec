@@ -17,6 +17,7 @@
 
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -99,6 +100,8 @@ function main(): void {
 
   const validateArgs = [VALIDATE, opts.checklist, opts.auditLog];
   if (opts.lenient) validateArgs.push('--lenient');
+  const previousChecklist = extractPreviousChecklist(opts.target, opts.checklist);
+  if (previousChecklist) validateArgs.push('--previous', previousChecklist);
 
   step('collect', executorCommand(collectArgs));
   const collectExit = runTsx(collectArgs, [0, 3]);
@@ -602,6 +605,29 @@ export function gitWorktreeState(
   if (/D/.test(code)) return 'deleted';
   if (code.trim().length > 0) return 'modified';
   return 'clean';
+}
+
+// Extracts the previous committed checklist (the HEAD version) to a temp
+// file so audit-validate.ts can require re-audit status-change rationales
+// without running git itself. Returns null when the checklist is outside
+// the target, not tracked at HEAD (first audit), or git cannot answer —
+// the validator then skips the re-audit diff check.
+export function extractPreviousChecklist(target: string, checklistPath: string): string | null {
+  const rel = path.relative(target, checklistPath);
+  if (rel.startsWith('..') || path.isAbsolute(rel)) return null;
+  // "HEAD:./<path>" resolves relative to the git cwd (the -C target).
+  const gitPath = `HEAD:./${rel.split(path.sep).join('/')}`;
+  const r = spawnSync('git', ['-C', target, 'show', gitPath], {
+    encoding: 'utf8',
+    maxBuffer: 16 * 1024 * 1024,
+  });
+  if (r.error || r.status !== 0) return null;
+  const content = (r.stdout ?? '').toString();
+  if (content.length === 0) return null;
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'audit-previous-'));
+  const out = path.join(dir, 'AI-CONTRIBUTOR-CHECKLIST.md');
+  fs.writeFileSync(out, content);
+  return out;
 }
 
 export function stripTemplateOnlyBlocks(filePath: string): number {

@@ -18,6 +18,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {
   excerptForLog,
+  extractPreviousChecklist,
   gitWorktreeState,
   githubReadAccessHint,
   parseArgs,
@@ -303,6 +304,49 @@ function shellRun(cmd: string, args: string[], cwd: string): void {
     fs.unlinkSync(tracked);
     if (gitWorktreeState(tmp, tracked) === 'deleted') ok('gitWorktreeState: tracked-deleted file');
     else fail('gitWorktreeState: deleted', String(gitWorktreeState(tmp, tracked)));
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+}
+
+// ----- extractPreviousChecklist -------------------------------------------
+
+{
+  const gitEnv = ['-c', 'user.name=T', '-c', 'user.email=t@example.invalid'];
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'audit-run-previous-'));
+  try {
+    const auditDir = path.join(tmp, '.ai-contributor-audit');
+    fs.mkdirSync(auditDir, { recursive: true });
+    const checklist = path.join(auditDir, 'AI-CONTRIBUTOR-CHECKLIST.md');
+    fs.writeFileSync(checklist, '# previous audit v1\n');
+    spawnSync('git', ['-C', tmp, 'init', '-b', 'main'], { encoding: 'utf8' });
+    spawnSync('git', ['-C', tmp, 'add', '.'], { encoding: 'utf8' });
+    spawnSync('git', ['-C', tmp, ...gitEnv, 'commit', '-m', 'init'], { encoding: 'utf8' });
+    fs.writeFileSync(checklist, '# current working tree v2\n');
+
+    const extracted = extractPreviousChecklist(tmp, checklist);
+    if (extracted !== null && fs.readFileSync(extracted, 'utf8') === '# previous audit v1\n') {
+      ok('extractPreviousChecklist returns HEAD content for tracked checklist');
+    } else {
+      fail(
+        'extractPreviousChecklist returns HEAD content for tracked checklist',
+        `extracted=${extracted}`,
+      );
+    }
+
+    const untracked = path.join(auditDir, 'UNTRACKED.md');
+    fs.writeFileSync(untracked, 'x\n');
+    if (extractPreviousChecklist(tmp, untracked) === null) {
+      ok('extractPreviousChecklist returns null for untracked file');
+    } else {
+      fail('extractPreviousChecklist returns null for untracked file', 'expected null');
+    }
+
+    if (extractPreviousChecklist(tmp, path.join(os.tmpdir(), 'outside-checklist.md')) === null) {
+      ok('extractPreviousChecklist returns null for path outside target');
+    } else {
+      fail('extractPreviousChecklist returns null for path outside target', 'expected null');
+    }
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
   }

@@ -308,6 +308,141 @@ function assert(name: string, condition: boolean, detail = ''): void {
   }
 }
 
+// Pause-path wiring: when the checklist is committed at HEAD, the echoed
+// "Then run" validate command must carry --previous <tempfile> so the
+// re-audit diff check (AUDIT070) can run. Regression coverage for the
+// two-line wiring in main() (extractPreviousChecklist + validateArgs push).
+{
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'audit-run-previous-committed-'));
+  try {
+    run('git', ['init', '-b', 'main'], tmp);
+    fs.writeFileSync(path.join(tmp, 'README.md'), '# audit run fixture\n');
+    fs.mkdirSync(path.join(tmp, '.ai-contributor-audit'), { recursive: true });
+    fs.copyFileSync(
+      path.join(REPO_ROOT, 'AI-CONTRIBUTOR-AUDIT.md'),
+      path.join(tmp, 'AI-CONTRIBUTOR-AUDIT.md'),
+    );
+    fs.copyFileSync(
+      path.join(REPO_ROOT, '.ai-contributor-audit', 'AI-CONTRIBUTOR-CHECKLIST.md'),
+      path.join(tmp, '.ai-contributor-audit', 'AI-CONTRIBUTOR-CHECKLIST.md'),
+    );
+    fs.copyFileSync(
+      path.join(REPO_ROOT, '.ai-contributor-audit', 'AI-CONTRIBUTOR-AUDIT-LOG.md'),
+      path.join(tmp, '.ai-contributor-audit', 'AI-CONTRIBUTOR-AUDIT-LOG.md'),
+    );
+    run(
+      'git',
+      [
+        'add',
+        'README.md',
+        'AI-CONTRIBUTOR-AUDIT.md',
+        '.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md',
+        '.ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-LOG.md',
+      ],
+      tmp,
+    );
+    run(
+      'git',
+      [
+        '-c',
+        'user.name=Audit Test',
+        '-c',
+        'user.email=audit@example.invalid',
+        'commit',
+        '-m',
+        'init with committed checklist',
+      ],
+      tmp,
+    );
+
+    // Non-interactive stdin (no TTY under spawnSync): audit-run stops after
+    // the initial stamp and echoes the pause-path commands instead of
+    // skipping the edit checkpoint.
+    const result = spawnSync(
+      'tsx',
+      [
+        SCRIPT,
+        '.',
+        '--no-network',
+        '--no-bootstrap-smoke',
+        '--auditor',
+        'test',
+        '--runner-agent',
+        'test',
+        '--runner-model',
+        'test',
+      ],
+      { cwd: tmp, encoding: 'utf8', timeout: 180_000 },
+    );
+
+    assert(
+      'committed checklist at HEAD: pause-path validate command carries --previous',
+      result.status === 0 &&
+        result.stdout.includes('initial stamp complete') &&
+        result.stdout.includes('Then run:') &&
+        result.stdout.includes('--previous'),
+      `status=${result.status}\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}`,
+    );
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+}
+
+// Negative counterpart: checklist present but NOT tracked at HEAD (first
+// audit) — the echoed validate command must not carry --previous.
+{
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'audit-run-previous-uncommitted-'));
+  try {
+    run('git', ['init', '-b', 'main'], tmp);
+    fs.writeFileSync(path.join(tmp, 'README.md'), '# audit run fixture\n');
+    run('git', ['add', 'README.md'], tmp);
+    run(
+      'git',
+      [
+        '-c',
+        'user.name=Audit Test',
+        '-c',
+        'user.email=audit@example.invalid',
+        'commit',
+        '-m',
+        'init',
+      ],
+      tmp,
+    );
+
+    const result = spawnSync(
+      'tsx',
+      [
+        SCRIPT,
+        '.',
+        '--reset-templates',
+        '--template-root',
+        REPO_ROOT,
+        '--no-network',
+        '--no-bootstrap-smoke',
+        '--auditor',
+        'test',
+        '--runner-agent',
+        'test',
+        '--runner-model',
+        'test',
+      ],
+      { cwd: tmp, encoding: 'utf8', timeout: 180_000 },
+    );
+
+    assert(
+      'checklist not tracked at HEAD: pause-path validate command omits --previous',
+      result.status === 0 &&
+        result.stdout.includes('initial stamp complete') &&
+        result.stdout.includes('Then run:') &&
+        !result.stdout.includes('--previous'),
+      `status=${result.status}\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}`,
+    );
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+}
+
 if (failed > 0) {
   console.error(`${failed} audit-run test(s) failed`);
   process.exit(1);

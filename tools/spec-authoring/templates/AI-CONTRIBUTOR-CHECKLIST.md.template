@@ -48,6 +48,7 @@ conformance_level:  # one of: none, {{generated:conformance-level-values}}. Stam
 4. **Every Comment must cite current-run evidence.** A checklist Comment must cite either a command recorded in the current run's audit log, a `file:line` / section citation from `audited_commit`, or `.ai-contributor-audit/AI-CONTRIBUTOR-EVIDENCE.json` emitted by the current `audit-collect` invocation. This rule prevents copied evidence: an agent cannot reuse a Comment unless it also provides current, reviewable evidence. Each `Fulfilled` row `MUST` additionally have at least one matching audit-log entry whose `Spec IDs` column lists one of the rule's visible IDs from this checklist, unless the row is a collector-derived finding citing `AI-CONTRIBUTOR-EVIDENCE.json`; CI fails the audit otherwise.
 5. **Timestamps must be fresh and measured by the scripts.** Do not run `date` or type assessment timestamps by hand. `audit-collect.ts` records `assessment_started_at` in `.ai-contributor-audit/AI-CONTRIBUTOR-EVIDENCE.json`; `audit-stamp.ts` stamps `assessment_started_at`, `assessment_completed_at`, and `assessment_duration` into both files.
 6. **Spec source must be immutable.** Ensure the stamper records the exact spec source used for the current run in both files. For an upstream audit, use a release tag or full commit SHA. For a forked local policy, pass `--spec-source` with the local policy file path plus its commit SHA. Same target repository, same `audited_commit`, same `spec_source`, and same external settings snapshots are the reproducibility boundary.
+7. **Status changes from the previous committed audit need a rationale.** `audit-run.ts` diffs the filled checklist against the version committed at `HEAD` and validation fails (`AUDIT070`) when an auditor-owned row's Status changed without a Comment rationale in the form `Changed from <old status> to <new status> because <reason>`, citing current-run evidence in backticks. Collector-derived and owner-profile stamped rows are exempt.
 
 The audit artifacts have different roles: `AI-CONTRIBUTOR-EVIDENCE.json` is the source for collector-derived facts and findings, the audit log records command and manual evidence, this checklist is the rendered scoring and judgment surface, and the root `AI-CONTRIBUTOR-AUDIT.md` summary is a stamper-written projection from the checklist. The canonical ownership table is in [`AI-CONTRIBUTOR-AUDIT-MODEL.md` § Artifact And Field Ownership](../AI-CONTRIBUTOR-AUDIT-MODEL.md#artifact-and-field-ownership).
 
@@ -227,7 +228,7 @@ npm --prefix tools run audit -- \
   --runner-agent "<runner>" \
   --runner-model "<model>"
 npm --prefix tools run audit:stamp     # writes derivable cells
-npm --prefix tools run audit:validate  # read-only structural check
+npm --prefix tools run audit:validate  # read-only structural check (re-audit: append -- --previous /tmp/previous-checklist.md)
 
 # Or invoke directly:
 tsx skills/ai-contributor-audit/scripts/audit-stamp.ts \
@@ -240,10 +241,14 @@ tsx skills/ai-contributor-audit/scripts/audit-stamp.ts \
   .ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md \
   .ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-LOG.md \
   --diff
+git show HEAD:.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md > /tmp/previous-checklist.md
 tsx skills/ai-contributor-audit/scripts/audit-validate.ts \
   .ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md \
-  .ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-LOG.md
+  .ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-LOG.md \
+  --previous /tmp/previous-checklist.md
 ```
+
+On a re-audit, `--previous` enables the `AUDIT070`–`AUDIT072` status-change rationale check; omit the `git show` line and the flag on a first audit (no checklist committed at `HEAD` yet).
 
 Conformance-level closure is enforced by default: a `✅ Yes` summary row fails if any applicable rule is still `⚠️ Warning`, `🚨 Alarm`, or blank. Pass `--lenient` to skip the closure check (the OK message will surface that it was skipped so consumers can filter lenient audits out of comparability analyses).
 

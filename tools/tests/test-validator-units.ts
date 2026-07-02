@@ -22,10 +22,16 @@ import type { AuditLogRow } from '../../skills/ai-contributor-audit/scripts/inte
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import type {
-  ChecklistRow,
-  SummaryRow,
+import {
+  parseChecklistRules,
+  type ChecklistRow,
+  type SummaryRow,
 } from '../../skills/ai-contributor-audit/scripts/internal/audit-markdown.ts';
+import {
+  buildMechanicalExemption,
+  checkReauditDiff,
+} from '../../skills/ai-contributor-audit/scripts/internal/validator-reaudit-diff.ts';
+import { AUTO_STAMP_PREFIX } from '../../skills/ai-contributor-audit/scripts/internal/audit-evidence.ts';
 import type {
   BacklogRow,
   Frontmatter,
@@ -78,7 +84,7 @@ const VALID_FRONTMATTER = [
   'assessment_duration: "00:00:05"',
   'audited_commit: 0123456789abcdef0123456789abcdef01234567',
   'auditor: "Test Bot"',
-  'validator_version: "0.1.0"',
+  'validator_version: "0.2.0"',
   'collector_version: "0.1.0"',
   'runner_agent: "claude-code"',
   'runner_model: "claude-opus"',
@@ -93,7 +99,7 @@ const VALID_FRONTMATTER = [
 {
   const ctx = makeContext(['# title', '', 'no frontmatter here']);
   const { fail, problems } = collect();
-  checkFrontmatter(ctx, fail, { validatorVersion: '0.1.0' });
+  checkFrontmatter(ctx, fail, { validatorVersion: '0.2.0' });
   if (problems.some((p) => p.code === 'AUDIT002' && /first line/.test(p.message))) {
     ok('AUDIT002: missing frontmatter (no leading marker)');
   } else {
@@ -105,7 +111,7 @@ const VALID_FRONTMATTER = [
 {
   const ctx = makeContext(['---', 'spec_version: "0.1"', 'auditor: "x"', '# no closing marker']);
   const { fail, problems } = collect();
-  checkFrontmatter(ctx, fail, { validatorVersion: '0.1.0' });
+  checkFrontmatter(ctx, fail, { validatorVersion: '0.2.0' });
   if (problems.some((p) => p.code === 'AUDIT002' && /not closed/.test(p.message))) {
     ok('AUDIT002: unclosed frontmatter');
   } else {
@@ -117,7 +123,7 @@ const VALID_FRONTMATTER = [
 {
   const ctx = makeContext(['---', 'this line has no colon', 'spec_version: "0.1"', '---']);
   const { fail, problems } = collect();
-  checkFrontmatter(ctx, fail, { validatorVersion: '0.1.0' });
+  checkFrontmatter(ctx, fail, { validatorVersion: '0.2.0' });
   if (problems.some((p) => p.code === 'AUDIT003')) {
     ok('AUDIT003: unparseable frontmatter line');
   } else {
@@ -134,7 +140,7 @@ const VALID_FRONTMATTER = [
   auditLines[idx] = 'conformance_level: 2';
   const ctx = makeContext(checklistLines, auditLines);
   const { fail, problems } = collect();
-  checkFrontmatter(ctx, fail, { validatorVersion: '0.1.0' });
+  checkFrontmatter(ctx, fail, { validatorVersion: '0.2.0' });
   if (problems.some((p) => p.code === 'AUDIT005' && /conformance_level/.test(p.message))) {
     ok('AUDIT005: cross-file conformance_level mismatch');
   } else {
@@ -148,7 +154,7 @@ const VALID_FRONTMATTER = [
   lines[lines.findIndex((l) => l.startsWith('spec_version:'))] = 'spec_version: ""';
   const ctx = makeContext(lines);
   const { fail, problems } = collect();
-  checkFrontmatter(ctx, fail, { validatorVersion: '0.1.0' });
+  checkFrontmatter(ctx, fail, { validatorVersion: '0.2.0' });
   if (problems.some((p) => p.code === 'AUDIT006' && /spec_version/.test(p.message))) {
     ok('AUDIT006: empty spec_version');
   } else {
@@ -162,7 +168,7 @@ const VALID_FRONTMATTER = [
   lines[lines.findIndex((l) => l.startsWith('validator_version:'))] = 'validator_version: "9.9.9"';
   const ctx = makeContext(lines);
   const { fail, problems } = collect();
-  checkFrontmatter(ctx, fail, { validatorVersion: '0.1.0' });
+  checkFrontmatter(ctx, fail, { validatorVersion: '0.2.0' });
   if (problems.some((p) => p.code === 'AUDIT018' || /validator_version/.test(p.message))) {
     ok('AUDIT018-class: validator_version mismatch surfaced');
   } else {
@@ -177,7 +183,7 @@ const VALID_FRONTMATTER = [
     'spec_source: https://github.com/x/y/tree/main';
   const ctx = makeContext(lines);
   const { fail, problems } = collect();
-  checkFrontmatter(ctx, fail, { validatorVersion: '0.1.0' });
+  checkFrontmatter(ctx, fail, { validatorVersion: '0.2.0' });
   if (problems.some((p) => /spec_source/.test(p.message))) {
     ok('spec_source: branch ref rejected (immutable-ref check)');
   } else {
@@ -192,7 +198,7 @@ const VALID_FRONTMATTER = [
     'assessment_duration: "five seconds"';
   const ctx = makeContext(lines);
   const { fail, problems } = collect();
-  checkFrontmatter(ctx, fail, { validatorVersion: '0.1.0' });
+  checkFrontmatter(ctx, fail, { validatorVersion: '0.2.0' });
   if (problems.some((p) => p.code === 'AUDIT009' || /assessment_duration/.test(p.message))) {
     ok('AUDIT009: malformed assessment_duration');
   } else {
@@ -206,7 +212,7 @@ const VALID_FRONTMATTER = [
   lines[lines.findIndex((l) => l.startsWith('conformance_level:'))] = 'conformance_level: bogus';
   const ctx = makeContext(lines);
   const { fail, problems } = collect();
-  checkFrontmatter(ctx, fail, { validatorVersion: '0.1.0' });
+  checkFrontmatter(ctx, fail, { validatorVersion: '0.2.0' });
   if (problems.some((p) => /conformance_level/.test(p.message))) {
     ok('invalid conformance_level rejected');
   } else {
@@ -744,6 +750,345 @@ function makeRules(withL0 = true): ChecklistRow[] {
     ok('AUDIT038: token disclosure ordering enforced');
   } else {
     bad('AUDIT038', JSON.stringify(problems));
+  }
+}
+
+// --------------------------------------------------------------------------
+// checkReauditDiff (validator-reaudit-diff.ts)
+
+function reauditChecklistLines(
+  rows: Array<{ scope: string; rule: string; status: string; comment: string; ids: string }>,
+): string[] {
+  const lines = [
+    '## Level 4 — AI Autonomous',
+    '',
+    '| Scope | Rule | A | Status | Comment | Requirement | Pillar | IDs |',
+    '| ----- | ---- | - | ------ | ------- | ----------- | ------ | --- |',
+  ];
+  for (const r of rows) {
+    lines.push(
+      `| \`${r.scope}\` | \`${r.rule}\` | - | ${r.status} | ${r.comment} | Req. | 6 | \`${r.ids}\` |`,
+    );
+  }
+  return lines;
+}
+
+function runReauditDiff(
+  currentRows: Array<{ scope: string; rule: string; status: string; comment: string; ids: string }>,
+  previousRows: Array<{
+    scope: string;
+    rule: string;
+    status: string;
+    comment: string;
+    ids: string;
+  }>,
+  isExempt: (row: ChecklistRow) => boolean = () => false,
+): string[] {
+  const codes: string[] = [];
+  const collect: ProblemReporter = (code) => {
+    codes.push(code);
+  };
+  const current = parseChecklistRules(reauditChecklistLines(currentRows));
+  checkReauditDiff(
+    current,
+    reauditChecklistLines(previousRows),
+    'PREV.md',
+    'CHECKLIST.md',
+    isExempt,
+    collect,
+  );
+  return codes;
+}
+
+{
+  const codes = runReauditDiff(
+    [
+      {
+        scope: 'SHOULD',
+        rule: 'Mock Mode',
+        status: '⚠️ Warning',
+        comment: '`README.md:42` — no mock-mode instructions',
+        ids: 'AIC-mock-mode-fallback',
+      },
+    ],
+    [
+      {
+        scope: 'SHOULD',
+        rule: 'Mock Mode',
+        status: '✅ Fulfilled',
+        comment: '`README.md:40` documents mock mode',
+        ids: 'AIC-mock-mode-fallback',
+      },
+    ],
+  );
+  if (codes.length === 1 && codes[0] === 'AUDIT070') {
+    ok('checkReauditDiff: changed status without rationale -> AUDIT070');
+  } else {
+    bad('checkReauditDiff changed-without-rationale', `codes=${codes.join(',')}`);
+  }
+}
+
+{
+  const codes = runReauditDiff(
+    [
+      {
+        scope: 'SHOULD',
+        rule: 'Mock Mode',
+        status: '✅ Fulfilled',
+        comment:
+          'Changed from ⚠️ Warning to ✅ Fulfilled because `README.md:42` now documents mock mode',
+        ids: 'AIC-mock-mode-fallback',
+      },
+    ],
+    [
+      {
+        scope: 'SHOULD',
+        rule: 'Mock Mode',
+        status: '⚠️ Warning',
+        comment: '`README.md:42` — no mock-mode instructions',
+        ids: 'AIC-mock-mode-fallback',
+      },
+    ],
+  );
+  if (codes.length === 0) {
+    ok('checkReauditDiff: rationale with citation -> no problems');
+  } else {
+    bad('checkReauditDiff rationale-ok', `codes=${codes.join(',')}`);
+  }
+}
+
+{
+  const codes = runReauditDiff(
+    [
+      {
+        scope: 'SHOULD',
+        rule: 'Mock Mode',
+        status: '✅ Fulfilled',
+        comment: 'Changed from ⚠️ Warning to ✅ Fulfilled because the readme documents it now',
+        ids: 'AIC-mock-mode-fallback',
+      },
+    ],
+    [
+      {
+        scope: 'SHOULD',
+        rule: 'Mock Mode',
+        status: '⚠️ Warning',
+        comment: '`README.md:42` — no mock-mode instructions',
+        ids: 'AIC-mock-mode-fallback',
+      },
+    ],
+  );
+  if (codes.length === 1 && codes[0] === 'AUDIT071') {
+    ok('checkReauditDiff: rationale without citation -> AUDIT071');
+  } else {
+    bad('checkReauditDiff rationale-no-citation', `codes=${codes.join(',')}`);
+  }
+}
+
+// Rows for the exemption scenarios: a collector-decisive row and an
+// owner-profile row, both with changed statuses and no rationale.
+const REAUDIT_EXEMPTION_CURRENT = [
+  {
+    scope: 'MUST',
+    rule: 'Branch Protection',
+    status: '⚠️ Warning',
+    comment: `${AUTO_STAMP_PREFIX} (rule: branch-protection). protection disabled`,
+    ids: 'AIC-default-branch-protected',
+  },
+  {
+    scope: 'SHOULD',
+    rule: 'SBOM',
+    status: '➖ Not relevant',
+    comment:
+      'Owner profile: `.ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-PROFILE.md` answers "no" to "Ships artifacts?", so this check is not applicable. Profile evidence: none provided.',
+    ids: 'AIC-sbom-generation',
+  },
+];
+const REAUDIT_EXEMPTION_PREVIOUS = [
+  {
+    scope: 'MUST',
+    rule: 'Branch Protection',
+    status: '✅ Fulfilled',
+    comment: `${AUTO_STAMP_PREFIX} (rule: branch-protection). protection enabled`,
+    ids: 'AIC-default-branch-protected',
+  },
+  {
+    scope: 'SHOULD',
+    rule: 'SBOM',
+    status: '⚠️ Warning',
+    comment: '`docs/release.md:3` — SBOM missing',
+    ids: 'AIC-sbom-generation',
+  },
+];
+
+{
+  // Exemption comes from evidence JSON: the collector decisively covers the
+  // Branch Protection row and the owner profile answers "no" for SBOM.
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'reaudit-evidence-'));
+  const evidencePath = path.join(dir, 'AI-CONTRIBUTOR-EVIDENCE.json');
+  fs.writeFileSync(
+    evidencePath,
+    JSON.stringify({
+      rules: {
+        'branch-protection': {
+          judgment_required: false,
+          derived_status: 'Warning',
+          derivation_reason: 'protection disabled',
+          aic_ids: ['AIC-default-branch-protected'],
+        },
+      },
+      profile: {
+        answers: [
+          {
+            question_id: 'q-ships-artifacts',
+            question: 'Ships artifacts?',
+            answer: 'no',
+            owner_evidence: '',
+            evidence_use: 'applicability',
+            affected_aic_ids: ['AIC-sbom-generation'],
+            source_line: 1,
+          },
+        ],
+      },
+    }),
+  );
+  const codes = runReauditDiff(
+    REAUDIT_EXEMPTION_CURRENT,
+    REAUDIT_EXEMPTION_PREVIOUS,
+    buildMechanicalExemption(evidencePath),
+  );
+  fs.rmSync(dir, { recursive: true, force: true });
+  if (codes.length === 0) {
+    ok('checkReauditDiff: evidence-backed mechanical and owner-profile rows exempt');
+  } else {
+    bad('checkReauditDiff mechanical-exempt', `codes=${codes.join(',')}`);
+  }
+}
+
+{
+  // Spoofed provenance: the comments imitate collector/profile stamps but
+  // the evidence JSON is missing, so nothing is exempt and both changed
+  // rows need rationales.
+  const codes = runReauditDiff(
+    REAUDIT_EXEMPTION_CURRENT,
+    REAUDIT_EXEMPTION_PREVIOUS,
+    buildMechanicalExemption('/nonexistent/AI-CONTRIBUTOR-EVIDENCE.json'),
+  );
+  if (codes.length === 2 && codes.every((c) => c === 'AUDIT070')) {
+    ok('checkReauditDiff: stamp-imitating comments without evidence -> AUDIT070');
+  } else {
+    bad('checkReauditDiff spoofed-stamp', `codes=${codes.join(',')}`);
+  }
+}
+
+{
+  const codes = runReauditDiff(
+    [
+      {
+        scope: 'SHOULD',
+        rule: 'New Row',
+        status: '⚠️ Warning',
+        comment: '`src/a.ts:1` — new finding',
+        ids: 'AIC-new-row',
+      },
+      {
+        scope: 'SHOULD',
+        rule: 'Was Blank',
+        status: '✅ Fulfilled',
+        comment: '`src/b.ts:1` evidence',
+        ids: 'AIC-was-blank',
+      },
+    ],
+    [
+      {
+        scope: 'SHOULD',
+        rule: 'Removed Row',
+        status: '✅ Fulfilled',
+        comment: '`docs/x.md` evidence',
+        ids: 'AIC-removed-row',
+      },
+      { scope: 'SHOULD', rule: 'Was Blank', status: '', comment: '', ids: 'AIC-was-blank' },
+    ],
+  );
+  if (codes.length === 0) {
+    ok('checkReauditDiff: unmatched rows and blank previous status ignored');
+  } else {
+    bad('checkReauditDiff unmatched-ignored', `codes=${codes.join(',')}`);
+  }
+}
+
+{
+  const codes: string[] = [];
+  const collect: ProblemReporter = (code) => {
+    codes.push(code);
+  };
+  checkReauditDiff(
+    [],
+    ['# not a checklist', 'no table here'],
+    'PREV.md',
+    'CHECKLIST.md',
+    () => false,
+    collect,
+  );
+  if (codes.length === 1 && codes[0] === 'AUDIT072') {
+    ok('checkReauditDiff: previous file with no rows -> AUDIT072');
+  } else {
+    bad('checkReauditDiff unparseable-previous', `codes=${codes.join(',')}`);
+  }
+}
+
+{
+  // Issue #9's example form backticks the statuses; the fragment matcher
+  // must accept it, and the status backticks must not count as the
+  // required evidence citation.
+  const withCitation = runReauditDiff(
+    [
+      {
+        scope: 'SHOULD',
+        rule: 'Mock Mode',
+        status: '⚠️ Warning',
+        comment:
+          'Changed from `✅ Fulfilled` to `⚠️ Warning` because `README.md:42` no longer documents mock mode',
+        ids: 'AIC-mock-mode-fallback',
+      },
+    ],
+    [
+      {
+        scope: 'SHOULD',
+        rule: 'Mock Mode',
+        status: '✅ Fulfilled',
+        comment: '`README.md:40` documents mock mode',
+        ids: 'AIC-mock-mode-fallback',
+      },
+    ],
+  );
+  const withoutCitation = runReauditDiff(
+    [
+      {
+        scope: 'SHOULD',
+        rule: 'Mock Mode',
+        status: '⚠️ Warning',
+        comment: 'Changed from `✅ Fulfilled` to `⚠️ Warning` because the docs were removed',
+        ids: 'AIC-mock-mode-fallback',
+      },
+    ],
+    [
+      {
+        scope: 'SHOULD',
+        rule: 'Mock Mode',
+        status: '✅ Fulfilled',
+        comment: '`README.md:40` documents mock mode',
+        ids: 'AIC-mock-mode-fallback',
+      },
+    ],
+  );
+  if (withCitation.length === 0 && withoutCitation.join(',') === 'AUDIT071') {
+    ok('checkReauditDiff: backticked statuses accepted, status backticks not a citation');
+  } else {
+    bad(
+      'checkReauditDiff backticked-statuses',
+      `withCitation=${withCitation.join(',')} withoutCitation=${withoutCitation.join(',')}`,
+    );
   }
 }
 

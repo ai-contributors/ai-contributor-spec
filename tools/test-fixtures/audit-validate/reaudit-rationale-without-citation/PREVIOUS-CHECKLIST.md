@@ -27,9 +27,10 @@ conformance_level: none
 
 ## Backlog — what to address first
 
-| Priority | Level | Rule           | Scope | Current status | Next action                              | Owner | Target date |
-| -------- | ----- | -------------- | ----- | -------------- | ---------------------------------------- | ----- | ----------- |
-| 3        | L1    | `Strict Types` | MUST  | ⚠️ Warning     | Enable `"strict": true` in tsconfig.json |       |             |
+| Priority | Level | Rule           | Scope  | Current status | Next action                              | Owner | Target date |
+| -------- | ----- | -------------- | ------ | -------------- | ---------------------------------------- | ----- | ----------- |
+| 3        | L1    | `Strict Types` | MUST   | ⚠️ Warning     | Enable `"strict": true` in tsconfig.json |       |             |
+| 5        | L4    | `Mock Mode`    | SHOULD | ⚠️ Warning     | Document a no-credentials local mode     |       |             |
 
 ## Level 0 — Baseline Hygiene
 
@@ -49,7 +50,7 @@ conformance_level: none
 
 | Scope    | Rule        | A   | Status     | Comment                                              | Requirement                                                                                    | Pillar | IDs                      |
 | -------- | ----------- | --- | ---------- | ---------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ------ | ------------------------ |
-| `SHOULD` | `Mock Mode` | -   | ⚠️ Warning | `README.md:42` — no mock-mode instructions; deferred | The project offers a safe local mode that avoids requiring live credentials during onboarding. | 2      | `AIC-mock-mode-fallback` |
+| `SHOULD` | `Mock Mode` | -   | ✅ Fulfilled | `README.md:40` documents mock mode | The project offers a safe local mode that avoids requiring live credentials during onboarding. | 2      | `AIC-mock-mode-fallback` |
 
 ## Optional
 
