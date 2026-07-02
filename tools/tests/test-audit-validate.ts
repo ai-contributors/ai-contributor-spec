@@ -122,6 +122,13 @@ const CASES: Case[] = [
     previous: 'PREVIOUS-CHECKLIST.md',
   },
   {
+    fixture: 'reaudit-changed-without-rationale',
+    expectExit: 1,
+    expectCodes: ['AUDIT070'],
+    flags: ['--lenient'],
+    previous: 'PREVIOUS-CHECKLIST.md',
+  },
+  {
     fixture: 'reaudit-rationale-without-citation',
     expectExit: 1,
     expectCodes: ['AUDIT071'],
