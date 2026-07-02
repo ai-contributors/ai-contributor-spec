@@ -22,7 +22,9 @@ Every released entry lists the release date (the day the version lands on `main`
 
 ## [Unreleased]
 
-### Added
+## [0.1.4] — 2026-07-02
+
+### Changed
 
 - Re-audits now require a change rationale on auditor-owned checklist rows
   whose status changed since the previous committed audit. `audit-run.ts`
@@ -32,6 +34,9 @@ Every released entry lists the release date (the day the version lands on `main`
   `AUDIT072` (unreadable previous checklist). Collector-derived and
   owner-profile stamped rows are exempt. Non-normative tooling change;
   `validator_version` is now `0.2.0`.
+
+This patch release does not change rule semantics, checklist rows, audit
+frontmatter fields, or conformance obligations.
 
 ## [0.1.3] — 2026-07-02
 

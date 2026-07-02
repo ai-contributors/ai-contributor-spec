@@ -4,7 +4,7 @@
 >
 > This specification treats AI as a system actor and defines reviewable guardrails for agent, harness, and tool behavior.
 
-**Version:** 0.1.3 · **License:** docs/specs [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); starter template, repo tooling, and audit runtime scripts [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0) · **Change history:** [`CHANGELOG.md`](CHANGELOG.md)
+**Version:** 0.1.4 · **License:** docs/specs [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); starter template, repo tooling, and audit runtime scripts [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0) · **Change history:** [`CHANGELOG.md`](CHANGELOG.md)
 
 ## Why This Exists
 
