@@ -84,7 +84,7 @@ const VALID_FRONTMATTER = [
   'assessment_duration: "00:00:05"',
   'audited_commit: 0123456789abcdef0123456789abcdef01234567',
   'auditor: "Test Bot"',
-  'validator_version: "0.1.0"',
+  'validator_version: "0.2.0"',
   'collector_version: "0.1.0"',
   'runner_agent: "claude-code"',
   'runner_model: "claude-opus"',
@@ -99,7 +99,7 @@ const VALID_FRONTMATTER = [
 {
   const ctx = makeContext(['# title', '', 'no frontmatter here']);
   const { fail, problems } = collect();
-  checkFrontmatter(ctx, fail, { validatorVersion: '0.1.0' });
+  checkFrontmatter(ctx, fail, { validatorVersion: '0.2.0' });
   if (problems.some((p) => p.code === 'AUDIT002' && /first line/.test(p.message))) {
     ok('AUDIT002: missing frontmatter (no leading marker)');
   } else {
@@ -111,7 +111,7 @@ const VALID_FRONTMATTER = [
 {
   const ctx = makeContext(['---', 'spec_version: "0.1"', 'auditor: "x"', '# no closing marker']);
   const { fail, problems } = collect();
-  checkFrontmatter(ctx, fail, { validatorVersion: '0.1.0' });
+  checkFrontmatter(ctx, fail, { validatorVersion: '0.2.0' });
   if (problems.some((p) => p.code === 'AUDIT002' && /not closed/.test(p.message))) {
     ok('AUDIT002: unclosed frontmatter');
   } else {
@@ -123,7 +123,7 @@ const VALID_FRONTMATTER = [
 {
   const ctx = makeContext(['---', 'this line has no colon', 'spec_version: "0.1"', '---']);
   const { fail, problems } = collect();
-  checkFrontmatter(ctx, fail, { validatorVersion: '0.1.0' });
+  checkFrontmatter(ctx, fail, { validatorVersion: '0.2.0' });
   if (problems.some((p) => p.code === 'AUDIT003')) {
     ok('AUDIT003: unparseable frontmatter line');
   } else {
@@ -140,7 +140,7 @@ const VALID_FRONTMATTER = [
   auditLines[idx] = 'conformance_level: 2';
   const ctx = makeContext(checklistLines, auditLines);
   const { fail, problems } = collect();
-  checkFrontmatter(ctx, fail, { validatorVersion: '0.1.0' });
+  checkFrontmatter(ctx, fail, { validatorVersion: '0.2.0' });
   if (problems.some((p) => p.code === 'AUDIT005' && /conformance_level/.test(p.message))) {
     ok('AUDIT005: cross-file conformance_level mismatch');
   } else {
@@ -154,7 +154,7 @@ const VALID_FRONTMATTER = [
   lines[lines.findIndex((l) => l.startsWith('spec_version:'))] = 'spec_version: ""';
   const ctx = makeContext(lines);
   const { fail, problems } = collect();
-  checkFrontmatter(ctx, fail, { validatorVersion: '0.1.0' });
+  checkFrontmatter(ctx, fail, { validatorVersion: '0.2.0' });
   if (problems.some((p) => p.code === 'AUDIT006' && /spec_version/.test(p.message))) {
     ok('AUDIT006: empty spec_version');
   } else {
@@ -168,7 +168,7 @@ const VALID_FRONTMATTER = [
   lines[lines.findIndex((l) => l.startsWith('validator_version:'))] = 'validator_version: "9.9.9"';
   const ctx = makeContext(lines);
   const { fail, problems } = collect();
-  checkFrontmatter(ctx, fail, { validatorVersion: '0.1.0' });
+  checkFrontmatter(ctx, fail, { validatorVersion: '0.2.0' });
   if (problems.some((p) => p.code === 'AUDIT018' || /validator_version/.test(p.message))) {
     ok('AUDIT018-class: validator_version mismatch surfaced');
   } else {
@@ -183,7 +183,7 @@ const VALID_FRONTMATTER = [
     'spec_source: https://github.com/x/y/tree/main';
   const ctx = makeContext(lines);
   const { fail, problems } = collect();
-  checkFrontmatter(ctx, fail, { validatorVersion: '0.1.0' });
+  checkFrontmatter(ctx, fail, { validatorVersion: '0.2.0' });
   if (problems.some((p) => /spec_source/.test(p.message))) {
     ok('spec_source: branch ref rejected (immutable-ref check)');
   } else {
@@ -198,7 +198,7 @@ const VALID_FRONTMATTER = [
     'assessment_duration: "five seconds"';
   const ctx = makeContext(lines);
   const { fail, problems } = collect();
-  checkFrontmatter(ctx, fail, { validatorVersion: '0.1.0' });
+  checkFrontmatter(ctx, fail, { validatorVersion: '0.2.0' });
   if (problems.some((p) => p.code === 'AUDIT009' || /assessment_duration/.test(p.message))) {
     ok('AUDIT009: malformed assessment_duration');
   } else {
@@ -212,7 +212,7 @@ const VALID_FRONTMATTER = [
   lines[lines.findIndex((l) => l.startsWith('conformance_level:'))] = 'conformance_level: bogus';
   const ctx = makeContext(lines);
   const { fail, problems } = collect();
-  checkFrontmatter(ctx, fail, { validatorVersion: '0.1.0' });
+  checkFrontmatter(ctx, fail, { validatorVersion: '0.2.0' });
   if (problems.some((p) => /conformance_level/.test(p.message))) {
     ok('invalid conformance_level rejected');
   } else {
