@@ -22,10 +22,16 @@ import type { AuditLogRow } from '../../skills/ai-contributor-audit/scripts/inte
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import type {
-  ChecklistRow,
-  SummaryRow,
+import {
+  parseChecklistRules,
+  type ChecklistRow,
+  type SummaryRow,
 } from '../../skills/ai-contributor-audit/scripts/internal/audit-markdown.ts';
+import {
+  checkReauditDiff,
+  isMechanicallyStamped,
+} from '../../skills/ai-contributor-audit/scripts/internal/validator-reaudit-diff.ts';
+import { AUTO_STAMP_PREFIX } from '../../skills/ai-contributor-audit/scripts/internal/audit-evidence.ts';
 import type {
   BacklogRow,
   Frontmatter,
@@ -744,6 +750,242 @@ function makeRules(withL0 = true): ChecklistRow[] {
     ok('AUDIT038: token disclosure ordering enforced');
   } else {
     bad('AUDIT038', JSON.stringify(problems));
+  }
+}
+
+// --------------------------------------------------------------------------
+// checkReauditDiff (validator-reaudit-diff.ts)
+
+function reauditChecklistLines(
+  rows: Array<{ scope: string; rule: string; status: string; comment: string; ids: string }>,
+): string[] {
+  const lines = [
+    '## Level 4 — AI Autonomous',
+    '',
+    '| Scope | Rule | A | Status | Comment | Requirement | Pillar | IDs |',
+    '| ----- | ---- | - | ------ | ------- | ----------- | ------ | --- |',
+  ];
+  for (const r of rows) {
+    lines.push(
+      `| \`${r.scope}\` | \`${r.rule}\` | - | ${r.status} | ${r.comment} | Req. | 6 | \`${r.ids}\` |`,
+    );
+  }
+  return lines;
+}
+
+function runReauditDiff(
+  currentRows: Array<{ scope: string; rule: string; status: string; comment: string; ids: string }>,
+  previousRows: Array<{
+    scope: string;
+    rule: string;
+    status: string;
+    comment: string;
+    ids: string;
+  }>,
+): string[] {
+  const codes: string[] = [];
+  const collect: ProblemReporter = (code) => {
+    codes.push(code);
+  };
+  const current = parseChecklistRules(reauditChecklistLines(currentRows));
+  checkReauditDiff(
+    current,
+    reauditChecklistLines(previousRows),
+    'PREV.md',
+    'CHECKLIST.md',
+    collect,
+  );
+  return codes;
+}
+
+{
+  const codes = runReauditDiff(
+    [
+      {
+        scope: 'SHOULD',
+        rule: 'Mock Mode',
+        status: '⚠️ Warning',
+        comment: '`README.md:42` — no mock-mode instructions',
+        ids: 'AIC-mock-mode-fallback',
+      },
+    ],
+    [
+      {
+        scope: 'SHOULD',
+        rule: 'Mock Mode',
+        status: '✅ Fulfilled',
+        comment: '`README.md:40` documents mock mode',
+        ids: 'AIC-mock-mode-fallback',
+      },
+    ],
+  );
+  if (codes.length === 1 && codes[0] === 'AUDIT070') {
+    ok('checkReauditDiff: changed status without rationale -> AUDIT070');
+  } else {
+    bad('checkReauditDiff changed-without-rationale', `codes=${codes.join(',')}`);
+  }
+}
+
+{
+  const codes = runReauditDiff(
+    [
+      {
+        scope: 'SHOULD',
+        rule: 'Mock Mode',
+        status: '✅ Fulfilled',
+        comment:
+          'Changed from ⚠️ Warning to ✅ Fulfilled because `README.md:42` now documents mock mode',
+        ids: 'AIC-mock-mode-fallback',
+      },
+    ],
+    [
+      {
+        scope: 'SHOULD',
+        rule: 'Mock Mode',
+        status: '⚠️ Warning',
+        comment: '`README.md:42` — no mock-mode instructions',
+        ids: 'AIC-mock-mode-fallback',
+      },
+    ],
+  );
+  if (codes.length === 0) {
+    ok('checkReauditDiff: rationale with citation -> no problems');
+  } else {
+    bad('checkReauditDiff rationale-ok', `codes=${codes.join(',')}`);
+  }
+}
+
+{
+  const codes = runReauditDiff(
+    [
+      {
+        scope: 'SHOULD',
+        rule: 'Mock Mode',
+        status: '✅ Fulfilled',
+        comment: 'Changed from ⚠️ Warning to ✅ Fulfilled because the readme documents it now',
+        ids: 'AIC-mock-mode-fallback',
+      },
+    ],
+    [
+      {
+        scope: 'SHOULD',
+        rule: 'Mock Mode',
+        status: '⚠️ Warning',
+        comment: '`README.md:42` — no mock-mode instructions',
+        ids: 'AIC-mock-mode-fallback',
+      },
+    ],
+  );
+  if (codes.length === 1 && codes[0] === 'AUDIT071') {
+    ok('checkReauditDiff: rationale without citation -> AUDIT071');
+  } else {
+    bad('checkReauditDiff rationale-no-citation', `codes=${codes.join(',')}`);
+  }
+}
+
+{
+  const codes = runReauditDiff(
+    [
+      {
+        scope: 'MUST',
+        rule: 'Branch Protection',
+        status: '⚠️ Warning',
+        comment: `${AUTO_STAMP_PREFIX} (rule: branch-protection). protection disabled`,
+        ids: 'AIC-default-branch-protected',
+      },
+      {
+        scope: 'SHOULD',
+        rule: 'SBOM',
+        status: '➖ Not relevant',
+        comment:
+          'Owner profile: `.ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-PROFILE.md` answers "no" to "Ships artifacts?", so this check is not applicable. Profile evidence: none provided.',
+        ids: 'AIC-sbom-generation',
+      },
+    ],
+    [
+      {
+        scope: 'MUST',
+        rule: 'Branch Protection',
+        status: '✅ Fulfilled',
+        comment: `${AUTO_STAMP_PREFIX} (rule: branch-protection). protection enabled`,
+        ids: 'AIC-default-branch-protected',
+      },
+      {
+        scope: 'SHOULD',
+        rule: 'SBOM',
+        status: '⚠️ Warning',
+        comment: '`docs/release.md:3` — SBOM missing',
+        ids: 'AIC-sbom-generation',
+      },
+    ],
+  );
+  if (codes.length === 0) {
+    ok('checkReauditDiff: mechanical and owner-profile rows exempt');
+  } else {
+    bad('checkReauditDiff mechanical-exempt', `codes=${codes.join(',')}`);
+  }
+}
+
+{
+  const codes = runReauditDiff(
+    [
+      {
+        scope: 'SHOULD',
+        rule: 'New Row',
+        status: '⚠️ Warning',
+        comment: '`src/a.ts:1` — new finding',
+        ids: 'AIC-new-row',
+      },
+      {
+        scope: 'SHOULD',
+        rule: 'Was Blank',
+        status: '✅ Fulfilled',
+        comment: '`src/b.ts:1` evidence',
+        ids: 'AIC-was-blank',
+      },
+    ],
+    [
+      {
+        scope: 'SHOULD',
+        rule: 'Removed Row',
+        status: '✅ Fulfilled',
+        comment: '`docs/x.md` evidence',
+        ids: 'AIC-removed-row',
+      },
+      { scope: 'SHOULD', rule: 'Was Blank', status: '', comment: '', ids: 'AIC-was-blank' },
+    ],
+  );
+  if (codes.length === 0) {
+    ok('checkReauditDiff: unmatched rows and blank previous status ignored');
+  } else {
+    bad('checkReauditDiff unmatched-ignored', `codes=${codes.join(',')}`);
+  }
+}
+
+{
+  const codes: string[] = [];
+  const collect: ProblemReporter = (code) => {
+    codes.push(code);
+  };
+  checkReauditDiff([], ['# not a checklist', 'no table here'], 'PREV.md', 'CHECKLIST.md', collect);
+  if (codes.length === 1 && codes[0] === 'AUDIT072') {
+    ok('checkReauditDiff: previous file with no rows -> AUDIT072');
+  } else {
+    bad('checkReauditDiff unparseable-previous', `codes=${codes.join(',')}`);
+  }
+}
+
+{
+  if (
+    isMechanicallyStamped(`${AUTO_STAMP_PREFIX} (rule: x). y`) &&
+    isMechanicallyStamped(
+      'Owner profile: `.ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-PROFILE.md` answers "no"',
+    ) &&
+    !isMechanicallyStamped('`README.md:42` — manual evidence')
+  ) {
+    ok('isMechanicallyStamped: prefixes detected, manual comment not');
+  } else {
+    bad('isMechanicallyStamped');
   }
 }
 
