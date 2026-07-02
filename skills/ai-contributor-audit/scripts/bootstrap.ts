@@ -87,6 +87,7 @@ const MANIFEST: readonly string[] = [
   'skills/ai-contributor-audit/references/audit-protocol.md',
   'skills/ai-contributor-audit/references/evidence-rules.md',
   'skills/ai-contributor-audit/references/audit-profile-template.md',
+  'skills/ai-contributor-audit/references/bootstrap-run.md',
   // Scripts (executable runbook tooling)
   'skills/ai-contributor-audit/scripts/package.json',
   'skills/ai-contributor-audit/scripts/internal/collector-hosted-settings.ts',

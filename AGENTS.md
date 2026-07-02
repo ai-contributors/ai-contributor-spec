@@ -326,7 +326,7 @@ AIC-skill-contract-defined, AIC-skill-code-review) and `Skill Safety`
 `skills/`:
 
 - `skills/ai-contributor-audit/` — runs an AI Contributor audit.
-- `skills/ai-contributor-audit-fix/` — closes one audit finding at a time.
+- `skills/ai-contributor-audit-fix/` — closes the audit findings blocking the next conformance level (or one named finding), then re-audits once.
 - `skills/ai-contributor-audit-profile/` — drafts the audit profile.
 
 Each skill has:

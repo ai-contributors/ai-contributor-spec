@@ -1,11 +1,14 @@
 ---
 name: ai-contributor-audit-profile
-description: Draft, confirm, and write .ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-PROFILE.md applicability answers for an AI Contributor audit. Use when a user wants to create, fill, revise, or explain owner applicability answers for an AI Contributor audit. Do not use for running the audit itself, stamping generated audit artifacts, or fixing checklist findings.
+description: Draft, confirm, and write the owner applicability profile .ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-PROFILE.md before an AI Contributor audit.
+disable-model-invocation: true
 ---
 
 # AI Contributor Audit Profile
 
 Create or update `.ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-PROFILE.md`, the owner-confirmed applicability input for AI Contributor audits.
+
+This skill is user-invoked only (`disable-model-invocation: true`). Start it explicitly — `/ai-contributor-audit-profile` in Claude Code or GitHub Copilot, `$ai-contributor-audit-profile` in Codex — it never starts because an agent matched a prompt.
 
 The profile steers applicability only:
 
@@ -64,12 +67,18 @@ the profile in a separate profile step, then rerun the audit.
 - Do not edit generated audit outputs: `AI-CONTRIBUTOR-AUDIT.md`, `.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md`, `.ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-LOG.md`, or `.ai-contributor-audit/AI-CONTRIBUTOR-EVIDENCE.json`.
 - Do not run `audit-collect.ts`, `audit-stamp.ts`, or `audit-validate.ts` unless the user asks for an audit after profile creation.
 - Do not use generated audit-output deletions or modifications as profile evidence. Preserve and report them separately.
-- Treat a tracked deletion of `.ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-PROFILE.md` as the owner's fresh-start signal. Default to the canonical blank template; do not lift answers from `git show HEAD:.ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-PROFILE.md` unless the owner explicitly asks to restore.
 - Do not silently update the profile during an audit. If the owner gives new answers while an audit is running, finish the profile update first and rerun the audit from collection.
 - Do not infer sensitive-data, production-data, or regulated-data answers from absence alone if the owner is unsure.
 - Do not change checklist scopes while filling a target repo profile; checklist scope changes belong in this spec repo.
 - Keep every decision question phrased in the same direction: `yes` enables affected checks, `no` disables them only when `Not relevant` is allowed.
 - Do not describe a profile review as current, complete, or ready for final confirmation while any canonical template question is missing from the draft. Name the missing question and include it in the owner review table first.
-- Do not bump `Owner (re)confirmed YYYY-MM-DD` dates on rows whose answer and evidence text did not change during this run. Date-only refreshes are forbidden because they create empty version-control churn and erode the meaning of "reconfirmed".
-- Do not write a `Confidence` column to the persisted profile file. Confidence is a chat-only signal that helps the owner triage which rows need close attention during the rendered-diff review; once the owner confirms, the file records only the canonical columns (Area, Question, Answer, Evidence, Affected checks).
-- Do not run the target repository's formatter (`prettier`, `pnpm format`, `npm run format`, equivalents) on the profile file from inside this skill. The target's pre-commit hook or CI handles formatting; auto-formatting here couples the skill to whatever formatter is installed and produces target-dependent output.
+
+## Before Declaring Done
+
+- [ ] Every canonical template question appears in the written profile, in canonical order.
+- [ ] Every answer cell is `yes`, `no`, or blank; blank rows carry rationale naming the missing owner fact.
+- [ ] The owner confirmed the rendered diff before the file was written, including every low-confidence, newly inserted, and sensitive/regulatory row.
+- [ ] `Owner (re)confirmed YYYY-MM-DD` dates moved only on rows whose answer or evidence text changed this run (workflow step 15).
+- [ ] The persisted file has no `Confidence` column (workflow step 10) and was not run through the target repository's formatter (workflow step 16).
+- [ ] `profile-validate.ts` ran cleanly and its `skill version: ...` banner is captured in the run report.
+- [ ] The final report covers the profile change kind (created / updated / restored / left deleted), pre-existing generated-output modifications, which `no` answers may make mapped checks `Not relevant`, and which blank rows still need owner facts.
