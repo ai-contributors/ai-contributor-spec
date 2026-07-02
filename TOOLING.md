@@ -191,7 +191,7 @@ Network use is intentionally explicit:
 ### `skills/ai-contributor-audit/scripts/`
 
 The canonical audit runtime. The high-level workflow is shown in the
-[README audit flow diagram](README.md#how-the-audit-runs).
+[README audit flow diagram](README.md#the-audit-process).
 
 - `audit-run.ts` orchestrates collect, stamp, optional edit pause, stamp
   again, validate.

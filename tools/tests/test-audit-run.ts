@@ -10,6 +10,9 @@ import { fileURLToPath } from 'node:url';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(HERE, '..', '..');
 const SCRIPT = path.join(REPO_ROOT, 'skills', 'ai-contributor-audit', 'scripts', 'audit-run.ts');
+const SPEC_VERSION: string = JSON.parse(
+  fs.readFileSync(path.join(REPO_ROOT, 'AI-CONTRIBUTOR-RULE-CATALOG.json'), 'utf8'),
+).specVersion;
 
 function run(cmd: string, args: string[], cwd: string): void {
   const result = spawnSync(cmd, args, { cwd, encoding: 'utf8' });
@@ -72,7 +75,7 @@ function assert(name: string, condition: boolean, detail = ''): void {
 
     assert(
       'reset-template run reports template spec_version before target checklist exists',
-      result.status === 0 && result.stdout.includes('spec_version=0.1.2'),
+      result.status === 0 && result.stdout.includes(`spec_version=${SPEC_VERSION}`),
       `status=${result.status}\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}`,
     );
     assert(

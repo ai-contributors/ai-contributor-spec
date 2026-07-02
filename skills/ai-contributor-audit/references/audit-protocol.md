@@ -8,20 +8,19 @@ Pin the target commit. Pin the spec source. Run the collector. Stamp mechanical 
 
 Do not treat the checklist, audit log, or root summary as independent files to patch. A status change starts with `audit-collect`, then `audit-stamp`, then an evidence-review pass for judgment-required rows, then `audit-stamp`, then `audit-validate`; direct Markdown edits to derived cells are invalid audit output.
 
-## Process Modes
+## Audit Process And Auditor Role
 
-The checklist supports three process modes:
+The audit is scripted. The scripts collect, stamp, derive, and validate
+mechanical fields; the auditor owns judgment-required rows and manual
+evidence. The auditor may be a human or an agent — both
+produce the same artifacts and the same evidence chain, both are valid audit
+output when validation passes, and both require human/accountable-owner
+acceptance before a conformance claim is published.
 
-| Mode | Boundary | Claim strength |
-| --- | --- | --- |
-| Manual self-assessment | A human reads the checklist and records findings by hand, without scripts or an agent. | Useful for early gap analysis, but not a reproducible audit claim. |
-| Scripted human audit | A human owns judgment-required rows and manual evidence; the scripts collect, stamp, derive, and validate mechanical fields. | Recommended minimum before publishing a conformance claim. |
-| Agent-assisted audit | An agent follows this protocol for judgment-required rows while the scripts collect, stamp, derive, and validate mechanical fields. | Valid audit output when validation passes, still requiring human/accountable-owner acceptance before publishing a claim. |
-
-Script-free checklist use is allowed as a planning exercise. It must not be
-presented as the same evidence chain as a scripted audit because timestamps,
-derived summaries, `conformance_level`, and completeness checks are not
-mechanically verified.
+Script-free checklist use (manual self-assessment) is allowed as a planning
+exercise. It must not be presented as the same evidence chain as a scripted
+audit because timestamps, derived summaries, `conformance_level`, and
+completeness checks are not mechanically verified.
 
 ## Audit Lifecycle And Field Ownership
 
