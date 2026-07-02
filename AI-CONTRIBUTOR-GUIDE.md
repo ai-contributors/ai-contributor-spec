@@ -1,6 +1,6 @@
 # AI Contributor Adoption Guide
 
-> **Version:** 0.1.3 · **Reference specification:** [`AI-CONTRIBUTOR-SPECIFICATION.md`](AI-CONTRIBUTOR-SPECIFICATION.md) v0.1.3 · **Change history:** [`CHANGELOG.md`](CHANGELOG.md)
+> **Version:** 0.1.4 · **Reference specification:** [`AI-CONTRIBUTOR-SPECIFICATION.md`](AI-CONTRIBUTOR-SPECIFICATION.md) v0.1.4 · **Change history:** [`CHANGELOG.md`](CHANGELOG.md)
 
 A step-by-step adoption path for small teams and solo developers building TypeScript web applications on GitHub. Follow it from top to bottom. Each phase moves the repository to the next level: Phase 0 → Level 0, Phase 1 → Level 1 and simple Level 2 workflows, Phase 2 → Level 3, Phase 3 → Level 4.
 
