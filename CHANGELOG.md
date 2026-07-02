@@ -20,6 +20,29 @@ releases may update `specVersion` without changing `schemaVersion`.
 
 Every released entry lists the release date (the day the version lands on `main`).
 
+## [0.1.3] — 2026-07-02
+
+### Changed
+
+- Collapsed the three documented process options (manual self-assessment,
+  scripted human audit, agent-assisted audit) into a single scripted audit
+  process whose judgment-required rows are filled by a human or an agent.
+  Both auditor choices produce the same artifacts and evidence chain and
+  require human/accountable-owner acceptance before a conformance claim.
+- Manual self-assessment is now described as a script-free planning exercise
+  for gap analysis rather than a peer process option; it was never a valid
+  conformance-claim path, and that remains unchanged.
+- Audit field-ownership documentation is consolidated:
+  `AI-CONTRIBUTOR-AUDIT-MODEL.md` § Artifact And Field Ownership is the single
+  canonical table, and the shipped audit protocol and `CONTRIBUTING.md` link
+  to it instead of restating it. The ownership rules themselves are unchanged.
+- The bootstrap runbook manifest now materializes
+  `AI-CONTRIBUTOR-AUDIT-MODEL.md` so the protocol's canonical ownership
+  reference resolves inside pinned runbooks.
+
+This patch release does not change rule semantics, checklist rows, audit
+frontmatter fields, or conformance obligations.
+
 ## [0.1.2] — 2026-05-10
 
 ### Changed

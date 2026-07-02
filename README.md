@@ -4,7 +4,7 @@
 >
 > This specification treats AI as a system actor and defines reviewable guardrails for agent, harness, and tool behavior.
 
-**Version:** 0.1.2 · **License:** docs/specs [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); starter template, repo tooling, and audit runtime scripts [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0) · **Change history:** [`CHANGELOG.md`](CHANGELOG.md)
+**Version:** 0.1.3 · **License:** docs/specs [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); starter template, repo tooling, and audit runtime scripts [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0) · **Change history:** [`CHANGELOG.md`](CHANGELOG.md)
 
 ## Why This Exists
 
@@ -18,14 +18,33 @@ This project gives you:
   evidence for owner confirmation,
 - a runnable audit skill that finds gaps,
 - a fix skill that helps close one gap at a time,
-- a manual checklist path if you are not ready to let an agent work on the repo.
+- an agent-free path: run the audit scripts yourself, or read the checklist by
+  hand for early gap analysis.
 
 The workflow is deliberately incremental: run the audit profile skill, confirm
 the profile answers, run the audit, get a sorted backlog, fix the rows needed
 for the next level, rerun the audit, and repeat until the repository reaches
 the level you need.
 
-## How The Audit Runs
+It is written for engineering leads, platform teams, harness engineers,
+security reviewers, and developers who want to use AI agents on real codebases
+without guessing which guardrails should exist. The target is one repository:
+the same checklist works for solo projects, team repositories, and monorepos,
+and the level depends on repository controls and AI risk, not team size. Use
+ownership, required reviews, branch protection, and path-scoped rules at the
+level of formality your repository needs.
+
+The scope is repository-side AI-assisted delivery: setup, policy, CI,
+verification, review, release controls, agent instructions, shared skills,
+MCP servers, AI provenance, and incident handling. The specification is
+vendor-neutral. It does not fully cover consumer-facing AI runtime safety for
+products such as in-product chatbots or end-user agent workflows; if your
+product exposes AI to users, you still need product-specific AI safety
+controls.
+
+<!-- doc-site:extract:quickstart -->
+
+## The Audit Process
 
 ```text
 +--------------------------+
@@ -56,28 +75,22 @@ the level you need.
                                                                                         +-----------+   +---------------------------+
 ```
 
-The audit scripts own mechanical evidence, timestamps, derived rows, and the
-root summary. The auditor, whether an agent or a human, owns judgment-required
-rows and manual evidence after current-run evidence exists. A human or named
-accountable owner reviews and accepts these artifacts before a repository
-publishes a conformance claim. The optional fix-skill loop is for improving
-gaps found by the audit, then rerunning the audit. The detailed protocol covers
-the internal stamp, evidence-review, second stamp, and validation sequence.
+The audit is scripted. `audit-collect.ts`, `audit-stamp.ts`, and
+`audit-validate.ts` own mechanical evidence, timestamps, derived fields, and
+the root summary; the auditor — a human or an agent — owns the
+judgment-required rows and manual evidence. Both auditor choices produce the
+same artifacts and the same evidence chain, and a human or named accountable
+owner reviews and accepts the artifacts before the repository publishes a
+conformance claim. The optional fix-skill loop addresses gaps found by the
+audit, then the audit runs again.
 
-<!-- doc-site:extract:quickstart -->
-
-## Process Options
-
-| Process | What it means | Best use |
-| --- | --- | --- |
-| **Manual self-assessment** | A human reads the checklist and records findings by hand, without scripts or an agent. | Early gap analysis and planning. |
-| **Scripted human audit** | A human makes the judgment calls while `audit-collect.ts`, `audit-stamp.ts`, and `audit-validate.ts` handle evidence, derived fields, and consistency. | Recommended minimum for conformance claims. |
-| **Agent-assisted audit** | An agent follows the audit protocol, fills judgment-required rows from current evidence, and uses the scripts for collection, stamping, and validation. | Faster repeatable audits, with human/accountable-owner acceptance before a claim. |
-
-A script-free checklist pass is useful, but it is not the reproducible audit
-path: timestamps, summaries, derived level status, and evidence completeness are
-not mechanically checked. Use a scripted human audit or agent-assisted audit
-before publishing a conformance claim.
+Before adopting the tooling, you can read the specification and checklist by
+hand for gap analysis: treat the rows you would mark `Alarm` or `Warning` as
+your backlog, and revisit the target level after each group of fixes. That
+manual pass is useful for planning, but it is not audit evidence: timestamps,
+summaries, derived level status, and evidence completeness are not
+mechanically checked. Publishing a conformance claim requires a scripted
+audit.
 
 ## Start Here
 
@@ -97,9 +110,10 @@ before publishing a conformance claim.
 6. Have a human or named accountable owner review the
    [audit evidence](AI-CONTRIBUTOR-AUDIT-MODEL.md) before claiming a level.
 
-If you are hesitant to start with an agent, use the [manual path](#manual-path)
-first. That gives you the same hardening path without letting an agent inspect
-the repository.
+The audit also runs without an agent: run the audit scripts yourself and fill
+the judgment-required rows by hand, or start with a script-free read of the
+specification and checklist for gap analysis (see
+[The Audit Process](#the-audit-process)).
 
 Using TypeScript, pnpm, and GitHub? Follow the concrete adoption path in
 [`AI-CONTRIBUTOR-GUIDE.md`](AI-CONTRIBUTOR-GUIDE.md).
@@ -107,9 +121,9 @@ Using TypeScript, pnpm, and GitHub? Follow the concrete adoption path in
 Maintaining this repository? See [`TOOLING.md`](TOOLING.md) for the tooling
 architecture, command map, and directory responsibilities.
 
-## Audit Prerequisites
+## Install The Skills
 
-For the automated audit path, have:
+For the scripted audit, have:
 
 - `git`, Node.js 24.x, and `npm` / `npx` available.
 - Network access to fetch the pinned specification and runbook tooling. The
@@ -125,7 +139,7 @@ Without GitHub CLI access, the audit still runs, but hosted controls such as
 branch protection, required reviews, secret scanning, push protection, and
 dependency alerts may remain `Warning` / verification gaps.
 
-## Install The Skills
+Install the skills:
 
 ```sh
 npx skills add ai-contributors/ai-contributor-spec --skill ai-contributor-audit-profile ai-contributor-audit ai-contributor-audit-fix
@@ -194,18 +208,6 @@ guardrails are strong enough for the AI workflow level you want to claim.
 
 <!-- /doc-site:extract:quickstart -->
 
-## Manual Path
-
-For a human-only hardening pass:
-
-1. Read [`AI-CONTRIBUTOR-SPECIFICATION.md`](AI-CONTRIBUTOR-SPECIFICATION.md).
-2. Fill [`.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md`](.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md).
-3. Use the checklist rows with `Alarm` or `Warning` as your backlog.
-4. Revisit the target level after each group of fixes.
-
-The automated path gives you more structure: pinned tooling, collected evidence,
-generated audit output, and a sorted backlog that can be fixed piece by piece.
-
 ## Pillars
 
 The 29 clauses are grouped into seven pillars. This grouping is a reader's map;
@@ -220,17 +222,6 @@ conformance is still checked clause by clause in the specification and checklist
 | 🤖 **AI Agents** | §17–20 | How AI agents, shared skills, MCP servers, and delegated agents are governed in the repository. |
 | ⚠️ **AI Risk** | §21–22 | AI-specific risks (prompt injection, untrusted input, capability scoping, allowlists, cost ceilings) and data protection for AI workflows. |
 | 🧭 **Oversight** | §23–29 | Human approval, guardrail evidence, policy ownership, AI licensing and attribution, AI credential lifecycle, model/provider changes, and AI incident response. |
-
-## Who It Is For
-
-This repository is for engineering leads, platform teams, harness engineers,
-security reviewers, and developers who want to use AI agents on real codebases
-without guessing which guardrails should exist.
-
-The target is one repository. The same checklist works for solo projects,
-team repositories, and monorepos; the level depends on repository controls and
-AI risk, not team size. Use ownership, required reviews, branch protection, and
-path-scoped rules at the level of formality your repository needs.
 
 ## Documentation Map
 
@@ -255,29 +246,19 @@ Contributor badge.
 
 | Level | Badge |
 |---|---|
-| Level 1 — Hardened | [![AI Contributor: Level 1 Hardened](https://img.shields.io/badge/AI%20Contributor-Level%201%20Hardened-blue)](./AI-CONTRIBUTOR-SPECIFICATION.md#conformance-levels) |
-| Level 2 — AI Assisted | [![AI Contributor: Level 2 AI Assisted](https://img.shields.io/badge/AI%20Contributor-Level%202%20AI%20Assisted-green)](./AI-CONTRIBUTOR-SPECIFICATION.md#conformance-levels) |
-| Level 3 — AI Authored | [![AI Contributor: Level 3 AI Authored](https://img.shields.io/badge/AI%20Contributor-Level%203%20AI%20Authored-brightgreen)](./AI-CONTRIBUTOR-SPECIFICATION.md#conformance-levels) |
-| Level 4 — AI Autonomous | [![AI Contributor: Level 4 AI Autonomous](https://img.shields.io/badge/AI%20Contributor-Level%204%20AI%20Autonomous-blueviolet)](./AI-CONTRIBUTOR-SPECIFICATION.md#conformance-levels) |
+| Level 1 — Hardened | [![AI Contributor: Level 1 Hardened](https://img.shields.io/badge/AI%20Contributor-Level%201%20Hardened-blue)](https://github.com/ai-contributors/ai-contributor-spec/blob/main/AI-CONTRIBUTOR-SPECIFICATION.md#conformance-levels) |
+| Level 2 — AI Assisted | [![AI Contributor: Level 2 AI Assisted](https://img.shields.io/badge/AI%20Contributor-Level%202%20AI%20Assisted-green)](https://github.com/ai-contributors/ai-contributor-spec/blob/main/AI-CONTRIBUTOR-SPECIFICATION.md#conformance-levels) |
+| Level 3 — AI Authored | [![AI Contributor: Level 3 AI Authored](https://img.shields.io/badge/AI%20Contributor-Level%203%20AI%20Authored-brightgreen)](https://github.com/ai-contributors/ai-contributor-spec/blob/main/AI-CONTRIBUTOR-SPECIFICATION.md#conformance-levels) |
+| Level 4 — AI Autonomous | [![AI Contributor: Level 4 AI Autonomous](https://img.shields.io/badge/AI%20Contributor-Level%204%20AI%20Autonomous-blueviolet)](https://github.com/ai-contributors/ai-contributor-spec/blob/main/AI-CONTRIBUTOR-SPECIFICATION.md#conformance-levels) |
 
 Paste the Markdown for your achieved level into your repository's README.
 
 ```markdown
-[![AI Contributor: Level 1 Hardened](https://img.shields.io/badge/AI%20Contributor-Level%201%20Hardened-blue)](./AI-CONTRIBUTOR-SPECIFICATION.md#conformance-levels)
-[![AI Contributor: Level 2 AI Assisted](https://img.shields.io/badge/AI%20Contributor-Level%202%20AI%20Assisted-green)](./AI-CONTRIBUTOR-SPECIFICATION.md#conformance-levels)
-[![AI Contributor: Level 3 AI Authored](https://img.shields.io/badge/AI%20Contributor-Level%203%20AI%20Authored-brightgreen)](./AI-CONTRIBUTOR-SPECIFICATION.md#conformance-levels)
-[![AI Contributor: Level 4 AI Autonomous](https://img.shields.io/badge/AI%20Contributor-Level%204%20AI%20Autonomous-blueviolet)](./AI-CONTRIBUTOR-SPECIFICATION.md#conformance-levels)
+[![AI Contributor: Level 1 Hardened](https://img.shields.io/badge/AI%20Contributor-Level%201%20Hardened-blue)](https://github.com/ai-contributors/ai-contributor-spec/blob/main/AI-CONTRIBUTOR-SPECIFICATION.md#conformance-levels)
+[![AI Contributor: Level 2 AI Assisted](https://img.shields.io/badge/AI%20Contributor-Level%202%20AI%20Assisted-green)](https://github.com/ai-contributors/ai-contributor-spec/blob/main/AI-CONTRIBUTOR-SPECIFICATION.md#conformance-levels)
+[![AI Contributor: Level 3 AI Authored](https://img.shields.io/badge/AI%20Contributor-Level%203%20AI%20Authored-brightgreen)](https://github.com/ai-contributors/ai-contributor-spec/blob/main/AI-CONTRIBUTOR-SPECIFICATION.md#conformance-levels)
+[![AI Contributor: Level 4 AI Autonomous](https://img.shields.io/badge/AI%20Contributor-Level%204%20AI%20Autonomous-blueviolet)](https://github.com/ai-contributors/ai-contributor-spec/blob/main/AI-CONTRIBUTOR-SPECIFICATION.md#conformance-levels)
 ```
-
-## Scope
-
-This specification is for repository-side AI-assisted delivery: setup, policy,
-CI, verification, review, release controls, agent instructions, shared skills,
-MCP servers, AI provenance, and incident handling.
-
-It is vendor-neutral. It does not fully cover consumer-facing AI runtime safety
-for products such as in-product chatbots or end-user agent workflows. If your
-product exposes AI to users, you still need product-specific AI safety controls.
 
 ## Contributing
 

@@ -8,20 +8,19 @@ Pin the target commit. Pin the spec source. Run the collector. Stamp mechanical 
 
 Do not treat the checklist, audit log, or root summary as independent files to patch. A status change starts with `audit-collect`, then `audit-stamp`, then an evidence-review pass for judgment-required rows, then `audit-stamp`, then `audit-validate`; direct Markdown edits to derived cells are invalid audit output.
 
-## Process Modes
+## Audit Process And Auditor Role
 
-The checklist supports three process modes:
+The audit is scripted. The scripts collect, stamp, derive, and validate
+mechanical fields; the auditor owns judgment-required rows and manual
+evidence. The auditor may be a human or an agent — both
+produce the same artifacts and the same evidence chain, both are valid audit
+output when validation passes, and both require human/accountable-owner
+acceptance before a conformance claim is published.
 
-| Mode | Boundary | Claim strength |
-| --- | --- | --- |
-| Manual self-assessment | A human reads the checklist and records findings by hand, without scripts or an agent. | Useful for early gap analysis, but not a reproducible audit claim. |
-| Scripted human audit | A human owns judgment-required rows and manual evidence; the scripts collect, stamp, derive, and validate mechanical fields. | Recommended minimum before publishing a conformance claim. |
-| Agent-assisted audit | An agent follows this protocol for judgment-required rows while the scripts collect, stamp, derive, and validate mechanical fields. | Valid audit output when validation passes, still requiring human/accountable-owner acceptance before publishing a claim. |
-
-Script-free checklist use is allowed as a planning exercise. It must not be
-presented as the same evidence chain as a scripted audit because timestamps,
-derived summaries, `conformance_level`, and completeness checks are not
-mechanically verified.
+Script-free checklist use (manual self-assessment) is allowed as a planning
+exercise. It must not be presented as the same evidence chain as a scripted
+audit because timestamps, derived summaries, `conformance_level`, and
+completeness checks are not mechanically verified.
 
 ## Audit Lifecycle And Field Ownership
 
@@ -36,22 +35,12 @@ The canonical audit lifecycle is:
 6. Run `audit-validate.ts`.
 7. Have a human or named accountable owner review and accept the artifacts before publishing a conformance claim.
 
-The collector and stamper own mechanical fields: assessment timestamps and duration, `spec_source`, `audited_commit`, identity fields supplied by flags or environment, `validator_version`, `collector_version`, automated checklist `A` / `Status` / `Comment` cells, stamped audit-log blocks, conformance summary `Status`, `conformance_level`, backlog derived columns, verification-gap stamped rows, and the root `AI-CONTRIBUTOR-AUDIT.md` summary.
-
-The owner profile is owner-confirmed input, not a temporary note file for the
-auditor. Profile creation should start with repository discovery: draft
-applicability answers with evidence, then ask the owner to confirm or correct
-them. The audit reads the confirmed profile but does not silently edit it. If
-the audit discovers missing, ambiguous, or contradictory owner facts, record
-`⚠️ Warning` or a verification gap that names the needed profile answer. If the
-owner explicitly updates the profile, rerun the audit from collection so the
-updated profile is part of the evidence chain.
-
-The auditor owns judgment-required checklist `Status` and `Comment` cells, manual audit-log rows below stamped blocks, conformance summary `Notes`, backlog `Next action` / `Owner` / `Target date`, and manual verification-gap rows. The auditor may be a human or an agent. In either case, every populated row must cite current-run evidence.
-
-`Date reached` is hybrid. The auditor enters it only when a level is first claimed as `✅ Yes`; the stamper preserves it while that level remains reached and clears it when the level drops out of `✅ Yes`.
-
-An agent-run audit is valid audit output when it follows this lifecycle and passes validation. It is not the same as the human/accountable-owner acceptance step required before claiming conformance externally.
+Field ownership is defined once, in the canonical table in
+[`AI-CONTRIBUTOR-AUDIT-MODEL.md` § Artifact And Field Ownership](../../../AI-CONTRIBUTOR-AUDIT-MODEL.md#artifact-and-field-ownership):
+the collector and stamper own every mechanical field, the auditor owns
+judgment-required cells and manual rows, and `Date reached` is hybrid. Every
+populated auditor row must cite current-run evidence. The numbered steps below
+name the owned fields where each phase touches them.
 
 ## Authoritative Sources
 

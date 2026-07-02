@@ -1,5 +1,5 @@
 ---
-spec_version: "0.1.2"
+spec_version: "0.1.3"
 spec_source:           # Stamped automatically by audit-stamp.ts from --spec-source, AI_CONTRIBUTOR_SPEC_SOURCE, the bootstrap manifest, or the pinned runbook path. Immutable source used for this audit, e.g. https://github.com/ai-contributors/ai-contributor-spec/tree/<full-commit-sha> or a release tag. Must match the companion audit log exactly.
 assessment_started_at:    # Stamped automatically by audit-stamp.ts from the collector's evidence JSON. Leave blank — the stamper overwrites it. ISO 8601 date-time with seconds.
 assessment_completed_at:  # Stamped automatically by audit-stamp.ts. Leave blank — the stamper overwrites it.

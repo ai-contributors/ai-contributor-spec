@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // SPDX-License-Identifier: Apache-2.0
 //
-// Asserts that the README "How The Audit Runs" diagram describes the full
+// Asserts that the README "The Audit Process" diagram describes the full
 // canonical lifecycle from AI-CONTRIBUTOR-AUDIT-MODEL.md: collect -> stamp
 // -> auditor edits -> stamp -> validate. Prevents the diagram from drifting
 // back to a single-stamp shorthand that hides the auditor checkpoint.
@@ -15,9 +15,9 @@ const repoRoot = path.resolve(here, '..', '..');
 const readmePath = path.join(repoRoot, 'README.md');
 const text = fs.readFileSync(readmePath, 'utf8');
 
-const sectionMatch = text.match(/## How The Audit Runs[\s\S]*?(?=\n## |\n# |$)/);
+const sectionMatch = text.match(/## The Audit Process[\s\S]*?(?=\n## |\n# |$)/);
 if (!sectionMatch) {
-  console.error('check-audit-flow-diagram: "How The Audit Runs" section not found in README.md');
+  console.error('check-audit-flow-diagram: "The Audit Process" section not found in README.md');
   process.exit(1);
 }
 const section = sectionMatch[0];
@@ -43,7 +43,7 @@ const requirements: { label: string; test: () => boolean }[] = [
 
 const failed = requirements.filter((r) => !r.test());
 if (failed.length > 0) {
-  console.error('check-audit-flow-diagram: README "How The Audit Runs" section is missing:');
+  console.error('check-audit-flow-diagram: README "The Audit Process" section is missing:');
   for (const r of failed) console.error(`  - ${r.label}`);
   console.error('');
   console.error(

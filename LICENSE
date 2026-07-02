@@ -7,8 +7,8 @@ Examples include, unless a subdirectory states otherwise:
 
 - README.md
 - AI-CONTRIBUTOR-SPECIFICATION.md
-- AI-CONTRIBUTOR-CHECKLIST.md
-- AI-CONTRIBUTOR-AUDIT-LOG.md
+- .ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md
+- .ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-LOG.md
 - AI-CONTRIBUTOR-AUDIT-MODEL.md
 - AI-CONTRIBUTOR-COVERAGE.md
 - AI-CONTRIBUTOR-GUIDE.md
