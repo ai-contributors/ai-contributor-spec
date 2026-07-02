@@ -73,11 +73,11 @@ Two paths, both produce the same file:
 
 ## Related references
 
-- [`AI-CONTRIBUTOR-AUDIT-MODEL.md`](AI-CONTRIBUTOR-AUDIT-MODEL.md) —
+- [`AI-CONTRIBUTOR-AUDIT-MODEL.md`](../AI-CONTRIBUTOR-AUDIT-MODEL.md) —
   where the profile fits in the audit loop.
 - [`skills/ai-contributor-audit-profile/SKILL.md`](../skills/ai-contributor-audit-profile/SKILL.md)
   — the agent-facing runbook, including guardrails and validator
   commands.
-- [`AI-CONTRIBUTOR-AUDIT-PROMPT.md`](AI-CONTRIBUTOR-AUDIT-PROMPT.md)
+- [`AI-CONTRIBUTOR-AUDIT-PROMPT.md`](../AI-CONTRIBUTOR-AUDIT-PROMPT.md)
   — the no-install prompt path that does not require the skills
   package.

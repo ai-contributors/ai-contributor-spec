@@ -108,7 +108,7 @@ audit.
 5. Rerun the audit after a batch of fixes, especially when you expect to reach
    the next level.
 6. Have a human or named accountable owner review the
-   [audit evidence](docs/AI-CONTRIBUTOR-AUDIT-MODEL.md) before claiming a level.
+   [audit evidence](AI-CONTRIBUTOR-AUDIT-MODEL.md) before claiming a level.
 
 The audit also runs without an agent: run the audit scripts yourself and fill
 the judgment-required rows by hand, or start with a script-free read of the
@@ -166,7 +166,7 @@ change uncommitted, commit, branch, push, or open a PR.
 
 If your agent does not support skills, or you prefer the prompt-based flow, use
 the prompt in
-[`AI-CONTRIBUTOR-AUDIT-PROMPT.md`](docs/AI-CONTRIBUTOR-AUDIT-PROMPT.md).
+[`AI-CONTRIBUTOR-AUDIT-PROMPT.md`](AI-CONTRIBUTOR-AUDIT-PROMPT.md).
 
 ## Choose Your Target Level
 
@@ -228,10 +228,10 @@ conformance is still checked clause by clause in the specification and checklist
 | Need | Read |
 |---|---|
 | Formal specification | [`AI-CONTRIBUTOR-SPECIFICATION.md`](AI-CONTRIBUTOR-SPECIFICATION.md) |
-| Audit evidence model | [`AI-CONTRIBUTOR-AUDIT-MODEL.md`](docs/AI-CONTRIBUTOR-AUDIT-MODEL.md) |
-| No-skill audit prompt | [`AI-CONTRIBUTOR-AUDIT-PROMPT.md`](docs/AI-CONTRIBUTOR-AUDIT-PROMPT.md) |
+| Audit evidence model | [`AI-CONTRIBUTOR-AUDIT-MODEL.md`](AI-CONTRIBUTOR-AUDIT-MODEL.md) |
+| No-skill audit prompt | [`AI-CONTRIBUTOR-AUDIT-PROMPT.md`](AI-CONTRIBUTOR-AUDIT-PROMPT.md) |
 | TypeScript + pnpm + GitHub adoption | [`AI-CONTRIBUTOR-GUIDE.md`](AI-CONTRIBUTOR-GUIDE.md) |
-| Coverage by level and pillar | [`AI-CONTRIBUTOR-COVERAGE.md`](docs/AI-CONTRIBUTOR-COVERAGE.md) |
+| Coverage by level and pillar | [`AI-CONTRIBUTOR-COVERAGE.md`](AI-CONTRIBUTOR-COVERAGE.md) |
 | Reusable TypeScript starter | [`examples/typescript-pnpm/`](examples/typescript-pnpm/) |
 
 ## Display Your Level

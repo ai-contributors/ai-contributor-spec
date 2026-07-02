@@ -39,13 +39,13 @@ catalog, specification, and templates that adopters fetch**, plus
 - `tools/spec-authoring/templates/AI-CONTRIBUTOR-SPECIFICATION.md.template` —
   hand-authored specification prose outside the generated clause section plus
   placement directives for catalog-owned facts.
-- `docs/AI-CONTRIBUTOR-COVERAGE.md` — generated coverage-map projection from
+- `AI-CONTRIBUTOR-COVERAGE.md` — generated coverage-map projection from
   `tools/spec-authoring/templates/AI-CONTRIBUTOR-COVERAGE.md.template` and the
   rule catalog.
 - `tools/spec-authoring/templates/AI-CONTRIBUTOR-COVERAGE.md.template` —
   hand-authored coverage-map prose plus placement directives for catalog-owned
   coverage tables.
-- `AI-CONTRIBUTOR-GUIDE.md`, `docs/AI-CONTRIBUTOR-AUDIT-MODEL.md` — companion docs.
+- `AI-CONTRIBUTOR-GUIDE.md`, `AI-CONTRIBUTOR-AUDIT-MODEL.md` — companion docs.
 - `AI-CONTRIBUTOR-AUDIT.md` — generated root audit summary template from
   `tools/spec-authoring/templates/AI-CONTRIBUTOR-AUDIT.md.template` and the
   rule catalog.
@@ -73,7 +73,7 @@ interchangeable:
 - `{{generated:...}}` directives are **authoring-time generation directives**.
   They belong only in source templates under `tools/spec-authoring/templates/`.
   Repository generators consume them when rendering checked-in projections such
-  as `AI-CONTRIBUTOR-SPECIFICATION.md`, `docs/AI-CONTRIBUTOR-COVERAGE.md`, and
+  as `AI-CONTRIBUTOR-SPECIFICATION.md`, `AI-CONTRIBUTOR-COVERAGE.md`, and
   `.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md`. Generated Markdown MUST
   NOT retain unresolved `{{generated:...}}` directives.
 - `<!-- BEGIN:... -->` / `<!-- END:... -->` markers are **shipped artifact
@@ -97,7 +97,7 @@ npm --prefix tools run check:ci-local   # local pre-push PR gate
 npm --prefix tools run check    # aggregate repository check
 npm --prefix tools run typecheck
 npm --prefix tools run check:markdown
-npm --prefix tools run generate:coverage   # refresh docs/AI-CONTRIBUTOR-COVERAGE.md
+npm --prefix tools run generate:coverage   # refresh AI-CONTRIBUTOR-COVERAGE.md
 npm --prefix tools run generate:checklist-assets   # refresh generated checklist
 npm --prefix tools run generate:audit-templates   # refresh generated audit templates
 npm --prefix tools run generate:specification   # refresh generated specification
@@ -155,7 +155,7 @@ reproducible subset through `npm --prefix tools run check:ci-local`):
   `AI-CONTRIBUTOR-AUDIT.md` and
   `.ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-LOG.md` match their templates
   plus catalog; `check:coverage` verifies
-  `docs/AI-CONTRIBUTOR-COVERAGE.md` matches the coverage template plus catalog;
+  `AI-CONTRIBUTOR-COVERAGE.md` matches the coverage template plus catalog;
   `check:specification` verifies `AI-CONTRIBUTOR-SPECIFICATION.md` matches the
   specification template plus catalog;
   `check:checklist-pillars` verifies visible checklist IDs against the catalog

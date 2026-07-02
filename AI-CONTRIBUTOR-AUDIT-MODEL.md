@@ -165,7 +165,7 @@ Generate when checked-in authoring content is fully derivable from canonical
 source files. `AI-CONTRIBUTOR-SPECIFICATION.md` is generated from the
 specification template plus `AI-CONTRIBUTOR-RULE-CATALOG.json`.
 `.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md` is generated from the
-checklist template plus the same catalog. `docs/AI-CONTRIBUTOR-COVERAGE.md` is
+checklist template plus the same catalog. `AI-CONTRIBUTOR-COVERAGE.md` is
 generated from its coverage template plus catalog rule, pillar, and level
 metadata. `AI-CONTRIBUTOR-AUDIT.md` and
 `.ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-LOG.md` are generated from their

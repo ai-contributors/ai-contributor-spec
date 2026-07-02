@@ -18,7 +18,7 @@ downstream artifacts are **generated** from it on every release:
 | ------------------- | ------------------------------------------------------------------- | ------------------------------------------ |
 | `specification`     | `AI-CONTRIBUTOR-SPECIFICATION.md`                                   | Humans reading the spec.                   |
 | `checklist`         | `.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md`                 | Auditors filling out evidence rows.        |
-| `coverage`          | `docs/AI-CONTRIBUTOR-COVERAGE.md`                                        | Adopters planning their climb.             |
+| `coverage`          | `AI-CONTRIBUTOR-COVERAGE.md`                                        | Adopters planning their climb.             |
 | `collectorRegistry` | `skills/ai-contributor-audit/scripts/internal/collector-registry.ts` | The audit runtime that fills evidence.     |
 
 If you are building any tool that needs to know "which rules apply at

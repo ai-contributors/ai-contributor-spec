@@ -44,7 +44,7 @@ const catalog: RuleCatalog = {
   projections: {
     specification: 'AI-CONTRIBUTOR-SPECIFICATION.md',
     checklist: '.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md',
-    coverage: 'docs/AI-CONTRIBUTOR-COVERAGE.md',
+    coverage: 'AI-CONTRIBUTOR-COVERAGE.md',
     collectorRegistry: 'skills/ai-contributor-audit/scripts/internal/collector-registry.ts',
   },
   pillars: [
@@ -157,7 +157,7 @@ assert('uses one catalog entry per AIC ID', catalog.rules.length === 2);
 assert('uses catalog spec version', catalog.specVersion === '0.1.1');
 assert(
   'records coverage as a catalog projection',
-  (catalog.projections as Record<string, string>).coverage === 'docs/AI-CONTRIBUTOR-COVERAGE.md',
+  (catalog.projections as Record<string, string>).coverage === 'AI-CONTRIBUTOR-COVERAGE.md',
 );
 assert(
   'uses pillar metadata',

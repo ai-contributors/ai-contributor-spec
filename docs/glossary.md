@@ -74,11 +74,11 @@ Terms used across the spec, the audit pipeline, the rule catalog, and the confor
 
 **Fix loop** (`ai-contributor-audit-fix`). The remediation skill. Reads the freshly-stamped checklist, picks the highest-priority _Alarm_/_Warning_ row, proposes a minimal change, applies it, then re-runs collect → stamp → validate to confirm the row resolved. Repeated until the target level's blockers clear. The loop never edits stamped blocks directly — it edits source files and lets the stamper rewrite the projection.
 
-**No-install prompt.** A single self-contained prompt you paste into any tool-using agent. Produces the same artifacts as the skills, with no `npx`, no clone, no toolchain. Slower and slightly less precise than the skill flow, but works anywhere. See [`AI-CONTRIBUTOR-AUDIT-PROMPT.md`](AI-CONTRIBUTOR-AUDIT-PROMPT.md).
+**No-install prompt.** A single self-contained prompt you paste into any tool-using agent. Produces the same artifacts as the skills, with no `npx`, no clone, no toolchain. Slower and slightly less precise than the skill flow, but works anywhere. See [`AI-CONTRIBUTOR-AUDIT-PROMPT.md`](../AI-CONTRIBUTOR-AUDIT-PROMPT.md).
 
 **Rule catalog** (`AI-CONTRIBUTOR-RULE-CATALOG.json`). The machine-readable canon. Each rule entry represents one stable `AIC-*` rule ID and carries the checklist metadata used to render and score audit rows; multiple rule IDs can contribute to the same checklist row. Generated projections consume this file — never scrape generated Markdown. Tool authors pin a rev and integrate against this.
 
-**Coverage map** (`docs/AI-CONTRIBUTOR-COVERAGE.md`). A grid of clauses × audit phases showing which clauses the collector evaluates mechanically, which need owner attestation, and which are out of audit scope. The map is regenerated, not authored.
+**Coverage map** (`AI-CONTRIBUTOR-COVERAGE.md`). A grid of clauses × audit phases showing which clauses the collector evaluates mechanically, which need owner attestation, and which are out of audit scope. The map is regenerated, not authored.
 
 **Stamp** (verb · the act of). As a verb: to run `audit-stamp.ts`, which rewrites every mechanical cell, frontmatter field, conformance summary line, backlog row, and root `AI-CONTRIBUTOR-AUDIT.md` projection from the evidence JSON. As a noun, stamped content means the mechanical frontmatter fields, status/comment cells, and checksum-protected blocks written by the stamper. Reproducibility is pinned by `spec_source`, `audited_commit`, tool versions, timestamps, and `.ai-contributor-audit/AI-CONTRIBUTOR-EVIDENCE.json`.
 

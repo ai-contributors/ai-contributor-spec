@@ -16,7 +16,7 @@ import {
 } from './shared/template-renderer.ts';
 
 const CATALOG = 'AI-CONTRIBUTOR-RULE-CATALOG.json';
-const COVERAGE = 'docs/AI-CONTRIBUTOR-COVERAGE.md';
+const COVERAGE = 'AI-CONTRIBUTOR-COVERAGE.md';
 const TEMPLATE = 'tools/spec-authoring/templates/AI-CONTRIBUTOR-COVERAGE.md.template';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(HERE, '..', '..');
