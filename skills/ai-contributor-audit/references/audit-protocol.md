@@ -247,6 +247,8 @@ For judgment-required rows:
 - Record each command and a short output excerpt in the audit log **below** the `<!-- END:STAMPED-COLLECTOR-ROWS -->` marker. The block above that marker is owned by `audit-stamp.ts`, which mirrors the `commands` array of every decisive collector rule into evidence rows. Editing inside the marker block is wasted work; non-empty stamped blocks carry a checksum sentinel, and the next stamp run refuses to overwrite a block whose checksum no longer matches.
 - Decide the strictest supportable status.
 
+On re-audits, `audit-run.ts` extracts the previous committed checklist (`git show HEAD:.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md`) at the start of the run and passes it to `audit-validate.ts` via `--previous`. When an auditor-owned row's Status differs from that previous audit, the row's Comment must say `Changed from <old status> to <new status> because <reason>` with a backticked current-run citation. The validator fails otherwise (`AUDIT070` when the rationale is missing, `AUDIT071` when the citation is). Collector-derived and owner-profile stamped rows are exempt — their provenance already explains the change. The previous audit is still not evidence: the rationale must cite evidence from the current run only. On a first audit (checklist not tracked at `HEAD`) the check is skipped.
+
 ## 7. Derive Conformance Level
 
 `audit-stamp.ts` writes the Conformance level summary `Status` column from the current checklist row statuses and writes `conformance_level` in both files' frontmatter from the highest level whose Status is `✅ Yes`. Do not hand-edit `Status` or `conformance_level`.
@@ -255,20 +257,6 @@ Fill only the auditor-owned cells:
 
 - `Date reached` — set on the first audit that claims the level. The stamper preserves it across re-runs as long as the level remains `✅ Yes`, and clears it when a level drops out of `✅ Yes` so the date does not overstate when the level was reached.
 - `Notes` — preserved verbatim.
-
-### Re-audit status changes need a rationale
-
-`audit-run.ts` extracts the previous committed checklist (`git show
-HEAD:.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md`) at the start of the
-run and passes it to `audit-validate.ts` via `--previous`. When an
-auditor-owned row's Status differs from that previous audit, the row's
-Comment must contain a change rationale in the exact form
-`Changed from <old status> to <new status> because <reason>`, and the
-Comment must cite current-run evidence in backticks (`AUDIT070`,
-`AUDIT071`). Collector-derived and owner-profile stamped rows are exempt —
-their provenance already explains the change. The previous audit is still
-not evidence: the rationale must cite evidence from the current run only.
-On a first audit (checklist not tracked at `HEAD`) the check is skipped.
 
 ## 8. Fill Backlog
 
@@ -356,7 +344,7 @@ A non-zero stamper exit means evidence JSON is missing or malformed, or a derive
 
 ## 13. Validate
 
-Run the read-only validator over the just-stamped pair. The validator never mutates the files; AUDIT* defects come from the audit content, not from missing stamping.
+Run the read-only validator over the just-stamped pair. The validator never mutates the files; AUDIT* defects come from the audit content, not from missing stamping. On re-audits, `AUDIT070`–`AUDIT072` enforce the re-audit status-change rationale rule described in §6.
 
 Vendored form:
 
