@@ -16,6 +16,8 @@ This skill audits a repository against the AI Contributor Specification and writ
 
 Use it when you want an agent to run or repeat a conformance audit, refresh evidence, or score a repository against the current specification.
 
+All three skills are user-invoked only (`disable-model-invocation: true`): start them explicitly with your agent's skill syntax (for example `/ai-contributor-audit`); an agent never starts them on its own from a matched prompt.
+
 The skill includes its audit collector, stamper, and validator in `scripts/`. It fetches the specification, checklist template, audit-log template, and audit-profile template from the same pinned source revision. It records the audited commit and produces evidence reviewers can challenge.
 
 ## Low-barrier run
@@ -24,7 +26,7 @@ The skill includes its audit collector, stamper, and validator in `scripts/`. It
 2. Run the `ai-contributor-audit-profile` skill, or prepare the profile
    manually, then have the owner confirm
    `.ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-PROFILE.md`.
-3. Ask the agent to audit the repository against the AI Contributor Specification.
+3. Invoke the `ai-contributor-audit` skill (for example `/ai-contributor-audit`) to audit the repository against the AI Contributor Specification.
 4. Have a human or named accountable owner review `AI-CONTRIBUTOR-AUDIT.md` plus the full files in `.ai-contributor-audit/`.
 5. Fix `Alarm` rows first, then `Warning` rows.
 6. Commit the audit files only after a human has checked the evidence.
