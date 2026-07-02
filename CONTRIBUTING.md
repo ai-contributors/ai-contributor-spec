@@ -235,17 +235,11 @@ projections is the most common maintenance failure.
 - [`skills/ai-contributor-audit/SKILL.md`](skills/ai-contributor-audit/SKILL.md) — update the runbook if the change affects the audit workflow (new frontmatter field, new Status value, etc.). No `spec_version` to bump here; the skill references the spec repo at runtime.
 
 `spec_version` in generated audit templates comes from catalog `specVersion`.
-`spec_source`, `audited_commit`, `auditor`, `runner_agent`, and `runner_model`
-are supplied once through `audit-stamp.ts` flags or environment variables and
-then stamped into both audit files. `assessment_started_at`,
-`assessment_completed_at`, `assessment_duration`, `validator_version`,
-`collector_version`, and `conformance_level` are stamped automatically by
-`audit-stamp.ts` (timestamps from the collector's evidence JSON and current
-stamp run; versions from the running scripts; conformance level from the
-just-stamped Conformance level summary table). Keep stamper-owned frontmatter
-empty in this repository and preserve the inline hint comments.
-
-`audit-stamp.ts` also owns: collector-derived row `Status` + `Comment` cells in the checklist, the Backlog derived columns (`Priority` / `Level` / `Rule` / `Scope` / `Current status`), the Conformance level summary `Status` cells, the root `AI-CONTRIBUTOR-AUDIT.md` summary, the audit-log evidence rows between `<!-- BEGIN:STAMPED-COLLECTOR-ROWS -->` and `<!-- END:STAMPED-COLLECTOR-ROWS -->`, the verification-gaps rows between `<!-- BEGIN:STAMPED-VERIFICATION-GAPS -->` and `<!-- END:STAMPED-VERIFICATION-GAPS -->`, and cross-file equality for stamper-owned frontmatter fields between the checklist and audit log. `Date reached` is hybrid: the auditor enters it when a level is first claimed as `✅ Yes`, and the stamper preserves it while the level remains reached or clears it when the level drops. Do not hand-edit stamper-owned cells or marker blocks — the next stamp run overwrites them.
+Every other audit frontmatter field and derived checklist, summary, backlog,
+and audit-log cell is owned by the collector, stamper, or auditor as defined
+in the canonical table linked below. Keep stamper-owned frontmatter empty in
+this repository, preserve the inline hint comments, and do not hand-edit
+stamper-owned cells or marker blocks — the next stamp run overwrites them.
 
 The canonical artifact and field ownership table lives in [`AI-CONTRIBUTOR-AUDIT-MODEL.md`](AI-CONTRIBUTOR-AUDIT-MODEL.md#artifact-and-field-ownership). The audit lifecycle runbook lives in [`skills/ai-contributor-audit/references/audit-protocol.md`](skills/ai-contributor-audit/references/audit-protocol.md#audit-lifecycle-and-field-ownership). Agent-run audits can produce valid artifacts, but external conformance claims need human or named accountable-owner acceptance of those artifacts.
 

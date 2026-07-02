@@ -140,8 +140,9 @@ const MANIFEST: readonly string[] = [
   'AI-CONTRIBUTOR-AUDIT.md',
   '.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md',
   '.ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-LOG.md',
-  // Specification (read-only reference)
+  // Specification and audit model (read-only reference)
   'AI-CONTRIBUTOR-SPECIFICATION.md',
+  'AI-CONTRIBUTOR-AUDIT-MODEL.md',
 ];
 
 export function isImmutableRef(ref: string): boolean {

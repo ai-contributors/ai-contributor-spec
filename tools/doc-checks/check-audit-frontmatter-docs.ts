@@ -58,10 +58,12 @@ const mentionChecks: MentionCheck[] = [
     fields: synchronizedFields,
   },
   {
+    // CONTRIBUTING.md defers to the canonical ownership table instead of
+    // restating the field list; only the pointer itself is required.
     path: 'CONTRIBUTING.md',
-    label: 'contributing ownership prose',
-    marker: '`spec_source`, `audited_commit`, `auditor`, `runner_agent`, and `runner_model`',
-    fields: synchronizedFields,
+    label: 'contributing ownership pointer',
+    marker: 'AI-CONTRIBUTOR-AUDIT-MODEL.md#artifact-and-field-ownership',
+    fields: [],
   },
 ];
 

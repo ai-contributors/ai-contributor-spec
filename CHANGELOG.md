@@ -32,6 +32,13 @@ Every released entry lists the release date (the day the version lands on `main`
 - Manual self-assessment is now described as a script-free planning exercise
   for gap analysis rather than a peer process option; it was never a valid
   conformance-claim path, and that remains unchanged.
+- Audit field-ownership documentation is consolidated:
+  `AI-CONTRIBUTOR-AUDIT-MODEL.md` § Artifact And Field Ownership is the single
+  canonical table, and the shipped audit protocol and `CONTRIBUTING.md` link
+  to it instead of restating it. The ownership rules themselves are unchanged.
+- The bootstrap runbook manifest now materializes
+  `AI-CONTRIBUTOR-AUDIT-MODEL.md` so the protocol's canonical ownership
+  reference resolves inside pinned runbooks.
 
 This patch release does not change rule semantics, checklist rows, audit
 frontmatter fields, or conformance obligations.
