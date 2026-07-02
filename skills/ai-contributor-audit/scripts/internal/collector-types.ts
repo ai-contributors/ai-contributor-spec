@@ -68,13 +68,7 @@ export interface AiSurfaceInventory {
 }
 
 export type ApplicabilityShape =
-  | 'package'
-  | 'service'
-  | 'web-ui'
-  | 'cli'
-  | 'library'
-  | 'containerized'
-  | 'deploying';
+  'package' | 'service' | 'web-ui' | 'cli' | 'library' | 'containerized' | 'deploying';
 
 export interface ApplicabilityHints {
   shapes: ApplicabilityShape[];
@@ -200,10 +194,7 @@ export interface Evidence {
   profile: ProfileEvidence;
   github_api: {
     token_tier:
-      | 'none'
-      | 'api_identity_verified_scopes_unknown'
-      | 'audit_read_only'
-      | 'broad_write_capable';
+      'none' | 'api_identity_verified_scopes_unknown' | 'audit_read_only' | 'broad_write_capable';
     active_login: string | null;
     scopes_observed: string[];
     auth_status_excerpt: string;

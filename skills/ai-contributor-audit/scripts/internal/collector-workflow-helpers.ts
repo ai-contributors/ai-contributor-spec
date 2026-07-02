@@ -113,8 +113,7 @@ export function createWorkflowHelpers(deps: WorkflowHelpersDeps): {
     for (const r of summary as Array<Record<string, unknown>>) {
       if (r.type !== 'required_status_checks') continue;
       const params = r.parameters as
-        | { required_status_checks?: Array<{ context?: string }> }
-        | undefined;
+        { required_status_checks?: Array<{ context?: string }> } | undefined;
       for (const c of params?.required_status_checks ?? [])
         if (c.context) requiredChecks.push(c.context);
     }
