@@ -219,7 +219,7 @@ projections is the most common maintenance failure.
   markers, and placement directives.
 - Generated projections:
   [`AI-CONTRIBUTOR-SPECIFICATION.md`](AI-CONTRIBUTOR-SPECIFICATION.md),
-  [`AI-CONTRIBUTOR-COVERAGE.md`](AI-CONTRIBUTOR-COVERAGE.md),
+  [`AI-CONTRIBUTOR-COVERAGE.md`](docs/AI-CONTRIBUTOR-COVERAGE.md),
   [`AI-CONTRIBUTOR-AUDIT.md`](AI-CONTRIBUTOR-AUDIT.md),
   [`.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md`](.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md),
   and
@@ -241,7 +241,7 @@ in the canonical table linked below. Keep stamper-owned frontmatter empty in
 this repository, preserve the inline hint comments, and do not hand-edit
 stamper-owned cells or marker blocks — the next stamp run overwrites them.
 
-The canonical artifact and field ownership table lives in [`AI-CONTRIBUTOR-AUDIT-MODEL.md`](AI-CONTRIBUTOR-AUDIT-MODEL.md#artifact-and-field-ownership). The audit lifecycle runbook lives in [`skills/ai-contributor-audit/references/audit-protocol.md`](skills/ai-contributor-audit/references/audit-protocol.md#audit-lifecycle-and-field-ownership). Agent-run audits can produce valid artifacts, but external conformance claims need human or named accountable-owner acceptance of those artifacts.
+The canonical artifact and field ownership table lives in [`AI-CONTRIBUTOR-AUDIT-MODEL.md`](docs/AI-CONTRIBUTOR-AUDIT-MODEL.md#artifact-and-field-ownership). The audit lifecycle runbook lives in [`skills/ai-contributor-audit/references/audit-protocol.md`](skills/ai-contributor-audit/references/audit-protocol.md#audit-lifecycle-and-field-ownership). Agent-run audits can produce valid artifacts, but external conformance claims need human or named accountable-owner acceptance of those artifacts.
 
 ### Merge order of operations
 

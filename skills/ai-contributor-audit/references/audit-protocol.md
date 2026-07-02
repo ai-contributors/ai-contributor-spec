@@ -36,7 +36,7 @@ The canonical audit lifecycle is:
 7. Have a human or named accountable owner review and accept the artifacts before publishing a conformance claim.
 
 Field ownership is defined once, in the canonical table in
-[`AI-CONTRIBUTOR-AUDIT-MODEL.md` § Artifact And Field Ownership](../../../AI-CONTRIBUTOR-AUDIT-MODEL.md#artifact-and-field-ownership):
+[`AI-CONTRIBUTOR-AUDIT-MODEL.md` § Artifact And Field Ownership](../../../docs/AI-CONTRIBUTOR-AUDIT-MODEL.md#artifact-and-field-ownership):
 the collector and stamper own every mechanical field, the auditor owns
 judgment-required cells and manual rows, and `Date reached` is hybrid. Every
 populated auditor row must cite current-run evidence. The numbered steps below
@@ -47,7 +47,7 @@ name the owned fields where each phase touches them.
 Treat these files in the spec repo as the source of truth:
 
 - `AI-CONTRIBUTOR-SPECIFICATION.md`
-- `AI-CONTRIBUTOR-AUDIT-MODEL.md`
+- `docs/AI-CONTRIBUTOR-AUDIT-MODEL.md`
 - `AI-CONTRIBUTOR-AUDIT.md`
 - `.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md`
 - `.ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-LOG.md`
@@ -181,7 +181,7 @@ Do not copy forward previous statuses, comments, backlog rows, verification gaps
 
 ## 4. Prepare Frontmatter Identity
 
-Do not type duplicated mechanical frontmatter into both files. The canonical artifact and field ownership table is in [`AI-CONTRIBUTOR-AUDIT-MODEL.md` § Artifact And Field Ownership](../../../AI-CONTRIBUTOR-AUDIT-MODEL.md#artifact-and-field-ownership). `audit-stamp.ts` writes:
+Do not type duplicated mechanical frontmatter into both files. The canonical artifact and field ownership table is in [`AI-CONTRIBUTOR-AUDIT-MODEL.md` § Artifact And Field Ownership](../../../docs/AI-CONTRIBUTOR-AUDIT-MODEL.md#artifact-and-field-ownership). `audit-stamp.ts` writes:
 
 - `spec_source`
 - `audited_commit`

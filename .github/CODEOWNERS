@@ -7,9 +7,9 @@
 
 # Specification, audit model, guide — normative documents.
 /AI-CONTRIBUTOR-SPECIFICATION.md    @ai-contributors
-/AI-CONTRIBUTOR-AUDIT-MODEL.md      @ai-contributors
+/docs/AI-CONTRIBUTOR-AUDIT-MODEL.md @ai-contributors
 /AI-CONTRIBUTOR-GUIDE.md            @ai-contributors
-/AI-CONTRIBUTOR-COVERAGE.md         @ai-contributors
+/docs/AI-CONTRIBUTOR-COVERAGE.md    @ai-contributors
 
 # Audit templates shipped to adopters via bootstrap.
 /.ai-contributor-audit/             @ai-contributors

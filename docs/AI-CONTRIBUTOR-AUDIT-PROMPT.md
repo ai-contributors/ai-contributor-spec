@@ -4,7 +4,7 @@ Use this prompt when your agent does not support skills or when you want a
 copy-and-paste onboarding path.
 
 For repeat audits, prefer the
-[`ai-contributor-audit`](skills/ai-contributor-audit/SKILL.md) skill. The skill
+[`ai-contributor-audit`](../skills/ai-contributor-audit/SKILL.md) skill. The skill
 uses the same audit model, but is easier to reuse and less error-prone.
 
 ## Copy-Paste Prompt

@@ -1,8 +1,8 @@
 # AI Contributor Specification — Coverage map
 
-> **Version:** 0.1.3 · **Source catalog:** [`AI-CONTRIBUTOR-RULE-CATALOG.json`](AI-CONTRIBUTOR-RULE-CATALOG.json)
+> **Version:** 0.1.3 · **Source catalog:** [`AI-CONTRIBUTOR-RULE-CATALOG.json`](../AI-CONTRIBUTOR-RULE-CATALOG.json)
 
-**Non-normative.** This file shows how [`AI-CONTRIBUTOR-CHECKLIST.md`](.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md) is distributed across pillars, scopes (`MUST` / `MUST when applicable` / `SHOULD` / `MAY`), and minimum levels. Use it to estimate audit effort. Use the checklist itself for scoring.
+**Non-normative.** This file shows how [`AI-CONTRIBUTOR-CHECKLIST.md`](../.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md) is distributed across pillars, scopes (`MUST` / `MUST when applicable` / `SHOULD` / `MAY`), and minimum levels. Use it to estimate audit effort. Use the checklist itself for scoring.
 
 This generated projection is rendered from `tools/spec-authoring/templates/AI-CONTRIBUTOR-COVERAGE.md.template` plus `AI-CONTRIBUTOR-RULE-CATALOG.json`. The template owns explanatory prose and placement; the catalog owns row grouping, scope, level, pillar, and display metadata. Regenerate it with `tools/spec-authoring/generate-coverage.ts`; do not edit the generated output by hand.
 
@@ -10,7 +10,7 @@ This generated projection is rendered from `tools/spec-authoring/templates/AI-CO
 
 Use this file for planning, not for scoring. It tells you how many checklist rows exist at each level and pillar so you can estimate effort before an audit.
 
-For a conformance claim, use [`AI-CONTRIBUTOR-CHECKLIST.md`](.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md). If this file and the checklist disagree, rerun the catalog-backed generators; both files are projections of `AI-CONTRIBUTOR-RULE-CATALOG.json`.
+For a conformance claim, use [`AI-CONTRIBUTOR-CHECKLIST.md`](../.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md). If this file and the checklist disagree, rerun the catalog-backed generators; both files are projections of `AI-CONTRIBUTOR-RULE-CATALOG.json`.
 
 ## At a glance
 

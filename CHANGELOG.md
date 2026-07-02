@@ -36,9 +36,14 @@ Every released entry lists the release date (the day the version lands on `main`
   `AI-CONTRIBUTOR-AUDIT-MODEL.md` § Artifact And Field Ownership is the single
   canonical table, and the shipped audit protocol and `CONTRIBUTING.md` link
   to it instead of restating it. The ownership rules themselves are unchanged.
-- The bootstrap runbook manifest now materializes
-  `AI-CONTRIBUTOR-AUDIT-MODEL.md` so the protocol's canonical ownership
-  reference resolves inside pinned runbooks.
+- The bootstrap runbook manifest now materializes the audit model document
+  so the protocol's canonical ownership reference resolves inside pinned
+  runbooks.
+- `AI-CONTRIBUTOR-AUDIT-MODEL.md`, `AI-CONTRIBUTOR-COVERAGE.md`, and
+  `AI-CONTRIBUTOR-AUDIT-PROMPT.md` moved from the repository root to
+  `docs/`, keeping the root for entry-point documents. Internal links, the
+  bootstrap manifest, and the catalog `projections.coverage` path follow the
+  move; file contents are unchanged.
 
 This patch release does not change rule semantics, checklist rows, audit
 frontmatter fields, or conformance obligations.

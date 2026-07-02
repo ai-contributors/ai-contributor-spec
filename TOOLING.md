@@ -9,7 +9,8 @@ explains the layout and the commands maintainers use day-to-day.
 
 | Area                                   | Role                                                                                                                                       | Audience                                                          |
 | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------- |
-| Root Markdown files                    | Specification, guide, audit templates, audit model, contributor docs.                                                                      | Readers, adopters, maintainers.                                   |
+| Root Markdown files                    | Specification, guide, root audit summary template, contributor docs.                                                                       | Readers, adopters, maintainers.                                   |
+| `docs/`                                | Reference docs: audit model, coverage map, no-skill audit prompt, glossary, threat-model template, profile and catalog formats.            | Readers and adopters.                                             |
 | `skills/ai-contributor-audit/scripts/` | Canonical audit runtime shipped with the audit skill.                                                                                      | Installed-skill users, prompt-fetched runbooks, repo self-audits. |
 | `tools/`                               | Repository-local check and test harness.                                                                                                   | Maintainers and CI for this repository.                           |
 | `tools/test-fixtures/`                 | Static audit-artifact fixtures used by validator and stamper smoke tests.                                                                  | Test code only.                                                   |
@@ -128,7 +129,7 @@ The three commands most maintainers run day-to-day:
 | `npm --prefix tools run check:catalog-assets`        | Catalog, generated projections, checklist, coverage, conformance-level checks.                   |
 | `npm --prefix tools run check:rule-catalog`          | Validate and canonicalize the checked-in AI Contributor rule catalog.                            |
 | `npm --prefix tools run check:specification`         | `AI-CONTRIBUTOR-SPECIFICATION.md` matches its template and rule catalog.                         |
-| `npm --prefix tools run check:coverage`              | `AI-CONTRIBUTOR-COVERAGE.md` matches the coverage template and rule catalog.                     |
+| `npm --prefix tools run check:coverage`              | `docs/AI-CONTRIBUTOR-COVERAGE.md` matches the coverage template and rule catalog.                     |
 | `npm --prefix tools run check:checklist-assets`      | `.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md` matches the checklist template and catalog.  |
 | `npm --prefix tools run check:audit-templates`       | `AI-CONTRIBUTOR-AUDIT.md` and `.ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-LOG.md` are current.   |
 | `npm --prefix tools run check:audit-profile-template` | Audit-profile template applicability table is in sync with `PROFILE_QUESTIONS`.                  |
@@ -145,7 +146,7 @@ The three commands most maintainers run day-to-day:
 | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
 | `npm --prefix tools run generate:rule-catalog`       | Rewrite the AI Contributor rule catalog in canonical JSON order.                                 |
 | `npm --prefix tools run generate:specification`      | Rewrite `AI-CONTRIBUTOR-SPECIFICATION.md` from template + catalog.                               |
-| `npm --prefix tools run generate:coverage`           | Rewrite `AI-CONTRIBUTOR-COVERAGE.md` from template + catalog.                                    |
+| `npm --prefix tools run generate:coverage`           | Rewrite `docs/AI-CONTRIBUTOR-COVERAGE.md` from template + catalog.                                    |
 | `npm --prefix tools run generate:checklist-assets`   | Rewrite the checklist from template + catalog.                                                   |
 | `npm --prefix tools run generate:audit-templates`    | Rewrite the root summary + audit-log templates.                                                  |
 | `npm --prefix tools run generate:audit-profile-template` | Rewrite the audit-profile template applicability table.                                      |

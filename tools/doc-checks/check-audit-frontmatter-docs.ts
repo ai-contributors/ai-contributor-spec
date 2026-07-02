@@ -40,7 +40,7 @@ interface MentionCheck {
 
 const mentionChecks: MentionCheck[] = [
   {
-    path: 'AI-CONTRIBUTOR-AUDIT-MODEL.md',
+    path: 'docs/AI-CONTRIBUTOR-AUDIT-MODEL.md',
     label: 'canonical ownership table',
     marker: 'The frontmatter fields are owned as follows:',
     fields: allFrontmatterFields,
