@@ -42,8 +42,9 @@ Every released entry lists the release date (the day the version lands on `main`
 - `AI-CONTRIBUTOR-AUDIT-MODEL.md`, `AI-CONTRIBUTOR-COVERAGE.md`, and
   `AI-CONTRIBUTOR-AUDIT-PROMPT.md` moved from the repository root to
   `docs/`, keeping the root for entry-point documents. Internal links, the
-  bootstrap manifest, and the catalog `projections.coverage` path follow the
-  move; file contents are unchanged.
+  bootstrap manifest, the catalog `projections.coverage` path, `CODEOWNERS`,
+  and the moved files' own cross-references follow the move; normative
+  content is unchanged.
 
 This patch release does not change rule semantics, checklist rows, audit
 frontmatter fields, or conformance obligations.
