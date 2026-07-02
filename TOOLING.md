@@ -200,7 +200,10 @@ The canonical audit runtime. The high-level workflow is shown in the
 - `audit-stamp.ts` writes derivable audit fields into checklist, audit
   log, root summary.
 - `audit-validate.ts` checks artifact structure and cross-file
-  consistency.
+  consistency. When `audit-run.ts` finds the checklist tracked at `HEAD`,
+  it passes that previous version to `audit-validate.ts` via
+  `--previous`, and auditor-owned status changes then require a change
+  rationale (`AUDIT070`–`AUDIT072`).
 - `bootstrap.ts` fetches the pinned runbook file set for prompt-based
   audits.
 - `internal/` — implementation modules the entry points import. Shipped

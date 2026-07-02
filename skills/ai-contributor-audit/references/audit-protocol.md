@@ -256,6 +256,20 @@ Fill only the auditor-owned cells:
 - `Date reached` — set on the first audit that claims the level. The stamper preserves it across re-runs as long as the level remains `✅ Yes`, and clears it when a level drops out of `✅ Yes` so the date does not overstate when the level was reached.
 - `Notes` — preserved verbatim.
 
+### Re-audit status changes need a rationale
+
+`audit-run.ts` extracts the previous committed checklist (`git show
+HEAD:.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md`) at the start of the
+run and passes it to `audit-validate.ts` via `--previous`. When an
+auditor-owned row's Status differs from that previous audit, the row's
+Comment must contain a change rationale in the exact form
+`Changed from <old status> to <new status> because <reason>`, and the
+Comment must cite current-run evidence in backticks (`AUDIT070`,
+`AUDIT071`). Collector-derived and owner-profile stamped rows are exempt —
+their provenance already explains the change. The previous audit is still
+not evidence: the rationale must cite evidence from the current run only.
+On a first audit (checklist not tracked at `HEAD`) the check is skipped.
+
 ## 8. Fill Backlog
 
 `audit-stamp.ts` writes the derived columns (`Priority`, `Level`, `Rule`, `Scope`, `Current status`) of the Backlog table in the checklist and root `AI-CONTRIBUTOR-AUDIT.md` — it rewrites those rows from the current checklist row statuses, ordered by conformance level first and priority second, before AUDIT040–046 run during validation. Do not hand-curate which rules appear, the level, the priority tier, or the sort order.
