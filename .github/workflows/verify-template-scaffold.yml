@@ -27,7 +27,7 @@ jobs:
       run:
         working-directory: examples/typescript-pnpm/template
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       # Read pnpm version from packageManager: pnpm@<version> in
       # the scaffold's package.json rather than duplicating a literal
