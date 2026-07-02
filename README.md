@@ -17,7 +17,7 @@ This project gives you:
 - an audit profile skill that drafts applicability answers from repository
   evidence for owner confirmation,
 - a runnable audit skill that finds gaps,
-- a fix skill that helps close one gap at a time,
+- a fix skill that closes the gaps blocking the next conformance level,
 - an agent-free path: run the audit scripts yourself, or read the checklist by
   hand for early gap analysis.
 
