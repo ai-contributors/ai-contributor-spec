@@ -217,13 +217,9 @@ commits — see `Authorship` below.
   disclosure but still inherit the CC BY 4.0 / Apache-2.0 license terms for
   the path being changed.
 
-The block is intentionally short. Earlier drafts of this template included
-fields for AI-authored scope, validation evidence, and the human reviewer;
-those duplicate signal already present elsewhere in the PR (the diff, the
-"How validated" section, the reviewer assignment + CODEOWNERS) and were
-dropped. Do not re-add fields without a load-bearing reason — the trace
-block exists to satisfy specific normative rules, not to repeat everything
-the PR already says.
+The exact field formats, the disclosure threshold, and the rationale for
+keeping the block short are defined once in
+[`CONTRIBUTING.md` § AI-authored contributions](CONTRIBUTING.md#ai-authored-contributions).
 
 ## Prompt audit trail and agent traceability
 
