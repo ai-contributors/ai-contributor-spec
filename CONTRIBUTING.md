@@ -171,7 +171,7 @@ For materially AI-authored pull requests, complete the **AI Authorship & Agent T
 
 Each commit in a materially AI-authored PR MUST also include a `Co-Authored-By:` trailer naming the model/variant.
 
-The trace block is intentionally short. AI-authored scope, validation evidence, and the reviewer name are visible elsewhere in the PR (the diff, the "How validated" section, reviewer assignment + CODEOWNERS) and are not duplicated here.
+The trace block is intentionally short. AI-authored scope, validation evidence, and the reviewer name are visible elsewhere in the PR (the diff, the "How validated" section, reviewer assignment + CODEOWNERS) and are not duplicated here. Do not add fields to the block without a load-bearing reason — it exists to satisfy specific normative rules, not to repeat what the PR already shows.
 
 Pull requests with missing, unclear, or incorrect AI-authorship disclosure are held until the PR body is corrected. For normative policy changes, maintainers may require more validation evidence before review continues.
 
