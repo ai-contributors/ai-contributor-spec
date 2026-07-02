@@ -28,8 +28,8 @@ import {
   type SummaryRow,
 } from '../../skills/ai-contributor-audit/scripts/internal/audit-markdown.ts';
 import {
+  buildMechanicalExemption,
   checkReauditDiff,
-  isMechanicallyStamped,
 } from '../../skills/ai-contributor-audit/scripts/internal/validator-reaudit-diff.ts';
 import { AUTO_STAMP_PREFIX } from '../../skills/ai-contributor-audit/scripts/internal/audit-evidence.ts';
 import type {
@@ -782,6 +782,7 @@ function runReauditDiff(
     comment: string;
     ids: string;
   }>,
+  isExempt: (row: ChecklistRow) => boolean = () => false,
 ): string[] {
   const codes: string[] = [];
   const collect: ProblemReporter = (code) => {
@@ -793,6 +794,7 @@ function runReauditDiff(
     reauditChecklistLines(previousRows),
     'PREV.md',
     'CHECKLIST.md',
+    isExempt,
     collect,
   );
   return codes;
@@ -883,46 +885,99 @@ function runReauditDiff(
   }
 }
 
+// Rows for the exemption scenarios: a collector-decisive row and an
+// owner-profile row, both with changed statuses and no rationale.
+const REAUDIT_EXEMPTION_CURRENT = [
+  {
+    scope: 'MUST',
+    rule: 'Branch Protection',
+    status: '⚠️ Warning',
+    comment: `${AUTO_STAMP_PREFIX} (rule: branch-protection). protection disabled`,
+    ids: 'AIC-default-branch-protected',
+  },
+  {
+    scope: 'SHOULD',
+    rule: 'SBOM',
+    status: '➖ Not relevant',
+    comment:
+      'Owner profile: `.ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-PROFILE.md` answers "no" to "Ships artifacts?", so this check is not applicable. Profile evidence: none provided.',
+    ids: 'AIC-sbom-generation',
+  },
+];
+const REAUDIT_EXEMPTION_PREVIOUS = [
+  {
+    scope: 'MUST',
+    rule: 'Branch Protection',
+    status: '✅ Fulfilled',
+    comment: `${AUTO_STAMP_PREFIX} (rule: branch-protection). protection enabled`,
+    ids: 'AIC-default-branch-protected',
+  },
+  {
+    scope: 'SHOULD',
+    rule: 'SBOM',
+    status: '⚠️ Warning',
+    comment: '`docs/release.md:3` — SBOM missing',
+    ids: 'AIC-sbom-generation',
+  },
+];
+
 {
-  const codes = runReauditDiff(
-    [
-      {
-        scope: 'MUST',
-        rule: 'Branch Protection',
-        status: '⚠️ Warning',
-        comment: `${AUTO_STAMP_PREFIX} (rule: branch-protection). protection disabled`,
-        ids: 'AIC-default-branch-protected',
+  // Exemption comes from evidence JSON: the collector decisively covers the
+  // Branch Protection row and the owner profile answers "no" for SBOM.
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'reaudit-evidence-'));
+  const evidencePath = path.join(dir, 'AI-CONTRIBUTOR-EVIDENCE.json');
+  fs.writeFileSync(
+    evidencePath,
+    JSON.stringify({
+      rules: {
+        'branch-protection': {
+          judgment_required: false,
+          derived_status: 'Warning',
+          derivation_reason: 'protection disabled',
+          aic_ids: ['AIC-default-branch-protected'],
+        },
       },
-      {
-        scope: 'SHOULD',
-        rule: 'SBOM',
-        status: '➖ Not relevant',
-        comment:
-          'Owner profile: `.ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-PROFILE.md` answers "no" to "Ships artifacts?", so this check is not applicable. Profile evidence: none provided.',
-        ids: 'AIC-sbom-generation',
+      profile: {
+        answers: [
+          {
+            question_id: 'q-ships-artifacts',
+            question: 'Ships artifacts?',
+            answer: 'no',
+            owner_evidence: '',
+            evidence_use: 'applicability',
+            affected_aic_ids: ['AIC-sbom-generation'],
+            source_line: 1,
+          },
+        ],
       },
-    ],
-    [
-      {
-        scope: 'MUST',
-        rule: 'Branch Protection',
-        status: '✅ Fulfilled',
-        comment: `${AUTO_STAMP_PREFIX} (rule: branch-protection). protection enabled`,
-        ids: 'AIC-default-branch-protected',
-      },
-      {
-        scope: 'SHOULD',
-        rule: 'SBOM',
-        status: '⚠️ Warning',
-        comment: '`docs/release.md:3` — SBOM missing',
-        ids: 'AIC-sbom-generation',
-      },
-    ],
+    }),
   );
+  const codes = runReauditDiff(
+    REAUDIT_EXEMPTION_CURRENT,
+    REAUDIT_EXEMPTION_PREVIOUS,
+    buildMechanicalExemption(evidencePath),
+  );
+  fs.rmSync(dir, { recursive: true, force: true });
   if (codes.length === 0) {
-    ok('checkReauditDiff: mechanical and owner-profile rows exempt');
+    ok('checkReauditDiff: evidence-backed mechanical and owner-profile rows exempt');
   } else {
     bad('checkReauditDiff mechanical-exempt', `codes=${codes.join(',')}`);
+  }
+}
+
+{
+  // Spoofed provenance: the comments imitate collector/profile stamps but
+  // the evidence JSON is missing, so nothing is exempt and both changed
+  // rows need rationales.
+  const codes = runReauditDiff(
+    REAUDIT_EXEMPTION_CURRENT,
+    REAUDIT_EXEMPTION_PREVIOUS,
+    buildMechanicalExemption('/nonexistent/AI-CONTRIBUTOR-EVIDENCE.json'),
+  );
+  if (codes.length === 2 && codes.every((c) => c === 'AUDIT070')) {
+    ok('checkReauditDiff: stamp-imitating comments without evidence -> AUDIT070');
+  } else {
+    bad('checkReauditDiff spoofed-stamp', `codes=${codes.join(',')}`);
   }
 }
 
@@ -967,7 +1022,14 @@ function runReauditDiff(
   const collect: ProblemReporter = (code) => {
     codes.push(code);
   };
-  checkReauditDiff([], ['# not a checklist', 'no table here'], 'PREV.md', 'CHECKLIST.md', collect);
+  checkReauditDiff(
+    [],
+    ['# not a checklist', 'no table here'],
+    'PREV.md',
+    'CHECKLIST.md',
+    () => false,
+    collect,
+  );
   if (codes.length === 1 && codes[0] === 'AUDIT072') {
     ok('checkReauditDiff: previous file with no rows -> AUDIT072');
   } else {
@@ -976,16 +1038,57 @@ function runReauditDiff(
 }
 
 {
-  if (
-    isMechanicallyStamped(`${AUTO_STAMP_PREFIX} (rule: x). y`) &&
-    isMechanicallyStamped(
-      'Owner profile: `.ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-PROFILE.md` answers "no"',
-    ) &&
-    !isMechanicallyStamped('`README.md:42` — manual evidence')
-  ) {
-    ok('isMechanicallyStamped: prefixes detected, manual comment not');
+  // Issue #9's example form backticks the statuses; the fragment matcher
+  // must accept it, and the status backticks must not count as the
+  // required evidence citation.
+  const withCitation = runReauditDiff(
+    [
+      {
+        scope: 'SHOULD',
+        rule: 'Mock Mode',
+        status: '⚠️ Warning',
+        comment:
+          'Changed from `✅ Fulfilled` to `⚠️ Warning` because `README.md:42` no longer documents mock mode',
+        ids: 'AIC-mock-mode-fallback',
+      },
+    ],
+    [
+      {
+        scope: 'SHOULD',
+        rule: 'Mock Mode',
+        status: '✅ Fulfilled',
+        comment: '`README.md:40` documents mock mode',
+        ids: 'AIC-mock-mode-fallback',
+      },
+    ],
+  );
+  const withoutCitation = runReauditDiff(
+    [
+      {
+        scope: 'SHOULD',
+        rule: 'Mock Mode',
+        status: '⚠️ Warning',
+        comment: 'Changed from `✅ Fulfilled` to `⚠️ Warning` because the docs were removed',
+        ids: 'AIC-mock-mode-fallback',
+      },
+    ],
+    [
+      {
+        scope: 'SHOULD',
+        rule: 'Mock Mode',
+        status: '✅ Fulfilled',
+        comment: '`README.md:40` documents mock mode',
+        ids: 'AIC-mock-mode-fallback',
+      },
+    ],
+  );
+  if (withCitation.length === 0 && withoutCitation.join(',') === 'AUDIT071') {
+    ok('checkReauditDiff: backticked statuses accepted, status backticks not a citation');
   } else {
-    bad('isMechanicallyStamped');
+    bad(
+      'checkReauditDiff backticked-statuses',
+      `withCitation=${withCitation.join(',')} withoutCitation=${withoutCitation.join(',')}`,
+    );
   }
 }
 

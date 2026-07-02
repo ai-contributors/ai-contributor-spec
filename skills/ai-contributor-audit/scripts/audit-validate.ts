@@ -66,7 +66,7 @@ import {
   checkTokenDisclosure,
 } from './internal/validator-evidence-linkage.ts';
 import { checkFrontmatter } from './internal/validator-frontmatter.ts';
-import { checkReauditDiff } from './internal/validator-reaudit-diff.ts';
+import { buildMechanicalExemption, checkReauditDiff } from './internal/validator-reaudit-diff.ts';
 import {
   checkRootSectionCopies,
   checkSummary,
@@ -381,7 +381,14 @@ export function runValidator(argv: string[]): ValidatorResult {
   checkProfileEvidence(rules, context, fail);
   checkTokenDisclosure(auditReal, context, fail);
   if (!TEMPLATE_MODE && previousLines !== null) {
-    checkReauditDiff(rules, previousLines, previousOverride!, CHECKLIST_PATH, fail);
+    checkReauditDiff(
+      rules,
+      previousLines,
+      previousOverride!,
+      CHECKLIST_PATH,
+      buildMechanicalExemption(EVIDENCE_PATH),
+      fail,
+    );
   }
 
   if (problems.length === 0) {

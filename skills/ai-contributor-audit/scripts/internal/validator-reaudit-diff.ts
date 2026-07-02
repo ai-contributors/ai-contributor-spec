@@ -7,20 +7,52 @@
 // owner-profile stamps) are exempt — their provenance already explains
 // the change. Error codes AUDIT070..072.
 
-import { AUTO_STAMP_PREFIX } from './audit-evidence.ts';
+import fs from 'node:fs';
+import {
+  decisiveRulesByAic,
+  expectedCollectorStamp,
+  expectedProfileStamp,
+  parseProfileEvidence,
+  profileNoAnswersByAic,
+  type ProfileAnswerEvidence,
+} from './audit-evidence.ts';
 import { parseChecklistRules, type ChecklistRow } from './audit-markdown.ts';
 import type { ProblemReporter } from './validator-types.ts';
 
-// Leading token of comments written by ownerProfileComment() in
-// audit-evidence.ts.
-const OWNER_PROFILE_STAMP_PREFIX = 'Owner profile: ';
-
-export function isMechanicallyStamped(comment: string): boolean {
-  return comment.startsWith(AUTO_STAMP_PREFIX) || comment.startsWith(OWNER_PROFILE_STAMP_PREFIX);
+// Exemption must come from validated mechanical provenance in the current
+// run's evidence JSON — never from Comment text. A hand-written Comment
+// that imitates a collector or owner-profile stamp on a judgment row would
+// otherwise dodge AUDIT070, because AUDIT061 only pins rows that decisive
+// collector evidence actually covers. Missing or malformed evidence JSON
+// exempts nothing (AUDIT060 already flags that state when stamped rows
+// exist).
+export function buildMechanicalExemption(evidencePath: string): (row: ChecklistRow) => boolean {
+  let evidence: { rules?: Record<string, unknown>; profile?: unknown };
+  try {
+    evidence = JSON.parse(fs.readFileSync(evidencePath, 'utf8'));
+  } catch {
+    return () => false;
+  }
+  const decisiveByAic = decisiveRulesByAic(evidence.rules ?? {});
+  const profile = parseProfileEvidence(evidence.profile);
+  const profileNoByAic = profile
+    ? profileNoAnswersByAic(profile.answers)
+    : new Map<string, ProfileAnswerEvidence[]>();
+  return (row) =>
+    expectedCollectorStamp(row.ids, decisiveByAic) !== null ||
+    expectedProfileStamp(row, decisiveByAic, profileNoByAic) !== null;
 }
 
 export function changeRationaleFragment(prevStatus: string, currStatus: string): string {
   return `Changed from ${prevStatus} to ${currStatus} because `;
+}
+
+// The statuses may optionally be backticked — issue #9's example writes
+// `Changed from `✅ Fulfilled` to `⚠️ Warning` because …`.
+export function changeRationalePattern(prevStatus: string, currStatus: string): RegExp {
+  return new RegExp(
+    `Changed from \`?${escapeRegExp(prevStatus)}\`? to \`?${escapeRegExp(currStatus)}\`? because `,
+  );
 }
 
 export function checkReauditDiff(
@@ -28,6 +60,7 @@ export function checkReauditDiff(
   previousLines: string[],
   previousPath: string,
   checklistPath: string,
+  isExempt: (row: ChecklistRow) => boolean,
   fail: ProblemReporter,
 ): void {
   const previous = parseChecklistRules(previousLines);
@@ -55,20 +88,25 @@ export function checkReauditDiff(
     if (prev.status === '') continue; // unfinished previous audit row
     if (row.status === '') continue; // blank current status is AUDIT015's job
     if (row.status === prev.status) continue;
-    if (isMechanicallyStamped(row.comment)) continue;
+    if (isExempt(row)) continue;
 
-    const fragment = changeRationaleFragment(prev.status, row.status);
-    if (!row.comment.includes(fragment)) {
+    const match = changeRationalePattern(prev.status, row.status).exec(row.comment);
+    if (!match) {
       fail(
         'AUDIT070',
         checklistPath,
         row.line,
         `row "${row.rule}": status changed from "${prev.status}" to "${row.status}" since the previous committed audit; ` +
-          `Comment must include "${fragment}<reason citing current-run evidence>"`,
+          `Comment must include "${changeRationaleFragment(prev.status, row.status)}<reason citing current-run evidence>"`,
       );
       continue;
     }
-    if (!/`[^`]+`/.test(row.comment)) {
+    // The citation check must ignore the matched fragment itself: with
+    // backticked statuses the fragment contains backtick tokens that are
+    // not evidence citations.
+    const remainder =
+      row.comment.slice(0, match.index) + row.comment.slice(match.index + match[0].length);
+    if (!/`[^`]+`/.test(remainder)) {
       fail(
         'AUDIT071',
         checklistPath,
@@ -83,4 +121,8 @@ export function checkReauditDiff(
 // duplicate names exist, prefer the candidate with the identical AIC ID set.
 function rowKey(r: ChecklistRow): string {
   return `${r.scope}|${r.rule}`;
+}
+
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
