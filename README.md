@@ -246,18 +246,18 @@ Contributor badge.
 
 | Level | Badge |
 |---|---|
-| Level 1 — Hardened | [![AI Contributor: Level 1 Hardened](https://img.shields.io/badge/AI%20Contributor-Level%201%20Hardened-blue)](./AI-CONTRIBUTOR-SPECIFICATION.md#conformance-levels) |
-| Level 2 — AI Assisted | [![AI Contributor: Level 2 AI Assisted](https://img.shields.io/badge/AI%20Contributor-Level%202%20AI%20Assisted-green)](./AI-CONTRIBUTOR-SPECIFICATION.md#conformance-levels) |
-| Level 3 — AI Authored | [![AI Contributor: Level 3 AI Authored](https://img.shields.io/badge/AI%20Contributor-Level%203%20AI%20Authored-brightgreen)](./AI-CONTRIBUTOR-SPECIFICATION.md#conformance-levels) |
-| Level 4 — AI Autonomous | [![AI Contributor: Level 4 AI Autonomous](https://img.shields.io/badge/AI%20Contributor-Level%204%20AI%20Autonomous-blueviolet)](./AI-CONTRIBUTOR-SPECIFICATION.md#conformance-levels) |
+| Level 1 — Hardened | [![AI Contributor: Level 1 Hardened](https://img.shields.io/badge/AI%20Contributor-Level%201%20Hardened-blue)](https://github.com/ai-contributors/ai-contributor-spec/blob/main/AI-CONTRIBUTOR-SPECIFICATION.md#conformance-levels) |
+| Level 2 — AI Assisted | [![AI Contributor: Level 2 AI Assisted](https://img.shields.io/badge/AI%20Contributor-Level%202%20AI%20Assisted-green)](https://github.com/ai-contributors/ai-contributor-spec/blob/main/AI-CONTRIBUTOR-SPECIFICATION.md#conformance-levels) |
+| Level 3 — AI Authored | [![AI Contributor: Level 3 AI Authored](https://img.shields.io/badge/AI%20Contributor-Level%203%20AI%20Authored-brightgreen)](https://github.com/ai-contributors/ai-contributor-spec/blob/main/AI-CONTRIBUTOR-SPECIFICATION.md#conformance-levels) |
+| Level 4 — AI Autonomous | [![AI Contributor: Level 4 AI Autonomous](https://img.shields.io/badge/AI%20Contributor-Level%204%20AI%20Autonomous-blueviolet)](https://github.com/ai-contributors/ai-contributor-spec/blob/main/AI-CONTRIBUTOR-SPECIFICATION.md#conformance-levels) |
 
 Paste the Markdown for your achieved level into your repository's README.
 
 ```markdown
-[![AI Contributor: Level 1 Hardened](https://img.shields.io/badge/AI%20Contributor-Level%201%20Hardened-blue)](./AI-CONTRIBUTOR-SPECIFICATION.md#conformance-levels)
-[![AI Contributor: Level 2 AI Assisted](https://img.shields.io/badge/AI%20Contributor-Level%202%20AI%20Assisted-green)](./AI-CONTRIBUTOR-SPECIFICATION.md#conformance-levels)
-[![AI Contributor: Level 3 AI Authored](https://img.shields.io/badge/AI%20Contributor-Level%203%20AI%20Authored-brightgreen)](./AI-CONTRIBUTOR-SPECIFICATION.md#conformance-levels)
-[![AI Contributor: Level 4 AI Autonomous](https://img.shields.io/badge/AI%20Contributor-Level%204%20AI%20Autonomous-blueviolet)](./AI-CONTRIBUTOR-SPECIFICATION.md#conformance-levels)
+[![AI Contributor: Level 1 Hardened](https://img.shields.io/badge/AI%20Contributor-Level%201%20Hardened-blue)](https://github.com/ai-contributors/ai-contributor-spec/blob/main/AI-CONTRIBUTOR-SPECIFICATION.md#conformance-levels)
+[![AI Contributor: Level 2 AI Assisted](https://img.shields.io/badge/AI%20Contributor-Level%202%20AI%20Assisted-green)](https://github.com/ai-contributors/ai-contributor-spec/blob/main/AI-CONTRIBUTOR-SPECIFICATION.md#conformance-levels)
+[![AI Contributor: Level 3 AI Authored](https://img.shields.io/badge/AI%20Contributor-Level%203%20AI%20Authored-brightgreen)](https://github.com/ai-contributors/ai-contributor-spec/blob/main/AI-CONTRIBUTOR-SPECIFICATION.md#conformance-levels)
+[![AI Contributor: Level 4 AI Autonomous](https://img.shields.io/badge/AI%20Contributor-Level%204%20AI%20Autonomous-blueviolet)](https://github.com/ai-contributors/ai-contributor-spec/blob/main/AI-CONTRIBUTOR-SPECIFICATION.md#conformance-levels)
 ```
 
 ## Contributing
