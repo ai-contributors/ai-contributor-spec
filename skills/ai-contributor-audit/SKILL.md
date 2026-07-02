@@ -118,10 +118,11 @@ Use the lower-level commands when you need to inspect or recover one phase. The 
 
    Prints audit metadata, status counts, the list of collector-decisive rules with their status, and the list of collector-judgment-required rules with their reason. Useful for understanding what the collector decided before filling auditor-owned rows. No mutation; safe to run any time after `audit:collect`.
 
-4. **Validate** the filled pair (read-only — never mutates):
+4. **Validate** the filled pair (read-only — never mutates). On a re-audit, extract the previous committed checklist first and pass it via `--previous` — without it the `AUDIT070`–`AUDIT072` status-change rationale check is silently skipped (`audit-run.ts` does this automatically; omit it on a first audit):
 
    ```sh
-   npm --prefix tools run audit:validate
+   git show HEAD:.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md > /tmp/previous-checklist.md
+   npm --prefix tools run audit:validate -- --previous /tmp/previous-checklist.md
    ```
 
 The convenience `npm --prefix tools run audit` is the preferred vendored entry point.
@@ -155,9 +156,13 @@ npx --yes tsx@4.21.0 "${RUNBOOK}/skills/ai-contributor-audit/scripts/audit-stamp
   --auditor "AGENT | MODEL | REASONING_EFFORT" \
   --runner-agent "<runner>" \
   --runner-model "<model>"
+git show HEAD:.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md > /tmp/previous-checklist.md
 npx --yes tsx@4.21.0 "${RUNBOOK}/skills/ai-contributor-audit/scripts/audit-validate.ts" \
-  .ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md .ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-LOG.md
+  .ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md .ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-LOG.md \
+  --previous /tmp/previous-checklist.md
 ```
+
+On a re-audit, `--previous` enables the `AUDIT070`–`AUDIT072` status-change rationale check; omit the `git show` line and the flag on a first audit (no checklist committed at `HEAD` yet).
 
 When using the copy-and-paste prompt instead of an installed skill, fetch `bootstrap.ts` from the same pinned `spec_source` and let it materialize the runbook:
 
