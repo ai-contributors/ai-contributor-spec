@@ -1,6 +1,6 @@
 # AI Contributor Specification — Coverage map
 
-> **Version:** 0.1.3 · **Source catalog:** [`AI-CONTRIBUTOR-RULE-CATALOG.json`](AI-CONTRIBUTOR-RULE-CATALOG.json)
+> **Version:** 0.1.4 · **Source catalog:** [`AI-CONTRIBUTOR-RULE-CATALOG.json`](AI-CONTRIBUTOR-RULE-CATALOG.json)
 
 **Non-normative.** This file shows how [`AI-CONTRIBUTOR-CHECKLIST.md`](.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md) is distributed across pillars, scopes (`MUST` / `MUST when applicable` / `SHOULD` / `MAY`), and minimum levels. Use it to estimate audit effort. Use the checklist itself for scoring.
 

@@ -1,7 +1,7 @@
 {
   "$schema": "./AI-CONTRIBUTOR-RULE-CATALOG.schema.json",
   "schemaVersion": "0.1",
-  "specVersion": "0.1.3",
+  "specVersion": "0.1.4",
   "sourceOfTruth": "AI-CONTRIBUTOR-RULE-CATALOG.json",
   "projections": {
     "specification": "AI-CONTRIBUTOR-SPECIFICATION.md",
