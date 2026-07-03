@@ -22,6 +22,31 @@ Every released entry lists the release date (the day the version lands on `main`
 
 ## [Unreleased]
 
+## [0.2] — 2026-07-03
+
+### Changed
+
+- The shipped skills (`ai-contributor-audit`, `ai-contributor-audit-fix`,
+  `ai-contributor-audit-profile`) are now user-invoked only
+  (`disable-model-invocation: true`). Agents no longer start them from a
+  matched prompt; invoke them explicitly (for example `/ai-contributor-audit`).
+  Adopters who relied on natural-language triggering must switch to explicit
+  invocation — this behavior change is why this release is a minor bump.
+- `ai-contributor-audit-fix` now runs in two explicit modes: **fix-next-level**
+  (default) fixes every backlog row blocking the next unreached conformance
+  level in one confirmed batch, recording a per-finding outcome (`fixed`,
+  `blocked`, or `awaiting hosted-setting confirmation`); **fix-one** (a rule
+  named in the invocation) fixes that single row. Both modes run exactly one
+  collect → stamp → validate re-audit cycle after the batch instead of one per
+  finding.
+- The audit skill's non-vendored bootstrap and copy-and-paste runbook flows
+  moved from `SKILL.md` into
+  `skills/ai-contributor-audit/references/bootstrap-run.md`, which the
+  bootstrap manifest now materializes.
+
+This release does not change rule semantics, checklist rows, audit frontmatter
+fields, or conformance obligations.
+
 ## [0.1.4] — 2026-07-02
 
 ### Changed
