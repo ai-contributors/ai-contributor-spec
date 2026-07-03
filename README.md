@@ -17,7 +17,7 @@ This project gives you:
 - an audit profile skill that drafts applicability answers from repository
   evidence for owner confirmation,
 - a runnable audit skill that finds gaps,
-- a fix skill that helps close one gap at a time,
+- a fix skill that closes the gaps blocking the next conformance level,
 - an agent-free path: run the audit scripts yourself, or read the checklist by
   hand for early gap analysis.
 
@@ -103,10 +103,10 @@ audit.
    `AI-CONTRIBUTOR-AUDIT.md`.
 3. Review the current result and decide which
    [target level](#choose-your-target-level) you want to reach.
-4. Use the [fix skill](skills/ai-contributor-audit-fix/SKILL.md) to address one
-   backlog row at a time.
-5. Rerun the audit after a batch of fixes, especially when you expect to reach
-   the next level.
+4. Use the [fix skill](skills/ai-contributor-audit-fix/SKILL.md) to address the
+   backlog rows blocking your target level. It confirms the batch scope with
+   you, fixes each row, and finishes with a single re-audit.
+5. Rerun the audit whenever you need refreshed results outside a fix batch.
 6. Have a human or named accountable owner review the
    [audit evidence](AI-CONTRIBUTOR-AUDIT-MODEL.md) before claiming a level.
 
@@ -161,8 +161,15 @@ Then start the skill using your agent's invocation syntax:
   `$ai-contributor-audit-fix`.
 - Other agents: ask for the skill by name.
 
-The fix skill works on one finding, stops, and asks what to do next: leave the
-change uncommitted, commit, branch, push, or open a PR.
+The fix skill has two modes: **fix-next-level** (default —
+`/ai-contributor-audit-fix` fixes every backlog row blocking the next
+conformance level) and **fix-one** (`/ai-contributor-audit-fix <rule>` fixes
+the single named row). Both confirm the scope with you first, fix each row,
+ask what to do next (leave the changes uncommitted, commit, branch, push, or
+open a PR), and finish with a single re-audit.
+
+The skills are user-invoked only: an agent never starts them on its own from a
+matched prompt.
 
 If your agent does not support skills, or you prefer the prompt-based flow, use
 the prompt in

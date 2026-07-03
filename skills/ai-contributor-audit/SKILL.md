@@ -1,6 +1,7 @@
 ---
 name: ai-contributor-audit
-description: Audit, re-audit, or score a repository against the AI Contributor Specification. Use this skill when a user asks for AI Contributor conformance, repository audit evidence, checklist scoring, or refreshing .ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md / .ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-LOG.md. SKIP for generic security review, generic code review, dependency audit, license audit, repo-health roasts, or any "audit my repo" request that is not specifically about AI Contributor Specification conformance — those are different tasks and produce a different shape of output.
+description: Run a reproducible AI Contributor Specification conformance audit and produce the stamped checklist, audit log, evidence JSON, and root summary.
+disable-model-invocation: true
 ---
 
 # AI Contributor Audit
@@ -8,6 +9,8 @@ description: Audit, re-audit, or score a repository against the AI Contributor S
 > **Preflight (echo this to the user before doing anything):** "This is an AI Contributor Specification conformance audit. I will show the discovered `spec_version` and audit tool versions from the files being used, then pin the spec source, collect machine-readable evidence from the target repository, stamp mechanical fields, fill judgment-required rows from current evidence, stamp again, and run the structural validator. Tooling: `audit-run.ts` orchestrates `audit-collect.ts`, `audit-stamp.ts`, and `audit-validate.ts`; `bootstrap.ts` is used only when the target repo has not vendored the tooling. The collector checks local tools such as `git`, `gh`, `node`, `pnpm`, and `npm` when available. This produces reviewable audit artifacts; a human or named accountable owner should accept them before publishing a conformance claim. It is NOT a generic security review, code review, dependency audit, license audit, or repo-health assessment."
 
 Run a reproducible conformance audit against the [AI Contributor Specification](https://github.com/ai-contributors/ai-contributor-spec).
+
+This skill is user-invoked only (`disable-model-invocation: true`). Start it explicitly — `/ai-contributor-audit` in Claude Code or GitHub Copilot, `$ai-contributor-audit` in Codex — it never starts because an agent matched a prompt.
 
 The audit writes one root summary and three audit output artifacts in
 `.ai-contributor-audit/`. It also reads one optional owner profile input
@@ -127,60 +130,7 @@ Use the lower-level commands when you need to inspect or recover one phase. The 
 
 The convenience `npm --prefix tools run audit` is the preferred vendored entry point.
 
-If the target repo has not vendored the tooling, use the installed skill only to bootstrap the full runbook from the same pinned `SPEC_SHA`, then run the scripts from that bootstrapped directory. Do not run installed scripts with manually fetched templates; that mixes script and template refs and can reproduce stale collector behavior.
-
-```sh
-SPEC_SHA="<the same SHA recorded in spec_source>"
-RUNBOOK="/tmp/ai-contributor-audit-${SPEC_SHA}"
-npx --yes tsx@4.21.0 <path-to-this-skill>/scripts/bootstrap.ts "${SPEC_SHA}" --out="${RUNBOOK}"
-npx --yes tsx@4.21.0 "${RUNBOOK}/skills/ai-contributor-audit/scripts/audit-run.ts" . \
-  --reset-templates \
-  --template-root "${RUNBOOK}" \
-  --spec-source "https://github.com/ai-contributors/ai-contributor-spec/tree/${SPEC_SHA}" \
-  --auditor "AGENT | MODEL | REASONING_EFFORT" \
-  --runner-agent "<runner>" \
-  --runner-model "<model>"
-```
-
-The `npx --yes tsx@4.21.0` invocation acquires the TypeScript executor for
-bootstrap/startup. Once `audit-run.ts` is running, its collect/stamp/validate
-child phases invoke `tsx` from `PATH` and do not invoke `npm` or `npx` again.
-
-Or run the phases directly from the bootstrapped runbook:
-
-```sh
-npx --yes tsx@4.21.0 "${RUNBOOK}/skills/ai-contributor-audit/scripts/audit-collect.ts" .
-npx --yes tsx@4.21.0 "${RUNBOOK}/skills/ai-contributor-audit/scripts/audit-stamp.ts" \
-  .ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md .ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-LOG.md \
-  --spec-source "https://github.com/ai-contributors/ai-contributor-spec/tree/${SPEC_SHA}" \
-  --auditor "AGENT | MODEL | REASONING_EFFORT" \
-  --runner-agent "<runner>" \
-  --runner-model "<model>"
-git show HEAD:.ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md > /tmp/previous-checklist.md
-npx --yes tsx@4.21.0 "${RUNBOOK}/skills/ai-contributor-audit/scripts/audit-validate.ts" \
-  .ai-contributor-audit/AI-CONTRIBUTOR-CHECKLIST.md .ai-contributor-audit/AI-CONTRIBUTOR-AUDIT-LOG.md \
-  --previous /tmp/previous-checklist.md
-```
-
-On a re-audit, `--previous` enables the `AUDIT070`–`AUDIT072` status-change rationale check; omit the `git show` line and the flag on a first audit (no checklist committed at `HEAD` yet).
-
-When using the copy-and-paste prompt instead of an installed skill, fetch `bootstrap.ts` from the same pinned `spec_source` and let it materialize the runbook:
-
-```sh
-SPEC_SHA="<the same SHA recorded in spec_source>"
-curl -fsSL \
-  "https://raw.githubusercontent.com/ai-contributors/ai-contributor-spec/${SPEC_SHA}/skills/ai-contributor-audit/scripts/bootstrap.ts" \
-  -o /tmp/aic-bootstrap.ts
-RUNBOOK="/tmp/ai-contributor-audit-${SPEC_SHA}"
-npx --yes tsx@4.21.0 /tmp/aic-bootstrap.ts "${SPEC_SHA}" --out="${RUNBOOK}"
-npx --yes tsx@4.21.0 "${RUNBOOK}/skills/ai-contributor-audit/scripts/audit-run.ts" . \
-  --reset-templates \
-  --template-root "${RUNBOOK}" \
-  --spec-source "https://github.com/ai-contributors/ai-contributor-spec/tree/${SPEC_SHA}" \
-  --auditor "AGENT | MODEL | REASONING_EFFORT" \
-  --runner-agent "<runner>" \
-  --runner-model "<model>"
-```
+If the target repo has not vendored the tooling, use the installed skill (or the copy-and-paste prompt's fetched `bootstrap.ts`) only to bootstrap the full runbook from the same pinned `SPEC_SHA`, then run the scripts from that bootstrapped directory. Follow [`references/bootstrap-run.md`](references/bootstrap-run.md) for the exact commands.
 
 ## Required Workflow
 
