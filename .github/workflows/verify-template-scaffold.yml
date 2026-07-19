@@ -37,7 +37,7 @@ jobs:
         with:
           package_json_file: examples/typescript-pnpm/template/package.json
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version-file: examples/typescript-pnpm/template/.nvmrc
           cache: pnpm
